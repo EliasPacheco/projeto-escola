@@ -35,38 +35,71 @@ class MyHomePage extends StatelessWidget {
         padding: EdgeInsets.all(16.0),
         children: [
           MyCard(
-            title: 'Financeiro',
-            icon: FontAwesomeIcons.chartLine,
-            cardColor: Colors.blue,
-            onTap: () {
-              Navigator.pushNamed(context, 'financeiro/FinanceiroHome');
-            },
-          ),
-          MyCard(
-            title: 'Alunos',
-            icon: FontAwesomeIcons.users,
-            cardColor: Colors.green,
-            onTap: () {
-              Navigator.pushNamed(context, 'alunos/AlunoHome');
-            },
-          ),
-          MyCard(
-            title: 'Matricula',
-            icon: FontAwesomeIcons.graduationCap,
-            cardColor: Colors.blue,
-            onTap: () {
-              Navigator.pushNamed(context, 'alunos/MatriculaScreen');
-            },
-          ),
-          MyCard(
-            title: 'Avisos',
+            title: 'Comunicados',
             icon: FontAwesomeIcons.bell,
             cardColor: Colors.red,
             onTap: () {
               Navigator.pushNamed(context, 'avisos/AvisosHome');
             },
           ),
-          // Adicione mais cartões conforme necessário
+          MyCard(
+            title: 'Boletim',
+            icon: FontAwesomeIcons.fileAlt,
+            cardColor: Colors.red,
+            onTap: () {},
+          ),
+          MyCard(
+            title: 'Financeiro',
+            icon: FontAwesomeIcons.handHoldingDollar,
+            cardColor: Colors.blue,
+            onTap: () {
+              Navigator.pushNamed(context, 'financeiro/FinanceiroHome');
+            },
+          ),
+          MyCard(
+            title: 'Agenda',
+            icon: FontAwesomeIcons.calendarCheck,
+            cardColor: Colors.red,
+            onTap: () {},
+          ),
+          MyCard(
+            title: 'Ocorrências',
+            icon: FontAwesomeIcons.circleExclamation,
+            cardColor: Colors.red,
+            onTap: () {},
+          ),
+          MyCard(
+            title: 'Conteúdos',
+            icon: FontAwesomeIcons.book,
+            cardColor: Colors.red,
+            onTap: () {},
+          ),
+          MyCard(
+            title: 'Chat',
+            icon: FontAwesomeIcons.solidCommentDots,
+            cardColor: Colors.green,
+            onTap: () {
+              //Navigator.pushNamed(context, 'alunos/AlunoHome');
+            },
+          ),
+          MyCard(
+            title: 'Horários',
+            icon: FontAwesomeIcons.calendarAlt,
+            cardColor: Colors.blue,
+            onTap: () {
+
+              //Navigator.pushNamed(context, 'alunos/MatriculaScreen');
+            },
+          ),
+          MyCard(
+            title: 'Suporte',
+            icon: FontAwesomeIcons.solidCircleUser,
+            cardColor: Colors.blue,
+            onTap: () {
+
+              //Navigator.pushNamed(context, 'alunos/MatriculaScreen');
+            },
+          ),
         ],
       ),
     );
