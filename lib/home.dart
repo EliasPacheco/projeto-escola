@@ -37,7 +37,8 @@ class MyHomePage extends StatelessWidget {
           MyCard(
             title: 'Comunicados',
             icon: FontAwesomeIcons.bell,
-            cardColor: Colors.red,
+            cardColor: Colors.white,  // Alterado para branco
+            borderColor: Colors.purple,  // Alterado para branco
             onTap: () {
               Navigator.pushNamed(context, 'avisos/AvisosHome');
             },
@@ -45,13 +46,15 @@ class MyHomePage extends StatelessWidget {
           MyCard(
             title: 'Boletim',
             icon: FontAwesomeIcons.fileAlt,
-            cardColor: Colors.red,
+            cardColor: Colors.white,  // Alterado para branco
+            borderColor: Colors.purple,
             onTap: () {},
           ),
           MyCard(
             title: 'Financeiro',
             icon: FontAwesomeIcons.handHoldingDollar,
-            cardColor: Colors.blue,
+            cardColor: Colors.white,  // Alterado para branco
+            borderColor: Colors.purple,
             onTap: () {
               Navigator.pushNamed(context, 'financeiro/FinanceiroHome');
             },
@@ -59,25 +62,29 @@ class MyHomePage extends StatelessWidget {
           MyCard(
             title: 'Agenda',
             icon: FontAwesomeIcons.calendarCheck,
-            cardColor: Colors.red,
+            cardColor: Colors.white,  // Alterado para branco
+            borderColor: Colors.purple,
             onTap: () {},
           ),
           MyCard(
             title: 'Ocorrências',
             icon: FontAwesomeIcons.circleExclamation,
-            cardColor: Colors.red,
+            cardColor: Colors.white,  // Alterado para branco
+            borderColor: Colors.purple,
             onTap: () {},
           ),
           MyCard(
             title: 'Conteúdos',
             icon: FontAwesomeIcons.book,
-            cardColor: Colors.red,
+            cardColor: Colors.white,  // Alterado para branco
+            borderColor: Colors.purple,
             onTap: () {},
           ),
           MyCard(
             title: 'Chat',
             icon: FontAwesomeIcons.solidCommentDots,
-            cardColor: Colors.green,
+            cardColor: Colors.white,  // Alterado para branco
+            borderColor: Colors.purple,
             onTap: () {
               //Navigator.pushNamed(context, 'alunos/AlunoHome');
             },
@@ -85,7 +92,8 @@ class MyHomePage extends StatelessWidget {
           MyCard(
             title: 'Horários',
             icon: FontAwesomeIcons.calendarAlt,
-            cardColor: Colors.blue,
+            cardColor: Colors.white,  // Alterado para branco
+            borderColor: Colors.purple,
             onTap: () {
 
               //Navigator.pushNamed(context, 'alunos/MatriculaScreen');
@@ -94,7 +102,8 @@ class MyHomePage extends StatelessWidget {
           MyCard(
             title: 'Suporte',
             icon: FontAwesomeIcons.solidCircleUser,
-            cardColor: Colors.blue,
+            cardColor: Colors.white,  // Alterado para branco
+            borderColor: Colors.purple,
             onTap: () {
 
               //Navigator.pushNamed(context, 'alunos/MatriculaScreen');
@@ -110,12 +119,14 @@ class MyCard extends StatelessWidget {
   final String title;
   final IconData icon;
   final Color cardColor;
+  final Color borderColor;
   final Function()? onTap;
 
   MyCard({
     required this.title,
     required this.icon,
     required this.cardColor,
+    required this.borderColor,
     required this.onTap,
   });
 
@@ -130,13 +141,15 @@ class MyCard extends StatelessWidget {
             elevation: 4.0,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10.0),
+              side: BorderSide(color: borderColor),  // Adicionado para borda roxa
             ),
+            color: cardColor,  // Alterado para cor de fundo branca
             child: Padding(
               padding: EdgeInsets.all(16.0),
               child: Icon(
                 icon,
                 size: 50.0,
-                color: cardColor,
+                color: borderColor,  // Alterado para roxo
               ),
             ),
           ),
