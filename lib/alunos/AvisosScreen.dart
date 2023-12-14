@@ -41,7 +41,7 @@ class _AvisosHomeState extends State<AvisosHome> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Avisos Escolares'),
+        title: Text('Comunicados Escolares'),
       ),
       body: ListView.builder(
         itemCount: avisos.length,

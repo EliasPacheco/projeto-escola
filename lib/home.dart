@@ -1,7 +1,11 @@
 import 'package:escola/alunos/AlunoHome.dart';
+import 'package:escola/alunos/ChatScreen.dart';
+import 'package:escola/alunos/ConteudosScreen.dart';
 import 'package:escola/alunos/MatriculaScreen.dart';
-import 'package:escola/avisos/AvisosHome.dart';
+import 'package:escola/alunos/AvisosScreen.dart';
+import 'package:escola/alunos/OcorrenciasScreen.dart';
 import 'package:escola/financeiro/FinanceiroHome.dart';
+import 'package:escola/suporte/SuporteScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
@@ -16,8 +20,12 @@ class MySchoolApp extends StatelessWidget {
       routes: {
         'alunos/AlunoHome': (context) => AlunoHome(),
         'financeiro/FinanceiroHome': (context) => FinanceiroHome(),
-        'avisos/AvisosHome': (context) => AvisosHome(),
+        'alunos/AvisosScreen': (context) => AvisosHome(),
         'alunos/MatriculaScreen': (context) => MatriculaScreen(),
+        'alunos/OcorrenciasScreen': (context) => OcorrenciasScreen(),
+        'alunos/ConteudosScreen': (context) => ConteudosScreen(),
+        'suporte/SuporteScreen': (context) => SuporteScreen(),
+        'alunos/ChatScreen': (context) => ChatScreen(),
       },
     );
   }
@@ -37,24 +45,24 @@ class MyHomePage extends StatelessWidget {
           MyCard(
             title: 'Comunicados',
             icon: FontAwesomeIcons.bell,
-            cardColor: Colors.white,  // Alterado para branco
-            borderColor: Colors.purple,  // Alterado para branco
+            cardColor: Colors.white, // Alterado para branco
+            borderColor: Color.fromARGB(255, 59, 16, 212),
             onTap: () {
-              Navigator.pushNamed(context, 'avisos/AvisosHome');
+              Navigator.pushNamed(context, 'alunos/AvisosScreen');
             },
           ),
           MyCard(
             title: 'Boletim',
             icon: FontAwesomeIcons.fileAlt,
-            cardColor: Colors.white,  // Alterado para branco
-            borderColor: Colors.purple,
+            cardColor: Colors.white, // Alterado para branco
+            borderColor: Color.fromARGB(255, 59, 16, 212),
             onTap: () {},
           ),
           MyCard(
             title: 'Financeiro',
             icon: FontAwesomeIcons.handHoldingDollar,
-            cardColor: Colors.white,  // Alterado para branco
-            borderColor: Colors.purple,
+            cardColor: Colors.white, // Alterado para branco
+            borderColor: Color.fromARGB(255, 59, 16, 212),
             onTap: () {
               Navigator.pushNamed(context, 'financeiro/FinanceiroHome');
             },
@@ -62,51 +70,53 @@ class MyHomePage extends StatelessWidget {
           MyCard(
             title: 'Agenda',
             icon: FontAwesomeIcons.calendarCheck,
-            cardColor: Colors.white,  // Alterado para branco
-            borderColor: Colors.purple,
+            cardColor: Colors.white, // Alterado para branco
+            borderColor: Color.fromARGB(255, 59, 16, 212),
             onTap: () {},
           ),
           MyCard(
             title: 'Ocorrências',
             icon: FontAwesomeIcons.circleExclamation,
-            cardColor: Colors.white,  // Alterado para branco
-            borderColor: Colors.purple,
-            onTap: () {},
+            cardColor: Colors.white, // Alterado para branco
+            borderColor: Color.fromARGB(255, 59, 16, 212),
+            onTap: () {
+              Navigator.pushNamed(context, 'alunos/OcorrenciasScreen');
+            },
           ),
           MyCard(
             title: 'Conteúdos',
             icon: FontAwesomeIcons.book,
-            cardColor: Colors.white,  // Alterado para branco
-            borderColor: Colors.purple,
-            onTap: () {},
+            cardColor: Colors.white, // Alterado para branco
+            borderColor: Color.fromARGB(255, 59, 16, 212),
+            onTap: () {
+              //Navigator.pushNamed(context, 'alunos/ConteudosScreen');
+            },
           ),
           MyCard(
             title: 'Chat',
             icon: FontAwesomeIcons.solidCommentDots,
-            cardColor: Colors.white,  // Alterado para branco
-            borderColor: Colors.purple,
+            cardColor: Colors.white, // Alterado para branco
+            borderColor: Color.fromARGB(255, 59, 16, 212),
             onTap: () {
-              //Navigator.pushNamed(context, 'alunos/AlunoHome');
+              Navigator.pushNamed(context, 'alunos/ChatScreen');
             },
           ),
           MyCard(
             title: 'Horários',
             icon: FontAwesomeIcons.calendarAlt,
-            cardColor: Colors.white,  // Alterado para branco
-            borderColor: Colors.purple,
+            cardColor: Colors.white, // Alterado para branco
+            borderColor: Color.fromARGB(255, 59, 16, 212),
             onTap: () {
-
               //Navigator.pushNamed(context, 'alunos/MatriculaScreen');
             },
           ),
           MyCard(
             title: 'Suporte',
             icon: FontAwesomeIcons.solidCircleUser,
-            cardColor: Colors.white,  // Alterado para branco
-            borderColor: Colors.purple,
+            cardColor: Colors.white, // Alterado para branco
+            borderColor: Color.fromARGB(255, 59, 16, 212),
             onTap: () {
-
-              //Navigator.pushNamed(context, 'alunos/MatriculaScreen');
+              Navigator.pushNamed(context, 'suporte/SuporteScreen');
             },
           ),
         ],
@@ -141,15 +151,16 @@ class MyCard extends StatelessWidget {
             elevation: 4.0,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10.0),
-              side: BorderSide(color: borderColor),  // Adicionado para borda roxa
+              side:
+                  BorderSide(color: borderColor), // Adicionado para borda roxa
             ),
-            color: cardColor,  // Alterado para cor de fundo branca
+            color: cardColor, // Alterado para cor de fundo branca
             child: Padding(
               padding: EdgeInsets.all(16.0),
               child: Icon(
                 icon,
                 size: 50.0,
-                color: borderColor,  // Alterado para roxo
+                color: borderColor, // Alterado para roxo
               ),
             ),
           ),
