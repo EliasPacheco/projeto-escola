@@ -32,11 +32,41 @@ class _FinanceiroHomeState extends State<FinanceiroHome> {
     Transacao('Pagamento do nego Gabriel', Icons.attach_money, Colors.green),
   ];
 
+  List<String> anos = ['Maternal', 'Infantil I', 'Infantil II', '1º Ano', '2º Ano', '3º Ano', '4º Ano', '5º Ano', '6º Ano'];
+  String selectedAno = 'Maternal';
+
+  void filtrarPorAno(String selectedAno) {
+    setState(() {
+      // Lógica para filtrar os alunos pelo ano selecionado
+      // Aqui você pode adicionar a lógica específica conforme necessário
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('Financeiro'),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: DropdownButton<String>(
+              value: selectedAno,
+              onChanged: (String? newValue) {
+                setState(() {
+                  selectedAno = newValue!;
+                  filtrarPorAno(selectedAno);
+                });
+              },
+              items: anos.map<DropdownMenuItem<String>>((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
+            ),
+          ),
+        ],
       ),
       body: ListView.builder(
         itemCount: transacoes.length,
@@ -57,22 +87,6 @@ class _FinanceiroHomeState extends State<FinanceiroHome> {
             ),
           );
         },
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Início',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.pie_chart),
-            label: 'Estatísticas',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Configurações',
-          ),
-        ],
       ),
     );
   }

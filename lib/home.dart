@@ -1,6 +1,7 @@
 import 'package:escola/alunos/AlunoHome.dart';
 import 'package:escola/alunos/ChatScreen.dart';
 import 'package:escola/alunos/ConteudosScreen.dart';
+import 'package:escola/alunos/HorariosScreen.dart';
 import 'package:escola/alunos/MatriculaScreen.dart';
 import 'package:escola/alunos/AvisosScreen.dart';
 import 'package:escola/alunos/OcorrenciasScreen.dart';
@@ -26,6 +27,7 @@ class MySchoolApp extends StatelessWidget {
         'alunos/ConteudosScreen': (context) => ConteudosScreen(),
         'suporte/SuporteScreen': (context) => SuporteScreen(),
         'alunos/ChatScreen': (context) => ChatScreen(),
+        'alunos/HorariosScreen': (context) => HorariosScreen(),
       },
     );
   }
@@ -52,11 +54,14 @@ class MyHomePage extends StatelessWidget {
             },
           ),
           MyCard(
-            title: 'Boletim',
-            icon: FontAwesomeIcons.fileAlt,
+            //icon: FontAwesomeIcons.fileAlt,
+            title: 'Aluno',
+            icon: FontAwesomeIcons.userGraduate,
             cardColor: Colors.white, // Alterado para branco
             borderColor: Color.fromARGB(255, 59, 16, 212),
-            onTap: () {},
+            onTap: () {
+              Navigator.pushNamed(context, 'alunos/AlunoHome');
+            },
           ),
           MyCard(
             title: 'Financeiro',
@@ -107,7 +112,7 @@ class MyHomePage extends StatelessWidget {
             cardColor: Colors.white, // Alterado para branco
             borderColor: Color.fromARGB(255, 59, 16, 212),
             onTap: () {
-              //Navigator.pushNamed(context, 'alunos/MatriculaScreen');
+              Navigator.pushNamed(context, 'alunos/HorariosScreen');
             },
           ),
           MyCard(

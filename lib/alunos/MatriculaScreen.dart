@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 
 void main() => runApp(MyApp());
 
@@ -26,11 +27,34 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
   TextEditingController nomePaiController = TextEditingController();
   TextEditingController nomeMaeController = TextEditingController();
   TextEditingController serieController = TextEditingController();
-  TextEditingController dataNascimentoController = TextEditingController();
-  TextEditingController valorMensalidadeController = TextEditingController();
   TextEditingController dataMatriculaController = TextEditingController();
+  TextEditingController naturalidadeController = TextEditingController();
+  TextEditingController enderecoResponsavel1Controller =
+      TextEditingController();
+  TextEditingController enderecoResponsavel2Controller =
+      TextEditingController();
+  TextEditingController cpfResponsavel2Controller = TextEditingController();
+  TextEditingController telefoneResponsavel2Controller =
+      TextEditingController();
 
   List<String> anexos = [];
+
+  var dataNascimentoController = TextEditingController();
+  var cpfResponsavel1Controller = TextEditingController();
+  var telefoneResponsavel1Controller = TextEditingController();
+
+  // Adicione os formatadores para os campos específicos
+  var dataNascimentoFormatter = MaskTextInputFormatter(
+      mask: '##/##/####', filter: {"#": RegExp(r'[0-9]')});
+  var cpfFormatter = MaskTextInputFormatter(
+      mask: '###.###.###-##', filter: {"#": RegExp(r'[0-9]')});
+  var telefoneFormatter = MaskTextInputFormatter(
+      mask: '(##) # ####-####', filter: {"#": RegExp(r'[0-9]')});
+
+  bool isDocumentoAnexado = false;
+
+  List<String> documentosAnexados = [];
+  List<bool> botoesDesativados = [false, false, false, false];
 
   @override
   Widget build(BuildContext context) {
@@ -51,19 +75,102 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
               _buildTextField(
                 dataNascimentoController,
                 'Data de Nascimento',
-              ),
-              _buildTextField(
-                valorMensalidadeController,
-                'Valor da Mensalidade',
+                maskFormatter: dataNascimentoFormatter,
                 keyboardType: TextInputType.number,
               ),
-              _buildTextField(dataMatriculaController, 'Data da Matrícula'),
+              _buildTextField(naturalidadeController, 'Naturalidade'),
+              _buildTextField(
+                dataMatriculaController,
+                'Data da Matrícula',
+                maskFormatter: dataNascimentoFormatter,
+                keyboardType: TextInputType.number,
+              ),
               SizedBox(height: 20),
+              _buildTextField(
+                  enderecoResponsavel1Controller, 'Endereço do Responsável 1'),
+              _buildTextField(
+                cpfResponsavel1Controller,
+                'Cpf do responsável 1',
+                keyboardType: TextInputType.number,
+                maskFormatter: cpfFormatter,
+              ),
+              _buildTextField(
+                telefoneResponsavel1Controller,
+                'Telefone',
+                keyboardType: TextInputType.phone,
+                maskFormatter: telefoneFormatter,
+              ),
+              _buildTextField(
+                  enderecoResponsavel2Controller, 'Endereço do Responsável 2'),
+              _buildTextField(
+                cpfResponsavel2Controller,
+                'Cpf do responsável 2',
+                keyboardType: TextInputType.number,
+                maskFormatter: cpfFormatter,
+              ),
+              _buildTextField(
+                telefoneResponsavel2Controller,
+                'Telefone',
+                keyboardType: TextInputType.phone,
+                maskFormatter: telefoneFormatter,
+              ),
+              SizedBox(height: 10),
+              if (isDocumentoAnexado)
+                Column(
+                  children: documentosAnexados
+                      .asMap()
+                      .entries
+                      .map(
+                        (entry) => Row(
+                          children: [
+                            Text(
+                              'Documento Anexado: ${entry.value}',
+                              style:
+                                  TextStyle(color: Colors.green, fontSize: 14),
+                            ),
+                            SizedBox(width: 8),
+                            GestureDetector(
+                              onTap: () {
+                                _removerDocumento(entry.key);
+                              },
+                              child: Icon(
+                                Icons.close,
+                                color: Colors.red,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                      .toList(),
+                ),
+              SizedBox(height: 8),
               ElevatedButton(
                 onPressed: () {
-                  _anexarDocumento(context);
+                  _anexarDocumento(context, 'RG do Aluno', 0);
                 },
-                child: Text('Anexar Documentos'),
+                child: Text('Anexar RG do Aluno'),
+                style: _getButtonStyle(0),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  _anexarDocumento(context, 'RG do Responsável', 1);
+                },
+                child: Text('Anexar RG do Responsável'),
+                style: _getButtonStyle(1),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  _anexarDocumento(context, 'Comprovante de Residência', 2);
+                },
+                child: Text('Anexar Comprovante de Residência'),
+                style: _getButtonStyle(2),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  _anexarDocumento(context, 'Histórico Escolar', 3);
+                },
+                child: Text('Anexar Histórico Escolar'),
+                style: _getButtonStyle(3),
               ),
               SizedBox(height: 20),
               ElevatedButton(
@@ -79,15 +186,28 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
     );
   }
 
+  ButtonStyle _getButtonStyle(int index) {
+    return ButtonStyle(
+      backgroundColor: MaterialStateProperty.all(
+        botoesDesativados[index] ? Colors.grey : Colors.blue,
+      ),
+      textStyle: MaterialStateProperty.all(
+        TextStyle(color: Colors.white),
+      ),
+    );
+  }
+
   Widget _buildTextField(
     TextEditingController controller,
     String labelText, {
     TextInputType keyboardType = TextInputType.text,
+    MaskTextInputFormatter? maskFormatter,
   }) {
     return Column(
       children: [
         TextField(
           controller: controller,
+          inputFormatters: maskFormatter != null ? [maskFormatter] : null,
           decoration: InputDecoration(
             labelText: labelText,
             border: OutlineInputBorder(),
@@ -99,23 +219,41 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
     );
   }
 
-  Future<void> _anexarDocumento(BuildContext context) async {
-    return showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Anexar Documentos'),
-          content: Column(
-            children: [
-              _buildAnexoButton('RG do Aluno'),
-              _buildAnexoButton('RG do Responsável'),
-              _buildAnexoButton('Comprovante de Residência'),
-              _buildAnexoButton('Histórico Escolar'),
-            ],
-          ),
-        );
-      },
-    );
+  void _removerDocumento(int index) {
+    setState(() {
+      documentosAnexados.removeAt(index);
+      if (documentosAnexados.isEmpty) {
+        isDocumentoAnexado = false;
+      }
+      for (int i = 0; i < botoesDesativados.length; i++) {
+        if (documentosAnexados.contains('RG do Aluno') && i == 0) {
+          botoesDesativados[i] = true;
+        } else if (documentosAnexados.contains('RG do Responsável') && i == 1) {
+          botoesDesativados[i] = true;
+        } else if (documentosAnexados.contains('Comprovante de Residência') &&
+            i == 2) {
+          botoesDesativados[i] = true;
+        } else if (documentosAnexados.contains('Histórico Escolar') && i == 3) {
+          botoesDesativados[i] = true;
+        } else {
+          botoesDesativados[i] = false;
+        }
+      }
+    });
+  }
+
+  Future<void> _anexarDocumento(
+      BuildContext context, String tipoDocumento, int index) async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.getImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      setState(() {
+        documentosAnexados.add(tipoDocumento);
+        isDocumentoAnexado = true;
+        botoesDesativados[index] = true; // Desativa o botão após anexar
+      });
+    }
   }
 
   Widget _buildAnexoButton(String tipoDocumento) {
@@ -137,22 +275,25 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
     if (pickedFile != null) {
       setState(() {
         anexos.add('$tipoDocumento: ${pickedFile.path}');
+        isDocumentoAnexado = true;
       });
-
-      Navigator.of(context).pop();
     }
   }
 
   void _realizarMatricula() {
-    // Adicione aqui a lógica para processar os dados da matrícula
-    // Exemplo: imprimir os dados no console
-    print('Nome: ${nomeController.text}');
-    print('Nome do Pai: ${nomePaiController.text}');
-    print('Nome da Mãe: ${nomeMaeController.text}');
-    print('Série: ${serieController.text}');
-    print('Data de Nascimento: ${dataNascimentoController.text}');
-    print('Valor da Mensalidade: ${valorMensalidadeController.text}');
     print('Data da Matrícula: ${dataMatriculaController.text}');
+    print('Série (Ano): ${serieController.text}');
+    print('Nome do Aluno: ${nomeController.text}');
+    print('Data de Nascimento: ${dataNascimentoController.text}');
+    print('Naturalidade: ${naturalidadeController.text}');
+    print('Nome do pai: ${nomePaiController.text}');
+    print('Nome da mãe: ${nomeMaeController.text}');
+    print('Endereço do Responsável 1: ${enderecoResponsavel1Controller.text}');
+    print('Cpf do responsável 1: ${cpfResponsavel1Controller.text}');
+    print('Telefone: ${telefoneResponsavel1Controller.text}');
+    print('Endereço do Responsável 2: ${enderecoResponsavel2Controller.text}');
+    print('Cpf do responsável 2: ${cpfResponsavel2Controller.text}');
+    print('Telefone: ${telefoneResponsavel2Controller.text}');
     print('Documentos Anexados: $anexos');
   }
 }

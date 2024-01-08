@@ -1,4 +1,4 @@
-import 'package:escola/home.dart';
+import 'package:escola/Login.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -18,7 +18,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       debugShowCheckedModeBanner: false,
-      home: MySchoolApp(),
+      home: LoginPage(),
     );
   }
 }
