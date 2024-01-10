@@ -42,7 +42,7 @@ class ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _getImage() async {
-    final pickedFile = await ImagePicker().getImage(source: ImageSource.gallery);
+    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
       setState(() {
         _image = File(pickedFile.path);

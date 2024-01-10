@@ -245,7 +245,7 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
   Future<void> _anexarDocumento(
       BuildContext context, String tipoDocumento, int index) async {
     final picker = ImagePicker();
-    final pickedFile = await picker.getImage(source: ImageSource.gallery);
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
 
     if (pickedFile != null) {
       setState(() {
@@ -270,7 +270,7 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
 
   Future<void> _selecionarArquivo(String tipoDocumento) async {
     final picker = ImagePicker();
-    final pickedFile = await picker.getImage(source: ImageSource.gallery);
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
 
     if (pickedFile != null) {
       setState(() {

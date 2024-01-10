@@ -1,8 +1,12 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:escola/home.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   runApp(MyApp());
 }
 
@@ -11,12 +15,12 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       theme: ThemeData(
-        primaryColor: Colors.blue, // Altere a cor principal conforme necessário
+        primaryColor: Colors.blue,
         colorScheme: ColorScheme.light(
-          primary: Colors.blue, // Cor principal
-          secondary: Colors.orange, // Cor de destaque
+          primary: Colors.blue,
+          secondary: Colors.orange,
         ),
-        fontFamily: 'Roboto', // Escolha a fonte desejada
+        fontFamily: 'Roboto',
       ),
       home: LoginPage(),
     );
@@ -31,6 +35,31 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   TextEditingController _matriculaCpfController = TextEditingController();
   TextEditingController _senhaController = TextEditingController();
+
+  Future<void> _signInWithEmailAndPassword() async {
+    try {
+      String matriculaCpf = _matriculaCpfController.text.trim();
+      String senha = _senhaController.text.trim();
+
+      UserCredential userCredential = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(email: matriculaCpf, password: senha);
+
+      print('Login bem-sucedido: ${userCredential.user!.uid}');
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => MySchoolApp()),
+      );
+    } on FirebaseAuthException catch (e) {
+      print('Erro de login: $e');
+      // Aqui você pode tratar diferentes tipos de erros, como
+      // 'user-not-found', 'wrong-password', etc.
+      // Exemplo: mostrar uma mensagem de erro ao usuário
+      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      //   content: Text('Erro de login: $e'),
+      // ));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,41 +76,26 @@ class _LoginPageState extends State<LoginPage> {
               controller: _matriculaCpfController,
               decoration: InputDecoration(
                 labelText: 'Matrícula ou CPF',
-                icon: Icon(Icons.person), // Adicione um ícone para o campo
+                icon: Icon(Icons.person),
               ),
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              keyboardType: TextInputType.emailAddress,
+              //number,
+              //inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             ),
             SizedBox(height: 16.0),
             TextField(
               controller: _senhaController,
               decoration: InputDecoration(
                 labelText: 'Senha',
-                icon: Icon(Icons.lock), // Adicione um ícone para o campo
+                icon: Icon(Icons.lock),
               ),
               obscureText: true,
             ),
             SizedBox(height: 32.0),
             ElevatedButton(
-              onPressed: () {
-                // Adicione aqui a lógica de autenticação
-                String matriculaCpf = _matriculaCpfController.text;
-                String senha = _senhaController.text;
-
-                // Adicione a lógica de autenticação aqui
-                // Exemplo simples: apenas imprime os valores inseridos
-                print('Matrícula ou CPF: $matriculaCpf');
-                print('Senha: $senha');
-
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => MySchoolApp()),
-                );
-              },
+              onPressed: _signInWithEmailAndPassword,
               style: ElevatedButton.styleFrom(
-                primary: Theme.of(context)
-                    .colorScheme
-                    .secondary, // Use a cor de destaque
+                primary: Theme.of(context).colorScheme.secondary,
               ),
               child: const Text(
                 'Entrar',

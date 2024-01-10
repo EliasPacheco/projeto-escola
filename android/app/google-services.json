@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "1004359003485",
-    "project_id": "school-64793",
-    "storage_bucket": "school-64793.appspot.com"
+    "project_number": "57604481514",
+    "project_id": "projeto-escola-22b2f",
+    "storage_bucket": "projeto-escola-22b2f.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1004359003485:android:9c46ed4482e264441dccb4",
+        "mobilesdk_app_id": "1:57604481514:android:970b9c5d52a4a480b61293",
         "android_client_info": {
           "package_name": "com.example.escola"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBH-Y47slxUVJRMYHVvFOzTC21UdtXYXQQ"
+          "current_key": "AIzaSyBqnpidHLXBsTlvVxtmEOkk_niKc9Bn_ws"
         }
       ],
       "services": {

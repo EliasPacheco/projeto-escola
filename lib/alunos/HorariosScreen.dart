@@ -26,7 +26,7 @@ class _HorariosScreenState extends State<HorariosScreen> {
   File? _selectedImage;
 
   Future<void> _pickImage() async {
-    final pickedFile = await ImagePicker().getImage(source: ImageSource.gallery);
+    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
 
     setState(() {
       if (pickedFile != null) {

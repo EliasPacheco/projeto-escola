@@ -6,6 +6,7 @@ import 'package:escola/alunos/MatriculaScreen.dart';
 import 'package:escola/alunos/AvisosScreen.dart';
 import 'package:escola/alunos/OcorrenciasScreen.dart';
 import 'package:escola/financeiro/FinanceiroHome.dart';
+import 'package:escola/funcionarios/Cadastrarfuncionario.dart';
 import 'package:escola/suporte/SuporteScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -125,6 +126,13 @@ class MyHomePage extends StatelessWidget {
             },
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // Adicione a lógica para adicionar novos avisos aqui
+          Navigator.push(context, MaterialPageRoute(builder: (context) => CadastroFuncionarioScreen()));
+        },
+        child: Icon(Icons.add),
       ),
     );
   }
