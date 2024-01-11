@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 void main() => runApp(MyApp());
 
@@ -43,7 +44,6 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
   var cpfResponsavel1Controller = TextEditingController();
   var telefoneResponsavel1Controller = TextEditingController();
 
-  // Adicione os formatadores para os campos específicos
   var dataNascimentoFormatter = MaskTextInputFormatter(
       mask: '##/##/####', filter: {"#": RegExp(r'[0-9]')});
   var cpfFormatter = MaskTextInputFormatter(
@@ -52,9 +52,13 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
       mask: '(##) # ####-####', filter: {"#": RegExp(r'[0-9]')});
 
   bool isDocumentoAnexado = false;
+  String? serieSelecionada;
 
   List<String> documentosAnexados = [];
   List<bool> botoesDesativados = [false, false, false, false];
+
+  final CollectionReference alunosCollection =
+      FirebaseFirestore.instance.collection('alunos');
 
   @override
   Widget build(BuildContext context) {
@@ -71,7 +75,7 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
               _buildTextField(nomeController, 'Nome do Aluno'),
               _buildTextField(nomePaiController, 'Nome do Pai'),
               _buildTextField(nomeMaeController, 'Nome da Mãe'),
-              _buildTextField(serieController, 'Série'),
+              _buildDropdownButton(),
               _buildTextField(
                 dataNascimentoController,
                 'Data de Nascimento',
@@ -219,6 +223,42 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
     );
   }
 
+  Widget _buildDropdownButton() {
+    return Column(
+      children: [
+        DropdownButtonFormField<String>(
+          value: serieSelecionada, // Alteração aqui
+          items: [
+            'Maternal',
+            'Infantil I',
+            'Infantil II',
+            '1º Ano',
+            '2º Ano',
+            '3º Ano',
+            '4º Ano',
+            '5º Ano',
+            '6º Ano',
+          ].map((String value) {
+            return DropdownMenuItem<String>(
+              value: value,
+              child: Text(value),
+            );
+          }).toList(),
+          onChanged: (String? newValue) {
+            setState(() {
+              serieSelecionada = newValue; // Alteração aqui
+            });
+          },
+          decoration: InputDecoration(
+            labelText: 'Série',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        SizedBox(height: 10),
+      ],
+    );
+  }
+
   void _removerDocumento(int index) {
     setState(() {
       documentosAnexados.removeAt(index);
@@ -251,49 +291,63 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
       setState(() {
         documentosAnexados.add(tipoDocumento);
         isDocumentoAnexado = true;
-        botoesDesativados[index] = true; // Desativa o botão após anexar
-      });
-    }
-  }
-
-  Widget _buildAnexoButton(String tipoDocumento) {
-    return Container(
-      margin: EdgeInsets.symmetric(vertical: 5),
-      child: ElevatedButton(
-        onPressed: () {
-          _selecionarArquivo(tipoDocumento);
-        },
-        child: Text('Anexar $tipoDocumento'),
-      ),
-    );
-  }
-
-  Future<void> _selecionarArquivo(String tipoDocumento) async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-
-    if (pickedFile != null) {
-      setState(() {
-        anexos.add('$tipoDocumento: ${pickedFile.path}');
-        isDocumentoAnexado = true;
+        botoesDesativados[index] = true;
       });
     }
   }
 
   void _realizarMatricula() {
-    print('Data da Matrícula: ${dataMatriculaController.text}');
-    print('Série (Ano): ${serieController.text}');
-    print('Nome do Aluno: ${nomeController.text}');
-    print('Data de Nascimento: ${dataNascimentoController.text}');
-    print('Naturalidade: ${naturalidadeController.text}');
-    print('Nome do pai: ${nomePaiController.text}');
-    print('Nome da mãe: ${nomeMaeController.text}');
-    print('Endereço do Responsável 1: ${enderecoResponsavel1Controller.text}');
-    print('Cpf do responsável 1: ${cpfResponsavel1Controller.text}');
-    print('Telefone: ${telefoneResponsavel1Controller.text}');
-    print('Endereço do Responsável 2: ${enderecoResponsavel2Controller.text}');
-    print('Cpf do responsável 2: ${cpfResponsavel2Controller.text}');
-    print('Telefone: ${telefoneResponsavel2Controller.text}');
-    print('Documentos Anexados: $anexos');
+    Map<String, dynamic> alunoData = {
+      'nome': nomeController.text,
+      'nomePai': nomePaiController.text,
+      'nomeMae': nomeMaeController.text,
+      'serie': serieSelecionada,
+      'dataNascimento': dataNascimentoController.text,
+      'naturalidade': naturalidadeController.text,
+      'dataMatricula': dataMatriculaController.text,
+      'enderecoResponsavel1': enderecoResponsavel1Controller.text,
+      'cpfResponsavel1': cpfResponsavel1Controller.text,
+      'telefoneResponsavel1': telefoneResponsavel1Controller.text,
+      'enderecoResponsavel2': enderecoResponsavel2Controller.text,
+      'cpfResponsavel2': cpfResponsavel2Controller.text,
+      'telefoneResponsavel2': telefoneResponsavel2Controller.text,
+      'documentosAnexados': documentosAnexados,
+    };
+
+    // Gere um UID único para o aluno
+    String alunoUid = alunosCollection.doc().id;
+
+    // Adicione o aluno à coleção de séries
+    alunosCollection
+        .doc(serieSelecionada)
+        .collection('alunos')
+        .doc(alunoUid)
+        .set(alunoData)
+        .then((value) {
+      print('Matrícula realizada com sucesso! Document ID: $alunoUid');
+      _limparCampos();
+    }).catchError((error) {
+      print('Erro ao realizar a matrícula: $error');
+    });
+  }
+
+  void _limparCampos() {
+    nomeController.clear();
+    nomePaiController.clear();
+    nomeMaeController.clear();
+    serieController.clear();
+    dataNascimentoController.clear();
+    cpfResponsavel1Controller.clear();
+    telefoneResponsavel1Controller.clear();
+    enderecoResponsavel1Controller.clear();
+    cpfResponsavel2Controller.clear();
+    telefoneResponsavel2Controller.clear();
+    enderecoResponsavel2Controller.clear();
+    dataMatriculaController.clear();
+    naturalidadeController.clear();
+    serieSelecionada = null;
+    isDocumentoAnexado = false;
+    documentosAnexados.clear();
+    botoesDesativados = [false, false, false, false];
   }
 }

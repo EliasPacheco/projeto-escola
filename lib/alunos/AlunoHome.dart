@@ -1,5 +1,14 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:escola/alunos/MatriculaScreen.dart';
 import 'package:flutter/material.dart';
+
+class Aluno {
+  final String documentId;
+  final String nome;
+  final String serie;
+
+  Aluno({required this.documentId, required this.nome, required this.serie});
+}
 
 void main() {
   runApp(MyApp());
@@ -24,40 +33,79 @@ class AlunoHome extends StatefulWidget {
 }
 
 class _AlunoHomeState extends State<AlunoHome> {
-  List<String> alunos = [
-    'João',
-    'Maria',
-    'Pedro',
-    'Ana',
-    'Carlos',
-    'Bianca',
-    'Rafael',
-    'Julia',
+  late List<Aluno> alunos;
+  List<String> anos = [
+    'Maternal',
+    'Infantil I',
+    'Infantil II',
+    '1º Ano',
+    '2º Ano',
+    '3º Ano',
+    '4º Ano',
+    '5º Ano',
+    '6º Ano'
   ];
-
-  List<String> anos = ['Maternal', 'Infantil I', 'Infantil II', '1º Ano', '2º Ano', '3º Ano', '4º Ano', '5º Ano', '6º Ano'];
   String selectedAno = 'Maternal';
-
-  List<String> alunosFiltrados = [];
+  List<Aluno> alunosFiltrados = [];
 
   @override
   void initState() {
     super.initState();
-    alunosFiltrados.addAll(alunos);
+    // Chama a função para buscar os alunos ao inicializar o widget
+    buscarAlunos();
+  }
+
+  // Função para buscar os dados da coleção "alunos" no Firestore
+  Future<void> buscarAlunos() async {
+    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+        .collection('alunos') // Use a coleção principal 'alunos'
+        .doc(selectedAno)
+        .collection('alunos')
+        .get();
+
+    setState(() {
+      alunos = querySnapshot.docs.map((DocumentSnapshot document) {
+        return Aluno(
+          documentId: document.id,
+          nome: (document['nome'] ?? '').toString(),
+          serie: (document['serie'] ?? '').toString(),
+        );
+      }).toList();
+
+      alunosFiltrados = List.from(alunos);
+    });
   }
 
   void filtrarAlunos(String query) {
     setState(() {
       alunosFiltrados = alunos
-          .where((aluno) => aluno.toLowerCase().contains(query.toLowerCase()))
+          .where((aluno) =>
+              aluno.nome.toLowerCase().contains(query.toLowerCase()) &&
+              aluno.serie == selectedAno)
           .toList();
     });
   }
 
-  void filtrarPorAno(String selectedAno) {
+  void resetFiltro() {
     setState(() {
-      // Lógica para filtrar os alunos pelo ano selecionado
-      // Aqui você pode adicionar a lógica específica conforme necessário
+      alunosFiltrados =
+          alunos.where((aluno) => aluno.serie == selectedAno).toList();
+    });
+  }
+
+  void filtrarPorAno(String selectedAno) async {
+    // Atualiza o estado com o novo ano selecionado
+    setState(() {
+      this.selectedAno = selectedAno;
+    });
+
+    // Chama a função para buscar os alunos novamente com o novo ano
+    await buscarAlunos();
+
+    // Filtra os alunos com base no novo ano
+    setState(() {
+      alunosFiltrados =
+          alunos.where((aluno) => aluno.serie == selectedAno).toList();
     });
   }
 
@@ -91,7 +139,8 @@ class _AlunoHomeState extends State<AlunoHome> {
 
   String _getDataAtual() {
     DateTime dataAtual = DateTime.now();
-    String formattedDate = "${dataAtual.day.toString().padLeft(2, '0')}/${dataAtual.month.toString().padLeft(2, '0')}";
+    String formattedDate =
+        "${dataAtual.day.toString().padLeft(2, '0')}/${dataAtual.month.toString().padLeft(2, '0')}";
     return formattedDate;
   }
 
@@ -108,8 +157,10 @@ class _AlunoHomeState extends State<AlunoHome> {
               onChanged: (String? newValue) {
                 setState(() {
                   selectedAno = newValue!;
-                  filtrarPorAno(selectedAno);
                 });
+
+                // Chama a função para filtrar os alunos com base no novo ano selecionado
+                filtrarPorAno(selectedAno);
               },
               items: anos.map<DropdownMenuItem<String>>((String value) {
                 return DropdownMenuItem<String>(
@@ -133,7 +184,13 @@ class _AlunoHomeState extends State<AlunoHome> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: TextField(
-                  onChanged: filtrarAlunos,
+                  onChanged: (query) {
+                    if (query.isEmpty) {
+                      resetFiltro();
+                    } else {
+                      filtrarAlunos(query);
+                    }
+                  },
                   decoration: InputDecoration(
                     hintText: 'Pesquisar Alunos',
                     prefixIcon: Icon(Icons.search),
@@ -157,7 +214,7 @@ class _AlunoHomeState extends State<AlunoHome> {
                 itemCount: alunosFiltrados.length,
                 itemBuilder: (context, index) {
                   return ListTile(
-                    title: Text(alunosFiltrados[index]),
+                    title: Text('${alunosFiltrados[index].nome}'),
                     trailing: PopupMenuButton<String>(
                       itemBuilder: (context) {
                         return [
@@ -173,7 +230,7 @@ class _AlunoHomeState extends State<AlunoHome> {
                       },
                       onSelected: (String value) {
                         if (value == 'opcao1') {
-                          exibirModalPresencaFalta(alunosFiltrados[index]);
+                          exibirModalPresencaFalta(alunosFiltrados[index].nome);
                         } else if (value == 'opcao2') {
                           // Adicione lógica para a opção Boletim
                         }
@@ -189,7 +246,8 @@ class _AlunoHomeState extends State<AlunoHome> {
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           // Adicione a lógica para adicionar novos avisos aqui
-          Navigator.push(context, MaterialPageRoute(builder: (context) => MatriculaScreen()));
+          Navigator.push(context,
+              MaterialPageRoute(builder: (context) => MatriculaScreen()));
         },
         child: Icon(Icons.add),
       ),

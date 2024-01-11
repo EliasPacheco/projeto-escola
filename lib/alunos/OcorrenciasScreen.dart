@@ -1,3 +1,4 @@
+import 'package:escola/cards/Ocorrenciacard.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -79,7 +80,8 @@ class _OcorrenciasScreenState extends State<OcorrenciasScreen> {
                         SizedBox(width: 4.0),
                         Text(
                           avisos[index].data,
-                          style: TextStyle(color: Color.fromARGB(255, 116, 115, 115)),
+                          style: TextStyle(
+                              color: Color.fromARGB(255, 116, 115, 115)),
                         ),
                       ],
                     ),
@@ -92,8 +94,8 @@ class _OcorrenciasScreenState extends State<OcorrenciasScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // Adicione a lógica para adicionar novos avisos aqui
-          // Exemplo: Navigator.push(context, MaterialPageRoute(builder: (context) => AdicionarAvisoScreen()));
+          Navigator.push(context,
+              MaterialPageRoute(builder: (context) => OcorrenciaCard()));
         },
         child: Icon(Icons.add),
       ),

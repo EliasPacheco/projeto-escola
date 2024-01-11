@@ -12,6 +12,7 @@ class MyApp extends StatelessWidget {
       title: 'Adicionar Comunicados',
       theme: ThemeData(
         primarySwatch: Colors.blue,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
       home: FormaCard(),
     );
@@ -29,6 +30,8 @@ class _FormaCardState extends State<FormaCard> {
   TextEditingController _descricaoController = TextEditingController();
   TextEditingController _dataController = TextEditingController();
   DateTime? _selectedDate;
+  String?
+      _selectedOption; // Variável para armazenar a opção selecionada no DropdownButton
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
@@ -45,14 +48,22 @@ class _FormaCardState extends State<FormaCard> {
     }
   }
 
-  // Função para enviar dados para o Firestore
   Future<void> _enviarParaFirestore() async {
     try {
-      await FirebaseFirestore.instance.collection('comunicados').add({
-        'titulo': _tituloController.text,
-        'descricao': _descricaoController.text,
-        'data': _dataController.text,
-      });
+      if (_selectedOption != null) {
+        // Criar um documento com o nome da opção dentro da coleção "comunicados"
+        await FirebaseFirestore.instance
+            .collection('comunicados')
+            .doc(_selectedOption)
+            .set({
+          'titulo': _tituloController.text,
+          'descricao': _descricaoController.text,
+          'data': _dataController.text,
+          'opcao': _selectedOption,
+        });
+      } else {
+        print('Nenhuma opção selecionada.');
+      }
     } catch (e) {
       print('Erro ao enviar dados para o Firestore: $e');
     }
@@ -75,6 +86,7 @@ class _FormaCardState extends State<FormaCard> {
                 controller: _tituloController,
                 decoration: InputDecoration(
                   labelText: 'Título',
+                  border: OutlineInputBorder(),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -86,8 +98,10 @@ class _FormaCardState extends State<FormaCard> {
               SizedBox(height: 16.0),
               TextFormField(
                 controller: _descricaoController,
+                maxLines: 3,
                 decoration: InputDecoration(
                   labelText: 'Descrição',
+                  border: OutlineInputBorder(),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -97,32 +111,60 @@ class _FormaCardState extends State<FormaCard> {
                 },
               ),
               SizedBox(height: 16.0),
-              TextFormField(
-                controller: _dataController,
-                decoration: InputDecoration(
-                  labelText: 'Data',
-                  suffixIcon: IconButton(
-                    icon: Icon(Icons.calendar_today),
-                    onPressed: () {
-                      _selectDate(context);
-                    },
-                  ),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Por favor, insira a data';
-                  }
-                  return null;
+              InkWell(
+                onTap: () {
+                  _selectDate(context);
                 },
+                child: TextFormField(
+                  controller: _dataController,
+                  decoration: InputDecoration(
+                    labelText: 'Data',
+                    border: OutlineInputBorder(),
+                    suffixIcon: Icon(Icons.calendar_today),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Por favor, insira a data';
+                    }
+                    return null;
+                  },
+                  onTap: () {
+                    _selectDate(context);
+                  },
+                ),
+              ),
+              SizedBox(height: 16.0),
+              // DropdownButton para escolher a opção desejada
+              DropdownButton<String>(
+                value: _selectedOption,
+                onChanged: (String? newValue) {
+                  setState(() {
+                    _selectedOption = newValue;
+                  });
+                },
+                items: [
+                  'Maternal',
+                  'Infantil I',
+                  'Infantil II',
+                  '1º ano',
+                  '2º ano',
+                  '3º ano',
+                  '4º ano',
+                  '5º ano',
+                  '6º ano',
+                ].map<DropdownMenuItem<String>>((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+                hint: Text(
+                    'Selecione a opção'), // Texto exibido quando nenhuma opção está selecionada
               ),
               SizedBox(height: 16.0),
               ElevatedButton(
                 onPressed: () {
                   if (_formKey.currentState!.validate()) {
-                    // Se o formulário for válido, envie os dados para o Firestore
-                    _enviarParaFirestore();
-
-                    // Exiba os dados em um diálogo
                     showDialog(
                       context: context,
                       builder: (BuildContext context) {
@@ -130,15 +172,30 @@ class _FormaCardState extends State<FormaCard> {
                           title: Text('Dados do Formulário'),
                           content: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               Text('Título: ${_tituloController.text}'),
                               Text('Descrição: ${_descricaoController.text}'),
                               Text('Data: ${_dataController.text}'),
+                              Text('Opção: ${_selectedOption ?? "Nenhuma opção selecionada"}'),
+
                             ],
                           ),
                           actions: [
                             TextButton(
                               onPressed: () {
+                                Navigator.of(context).pop();
+                              },
+                              child: Text('Cancelar'),
+                            ),
+                            ElevatedButton(
+                              onPressed: () {
+                                _enviarParaFirestore();
+                                _tituloController.clear();
+                                _descricaoController.clear();
+                                _dataController.clear();
+                                _selectedOption =
+                                    null; // Limpar a opção selecionada
                                 Navigator.of(context).pop();
                               },
                               child: Text('OK'),
