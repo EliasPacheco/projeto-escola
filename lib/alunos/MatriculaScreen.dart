@@ -29,6 +29,7 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
   TextEditingController nomeMaeController = TextEditingController();
   TextEditingController serieController = TextEditingController();
   TextEditingController dataMatriculaController = TextEditingController();
+  TextEditingController matriculaController = TextEditingController();
   TextEditingController naturalidadeController = TextEditingController();
   TextEditingController enderecoResponsavel1Controller =
       TextEditingController();
@@ -89,6 +90,7 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
                 maskFormatter: dataNascimentoFormatter,
                 keyboardType: TextInputType.number,
               ),
+              _buildTextField(matriculaController, 'Matrícula'),
               SizedBox(height: 20),
               _buildTextField(
                   enderecoResponsavel1Controller, 'Endereço do Responsável 1'),
@@ -100,7 +102,7 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
               ),
               _buildTextField(
                 telefoneResponsavel1Controller,
-                'Telefone',
+                'Telefone 1',
                 keyboardType: TextInputType.phone,
                 maskFormatter: telefoneFormatter,
               ),
@@ -114,7 +116,7 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
               ),
               _buildTextField(
                 telefoneResponsavel2Controller,
-                'Telefone',
+                'Telefone 2',
                 keyboardType: TextInputType.phone,
                 maskFormatter: telefoneFormatter,
               ),
@@ -176,6 +178,13 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
                 child: Text('Anexar Histórico Escolar'),
                 style: _getButtonStyle(3),
               ),
+              /*ElevatedButton(
+                onPressed: () {
+                  _anexarDocumento(context, 'Declaração Escolar', 4);
+                },
+                child: Text('Anexar Declaração Escolar'),
+                style: _getButtonStyle(4),
+              ),*/
               SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () {
@@ -305,6 +314,7 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
       'dataNascimento': dataNascimentoController.text,
       'naturalidade': naturalidadeController.text,
       'dataMatricula': dataMatriculaController.text,
+      'Matricula': matriculaController.text,
       'enderecoResponsavel1': enderecoResponsavel1Controller.text,
       'cpfResponsavel1': cpfResponsavel1Controller.text,
       'telefoneResponsavel1': telefoneResponsavel1Controller.text,
@@ -344,6 +354,7 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
     telefoneResponsavel2Controller.clear();
     enderecoResponsavel2Controller.clear();
     dataMatriculaController.clear();
+    matriculaController.clear();
     naturalidadeController.clear();
     serieSelecionada = null;
     isDocumentoAnexado = false;

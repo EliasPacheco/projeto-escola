@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:escola/home.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,15 +37,35 @@ class _LoginPageState extends State<LoginPage> {
   TextEditingController _matriculaCpfController = TextEditingController();
   TextEditingController _senhaController = TextEditingController();
 
-  Future<void> _signInWithEmailAndPassword() async {
+  Future<void> _signInWithMatriculaCpfAndPassword() async {
     try {
       String matriculaCpf = _matriculaCpfController.text.trim();
       String senha = _senhaController.text.trim();
 
-      UserCredential userCredential = await FirebaseAuth.instance
-          .signInWithEmailAndPassword(email: matriculaCpf, password: senha);
+      QuerySnapshot<Map<String, dynamic>> coordenacaoQuery =
+          await FirebaseFirestore.instance
+              .collection('professores')
+              .where('cpf', isEqualTo: matriculaCpf)
+              .where('senha', isEqualTo: senha)
+              .get();
 
-      print('Login bem-sucedido: ${userCredential.user!.uid}');
+      if (coordenacaoQuery.docs.isEmpty) {
+        QuerySnapshot<Map<String, dynamic>> professoresQuery =
+            await FirebaseFirestore.instance
+                .collection('coordenacao')
+                .where('cpf', isEqualTo: matriculaCpf)
+                .where('senha', isEqualTo: senha)
+                .get();
+
+        if (professoresQuery.docs.isEmpty) {
+          throw FirebaseAuthException(
+            code: 'user-not-found',
+            message: 'Usuário não encontrado nas coleções especificadas',
+          );
+        }
+      }
+
+      print('Login bem-sucedido: $matriculaCpf');
 
       Navigator.pushReplacement(
         context,
@@ -52,12 +73,10 @@ class _LoginPageState extends State<LoginPage> {
       );
     } on FirebaseAuthException catch (e) {
       print('Erro de login: $e');
-      // Aqui você pode tratar diferentes tipos de erros, como
-      // 'user-not-found', 'wrong-password', etc.
-      // Exemplo: mostrar uma mensagem de erro ao usuário
-      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      //   content: Text('Erro de login: $e'),
-      // ));
+      // Tratar erro, mostrar mensagem, etc.
+    } catch (e) {
+      print('Erro inesperado: $e');
+      // Tratar erro inesperado
     }
   }
 
@@ -78,9 +97,8 @@ class _LoginPageState extends State<LoginPage> {
                 labelText: 'Matrícula ou CPF',
                 icon: Icon(Icons.person),
               ),
-              keyboardType: TextInputType.emailAddress,
-              //number,
-              //inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             ),
             SizedBox(height: 16.0),
             TextField(
@@ -93,7 +111,7 @@ class _LoginPageState extends State<LoginPage> {
             ),
             SizedBox(height: 32.0),
             ElevatedButton(
-              onPressed: _signInWithEmailAndPassword,
+              onPressed: _signInWithMatriculaCpfAndPassword,
               style: ElevatedButton.styleFrom(
                 primary: Theme.of(context).colorScheme.secondary,
               ),

@@ -32,7 +32,6 @@ class _OcorrenciaCardState extends State<OcorrenciaCard> {
   TextEditingController _alunoController = TextEditingController();
   DateTime? _selectedDate;
   String? _selectedOption;
-  List<String> _alunosDaSerie = [];
   List<String> _alunosDaOpcao = [];
 
   Future<void> _selectDate(BuildContext context) async {
@@ -50,26 +49,30 @@ class _OcorrenciaCardState extends State<OcorrenciaCard> {
     }
   }
 
+  List<Map<String, dynamic>> _alunosDaSerieWithUid = [];
+
   Future<void> _carregarAlunosDaSerie() async {
     try {
       if (_selectedOption != null && _selectedOption != 'Aluno') {
         final QuerySnapshot<Map<String, dynamic>> querySnapshot =
             await FirebaseFirestore.instance
                 .collection('alunos')
-                .doc('$_selectedOption')
-                .collection('alunos') // Modificação aqui
+                .doc(_selectedOption)
+                .collection('alunos')
                 .get();
 
         if (querySnapshot.docs.isNotEmpty) {
           setState(() {
-            _alunosDaSerie = querySnapshot.docs
-                .map((doc) => doc['nome']
-                    as String) // Ajuste conforme a estrutura dos documentos na subcoleção
+            _alunosDaSerieWithUid = querySnapshot.docs
+                .map((doc) => {
+                      'nome': doc['nome'] as String,
+                      'uid': doc.id,
+                    })
                 .toList();
-            print('Alunos da série: $_alunosDaSerie');
+            print('Alunos da série ($_selectedOption): $_alunosDaSerieWithUid');
           });
 
-          if (_alunosDaSerie.isEmpty) {
+          if (_alunosDaSerieWithUid.isEmpty) {
             print('Não há alunos na série: $_selectedOption');
           }
         }
@@ -82,19 +85,30 @@ class _OcorrenciaCardState extends State<OcorrenciaCard> {
   Future<void> _enviarParaFirestore() async {
     try {
       if (_selectedOption != null) {
-        // Adiciona o aluno à lista correspondente à opção selecionada
-        _alunosDaOpcao.add(_alunoController.text);
+        String alunoUid = _alunosDaSerieWithUid.firstWhere(
+            (aluno) => aluno['nome'] == _alunoController.text)['uid'];
 
-        await FirebaseFirestore.instance
-            .collection('ocorrencias')
-            .doc(_selectedOption)
-            .set({
+        Map<String, dynamic> ocorrencia = {
           'titulo': _tituloController.text,
           'descricao': _descricaoController.text,
           'data': _dataController.text,
-          'opcao': _selectedOption,
-          'alunos': _alunosDaOpcao,
+        };
+
+        DocumentReference alunoRef = FirebaseFirestore.instance
+            .collection('alunos')
+            .doc(_selectedOption)
+            .collection('alunos')
+            .doc(alunoUid); // Usando o UID do aluno
+
+        await alunoRef.update({
+          'ocorrencias': FieldValue.arrayUnion([ocorrencia]),
         });
+
+        _tituloController.clear();
+        _descricaoController.clear();
+        _dataController.clear();
+        _alunoController.clear();
+        _selectedOption = null;
       } else {
         print('Nenhuma opção selecionada.');
       }
@@ -108,7 +122,7 @@ class _OcorrenciaCardState extends State<OcorrenciaCard> {
       if (_selectedOption != null) {
         final DocumentSnapshot<Map<String, dynamic>> documentSnapshot =
             await FirebaseFirestore.instance
-                .collection('alunos')
+                .collection('$_selectedOption')
                 .doc('$_selectedOption')
                 .get();
 
@@ -119,7 +133,11 @@ class _OcorrenciaCardState extends State<OcorrenciaCard> {
               _alunosDaOpcao = List<String>.from(data['alunos']);
               print('Alunos da opção: $_alunosDaOpcao');
             });
+          } else {
+            print('Campo "alunos" não encontrado no documento.');
           }
+        } else {
+          print('Documento não encontrado.');
         }
       }
     } catch (e) {
@@ -234,22 +252,21 @@ class _OcorrenciaCardState extends State<OcorrenciaCard> {
                     return null;
                   },
                   onTap: () async {
-                    // Ao tocar no campo de aluno, abrir um diálogo ou uma lista com os alunos da série selecionada
-                    await _carregarAlunosDaSerie(); // Certifica-se de ter a lista atualizada
+                    await _carregarAlunosDaSerie();
                     showDialog(
                       context: context,
                       builder: (BuildContext context) {
                         return AlertDialog(
-                          title: Text('Alunos da Série $_selectedOption'),
+                          title: Text('Alunos do $_selectedOption'),
                           content: SingleChildScrollView(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
-                              children: _alunosDaSerie
+                              children: _alunosDaSerieWithUid
                                   .map((aluno) => ListTile(
-                                        title: Text(aluno),
+                                        title: Text(aluno['nome']),
                                         onTap: () {
-                                          // Ao selecionar um aluno, preencha o campo de texto do aluno
-                                          _alunoController.text = aluno;
+                                          _alunoController.text = aluno[
+                                              'nome']; // Exibe o nome no TextFormField
                                           Navigator.of(context).pop();
                                         },
                                       ))

@@ -46,7 +46,6 @@ class _CadastroFuncionarioFormState extends State<CadastroFuncionarioForm> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _cpfController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
   static const String _coordenacaoRole = 'Coordenação';
@@ -56,7 +55,6 @@ class _CadastroFuncionarioFormState extends State<CadastroFuncionarioForm> {
     if (_nameController.text.isEmpty ||
         _cpfController.text.isEmpty ||
         _emailController.text.isEmpty ||
-        _phoneController.text.isEmpty ||
         _passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -77,15 +75,14 @@ class _CadastroFuncionarioFormState extends State<CadastroFuncionarioForm> {
         'nome': _nameController.text,
         'cpf': _cpfController.text,
         'email': _emailController.text,
-        'telefone': _phoneController.text,
         'senha': _passwordController.text,
         'funcao': _selectedRole,
       });
 
       _nameController.clear();
       _cpfController.clear();
-      _phoneController.clear();
       _passwordController.clear();
+      _emailController.clear();
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -141,13 +138,13 @@ class _CadastroFuncionarioFormState extends State<CadastroFuncionarioForm> {
         ),
         SizedBox(height: 10),
         TextField(
-          controller: _passwordController,
+          controller: _cpfController,
           decoration: InputDecoration(
             labelText: 'Senha',
             border: OutlineInputBorder(),
             contentPadding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
           ),
-          obscureText: true,
+          //obscureText: true,
         ),
         SizedBox(height: 10),
         DropdownButton<String>(
