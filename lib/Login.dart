@@ -45,6 +45,13 @@ class _LoginPageState extends State<LoginPage> {
       print('Matrícula/CPF: $matriculaCpf');
       print('Senha: $senha');
 
+      Map<String, dynamic>? alunoData = await _checkAlunos(matriculaCpf, senha);
+
+      if (alunoData != null) {
+        _handleSuccessfulLogin(matriculaCpf, alunoData);
+        return;
+      }
+
       // Verifica na coleção 'coordenacao'
       QuerySnapshot<Map<String, dynamic>> coordenacaoQuery =
           await FirebaseFirestore.instance
@@ -54,7 +61,8 @@ class _LoginPageState extends State<LoginPage> {
               .get();
 
       if (coordenacaoQuery.docs.isNotEmpty) {
-        _handleSuccessfulLogin(matriculaCpf);
+        _handleSuccessfulLogin(
+            matriculaCpf, null); // Você pode ajustar conforme necessário
         return;
       }
 
@@ -67,20 +75,17 @@ class _LoginPageState extends State<LoginPage> {
               .get();
 
       if (professoresQuery.docs.isNotEmpty) {
-        _handleSuccessfulLogin(matriculaCpf);
+        _handleSuccessfulLogin(
+            matriculaCpf, null); // Você pode ajustar conforme necessário
         return;
       }
 
       // Se não encontrar em 'professores', verifica na coleção 'alunos'
-      bool userFound = await _checkAlunos(matriculaCpf, senha);
-
-      if (!userFound) {
-        throw FirebaseAuthException(
-          code: 'user-not-found',
-          message:
-              'Credenciais inválidas. Usuário não encontrado nas coleções especificadas.',
-        );
-      }
+      throw FirebaseAuthException(
+        code: 'user-not-found',
+        message:
+            'Credenciais inválidas. Usuário não encontrado nas coleções especificadas.',
+      );
     } on FirebaseAuthException catch (e) {
       print('Erro de login: $e');
       // Tratar erro, mostrar mensagem, etc.
@@ -90,7 +95,8 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  Future<bool> _checkAlunos(String matriculaCpf, String senha) async {
+  Future<Map<String, dynamic>?> _checkAlunos(
+      String matriculaCpf, String senha) async {
     List<String> turmas = [
       'Maternal',
       'Infantil I',
@@ -119,22 +125,43 @@ class _LoginPageState extends State<LoginPage> {
             await turmaCollection.where('matricula', isEqualTo: senha).get();
 
         if (alunoInfoQuery.docs.isNotEmpty) {
-          _handleSuccessfulLogin(matriculaCpf);
-          return true;
+          Map<String, dynamic> alunoData = alunoInfoQuery.docs.first.data();
+          alunoData['turma'] = turma; // Adicione o nome da turma ao mapa
+          return alunoData;
         }
       }
     }
 
-    return false;
+    return null;
   }
 
-  void _handleSuccessfulLogin(String matriculaCpf) {
+  void _handleSuccessfulLogin(String matriculaCpf, Map<String, dynamic>? alunoData) {
+  if (alunoData != null) {
     print('Login bem-sucedido: $matriculaCpf');
+    print('Detalhes do alunoData: $alunoData');
+
+    // Show information in a SnackBar
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Login bem-sucedido. Detalhes: $alunoData'),
+        duration: Duration(seconds: 3),
+      ),
+    );
+
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => MySchoolApp()),
+      MaterialPageRoute(
+        builder: (context) => MySchoolApp(
+          matriculaCpf: matriculaCpf,
+          alunoData: alunoData ?? {},
+        ),
+      ),
     );
+  } else {
+    // Lógica para lidar com a situação em que os dados do aluno não foram encontrados.
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
