@@ -45,13 +45,6 @@ class _LoginPageState extends State<LoginPage> {
       print('Matrícula/CPF: $matriculaCpf');
       print('Senha: $senha');
 
-      Map<String, dynamic>? alunoData = await _checkAlunos(matriculaCpf, senha);
-
-      if (alunoData != null) {
-        _handleSuccessfulLogin(matriculaCpf, alunoData);
-        return;
-      }
-
       // Verifica na coleção 'coordenacao'
       QuerySnapshot<Map<String, dynamic>> coordenacaoQuery =
           await FirebaseFirestore.instance
@@ -61,8 +54,7 @@ class _LoginPageState extends State<LoginPage> {
               .get();
 
       if (coordenacaoQuery.docs.isNotEmpty) {
-        _handleSuccessfulLogin(
-            matriculaCpf, null); // Você pode ajustar conforme necessário
+        _handleSuccessfulLogin(matriculaCpf, null);
         return;
       }
 
@@ -75,12 +67,17 @@ class _LoginPageState extends State<LoginPage> {
               .get();
 
       if (professoresQuery.docs.isNotEmpty) {
-        _handleSuccessfulLogin(
-            matriculaCpf, null); // Você pode ajustar conforme necessário
+        _handleSuccessfulLogin(matriculaCpf, null);
         return;
       }
 
-      // Se não encontrar em 'professores', verifica na coleção 'alunos'
+      // Se não encontrar em 'professores' ou 'coordenacao', verifica na coleção 'alunos'
+      Map<String, dynamic>? alunoData = await _checkAlunos(matriculaCpf, senha);
+      if (alunoData != null) {
+        _handleSuccessfulLogin(matriculaCpf, alunoData);
+        return;
+      }
+
       throw FirebaseAuthException(
         code: 'user-not-found',
         message:
@@ -136,7 +133,6 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _handleSuccessfulLogin(String matriculaCpf, Map<String, dynamic>? alunoData) {
-  if (alunoData != null) {
     print('Login bem-sucedido: $matriculaCpf');
     print('Detalhes do alunoData: $alunoData');
 
@@ -157,11 +153,7 @@ class _LoginPageState extends State<LoginPage> {
         ),
       ),
     );
-  } else {
-    // Lógica para lidar com a situação em que os dados do aluno não foram encontrados.
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
