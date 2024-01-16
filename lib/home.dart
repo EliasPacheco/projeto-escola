@@ -35,13 +35,16 @@ class MySchoolApp extends StatelessWidget {
       ), // Pass alunoData here
       debugShowCheckedModeBanner: false,
       routes: {
-        'alunos/AlunoHome': (context) => AlunoHome(),
+        'alunos/AlunoHome': (context) => AlunoHome(
+              userType: userType,
+            ),
         'financeiro/FinanceiroHome': (context) => FinanceiroHome(),
         'alunos/AvisosScreen': (context) => AvisosHome(),
         'alunos/MatriculaScreen': (context) => MatriculaScreen(),
         'alunos/OcorrenciasScreen': (context) => OcorrenciasScreen(
               matriculaCpf: matriculaCpf,
-              alunoData: alunoData!,
+              alunoData: alunoData,
+              userType: userType,
             ),
         'alunos/ConteudosScreen': (context) => ConteudosScreen(),
         'suporte/SuporteScreen': (context) => SuporteScreen(),
@@ -84,8 +87,8 @@ class MyHomePage extends StatelessWidget {
     print('Tipo de usuário: $userType');
 
     print('isAluno: $isAluno');
-  print('isProfessor: $isProfessor');
-  print('isCoordenacao: $isCoordenacao');
+    print('isProfessor: $isProfessor');
+    print('isCoordenacao: $isCoordenacao');
 
     return Scaffold(
       appBar: AppBar(
@@ -115,12 +118,18 @@ class MyHomePage extends StatelessWidget {
           ),
           MyCard(
             //icon: FontAwesomeIcons.fileAlt,
-            title: 'Aluno',
+            title: 'Alunos',
             icon: FontAwesomeIcons.userGraduate,
             cardColor: Colors.white, // Alterado para branco
             borderColor: Color.fromARGB(255, 59, 16, 212),
             onTap: () {
-              Navigator.pushNamed(context, 'alunos/AlunoHome');
+              Navigator.pushNamed(
+                context,
+                'alunos/AlunoHome',
+                arguments: {
+                  'userType': userType,
+                },
+              );
             },
           ),
           MyCard(
@@ -152,6 +161,7 @@ class MyHomePage extends StatelessWidget {
                 arguments: {
                   'matriculaCpf': matriculaCpf,
                   'alunoData': alunoData,
+                  'userType': userType,
                 },
               );
             },

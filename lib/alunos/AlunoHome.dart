@@ -7,27 +7,19 @@ class Aluno {
   final String nome;
   final String serie;
 
-  Aluno({required this.documentId, required this.nome, required this.serie});
-}
-
-void main() {
-  runApp(MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Alunos',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: AlunoHome(),
-    );
-  }
+  Aluno({
+    required this.documentId,
+    required this.nome,
+    required this.serie,
+  });
 }
 
 class AlunoHome extends StatefulWidget {
+  final String userType;
+
+  // Adicione este construtor
+  const AlunoHome({Key? key, required this.userType}) : super(key: key);
+
   @override
   _AlunoHomeState createState() => _AlunoHomeState();
 }
@@ -243,14 +235,20 @@ class _AlunoHomeState extends State<AlunoHome> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Adicione a lógica para adicionar novos avisos aqui
-          Navigator.push(context,
-              MaterialPageRoute(builder: (context) => MatriculaScreen()));
-        },
-        child: Icon(Icons.add),
-      ),
+      floatingActionButton: widget.userType == 'Coordenacao'
+          ? FloatingActionButton(
+              onPressed: () {
+                // Adicione a lógica para adicionar novos avisos aqui
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => MatriculaScreen(),
+                  ),
+                );
+              },
+              child: Icon(Icons.add),
+            )
+          : null,
     );
   }
 }

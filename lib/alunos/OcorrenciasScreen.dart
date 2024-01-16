@@ -4,9 +4,14 @@ import 'package:escola/cards/Ocorrenciacard.dart';
 class OcorrenciasScreen extends StatefulWidget {
   final String matriculaCpf;
   final Map<String, dynamic>? alunoData;
+  final String userType;
 
-  OcorrenciasScreen({Key? key, required this.matriculaCpf, this.alunoData})
-      : super(key: key);
+  OcorrenciasScreen({
+    Key? key,
+    required this.matriculaCpf,
+    this.alunoData,
+    required this.userType,
+  }) : super(key: key);
 
   @override
   _OcorrenciasScreenState createState() => _OcorrenciasScreenState();
@@ -47,56 +52,68 @@ class _OcorrenciasScreenState extends State<OcorrenciasScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Ocorrências de $nomeAluno'),
+        title: Text(nomeAluno.isNotEmpty
+            ? 'Ocorrências de $nomeAluno'
+            : 'Ocorrências Escolares'),
       ),
-      body: avisos.isEmpty
+      body: widget.alunoData == null
           ? Center(
               child: Text('Sem ocorrências'),
             )
-          : ListView.builder(
-              itemCount: avisos.length,
-              itemBuilder: (context, index) {
-                return Card(
-                  elevation: 2.0,
-                  margin: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                  child: ListTile(
-                    contentPadding: EdgeInsets.all(8.0),
-                    title: Text(
-                      avisos[index].titulo,
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('$nomeAluno ' + avisos[index].descricao),
-                        SizedBox(height: 8.0),
-                        Row(
+          : avisos.isEmpty
+              ? Center(
+                  child: Text('Sem ocorrências'),
+                )
+              : ListView.builder(
+                  itemCount: avisos.length,
+                  itemBuilder: (context, index) {
+                    return Card(
+                      elevation: 2.0,
+                      margin:
+                          EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                      child: ListTile(
+                        contentPadding: EdgeInsets.all(8.0),
+                        title: Text(
+                          avisos[index].titulo,
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(Icons.calendar_today, size: 16.0),
-                            SizedBox(width: 4.0),
-                            Text(
-                              avisos[index].data,
-                              style: TextStyle(
-                                color: Color.fromARGB(255, 116, 115, 115),
-                              ),
+                            Text('$nomeAluno ' + avisos[index].descricao),
+                            SizedBox(height: 8.0),
+                            Row(
+                              children: [
+                                Icon(Icons.calendar_today, size: 16.0),
+                                SizedBox(width: 4.0),
+                                Text(
+                                  avisos[index].data,
+                                  style: TextStyle(
+                                    color: Color.fromARGB(255, 116, 115, 115),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                      ],
-                    ),
+                      ),
+                    );
+                  },
+                ),
+      floatingActionButton: widget.userType == 'Coordenacao'
+          ? FloatingActionButton(
+              onPressed: () {
+                // Adicione a lógica para adicionar novos avisos aqui
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => OcorrenciaCard(),
                   ),
                 );
               },
-            ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => OcorrenciaCard()),
-          );
-        },
-        child: Icon(Icons.add),
-      ),
+              child: Icon(Icons.add),
+            )
+          : null,
     );
   }
 }

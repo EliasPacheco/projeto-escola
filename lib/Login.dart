@@ -244,6 +244,8 @@ class _LoginPageState extends State<LoginPage> {
                 labelText: 'Senha',
                 icon: Icon(Icons.lock),
               ),
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               obscureText: true,
             ),
             SizedBox(height: 32.0),
