@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:escola/cards/Ocorrenciacard.dart';
 
@@ -52,7 +51,7 @@ class _OcorrenciasScreenState extends State<OcorrenciasScreen> {
       ),
       body: avisos.isEmpty
           ? Center(
-              child: CircularProgressIndicator(),
+              child: Text('Sem ocorrências'),
             )
           : ListView.builder(
               itemCount: avisos.length,
