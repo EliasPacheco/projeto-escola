@@ -37,6 +37,8 @@ class _LoginPageState extends State<LoginPage> {
   TextEditingController _matriculaCpfController = TextEditingController();
   TextEditingController _senhaController = TextEditingController();
 
+  bool _isCoordenacao = false;
+
   Future<void> _signInWithMatriculaCpfAndPassword() async {
     try {
       String matriculaCpf = _matriculaCpfController.text.trim();
@@ -44,6 +46,8 @@ class _LoginPageState extends State<LoginPage> {
 
       print('Matrícula/CPF: $matriculaCpf');
       print('Senha: $senha');
+
+      Map<String, dynamic>? alunoData;
 
       // Verifica na coleção 'coordenacao'
       QuerySnapshot<Map<String, dynamic>> coordenacaoQuery =
@@ -54,7 +58,8 @@ class _LoginPageState extends State<LoginPage> {
               .get();
 
       if (coordenacaoQuery.docs.isNotEmpty) {
-        _handleSuccessfulLogin(matriculaCpf, null);
+        _handleSuccessfulLogin(matriculaCpf, alunoData);
+        print('Login bem-sucedido como coordenacao');
         return;
       }
 
@@ -68,11 +73,12 @@ class _LoginPageState extends State<LoginPage> {
 
       if (professoresQuery.docs.isNotEmpty) {
         _handleSuccessfulLogin(matriculaCpf, null);
+        print('Login bem-sucedido como professor(a)');
         return;
       }
 
       // Se não encontrar em 'professores' ou 'coordenacao', verifica na coleção 'alunos'
-      Map<String, dynamic>? alunoData = await _checkAlunos(matriculaCpf, senha);
+      alunoData = await _checkAlunos(matriculaCpf, senha);
       if (alunoData != null) {
         _handleSuccessfulLogin(matriculaCpf, alunoData);
         return;
@@ -132,27 +138,75 @@ class _LoginPageState extends State<LoginPage> {
     return null;
   }
 
-  void _handleSuccessfulLogin(String matriculaCpf, Map<String, dynamic>? alunoData) {
+  void _handleSuccessfulLogin(
+      String matriculaCpf, Map<String, dynamic>? alunoData) async {
     print('Login bem-sucedido: $matriculaCpf');
     print('Detalhes do alunoData: $alunoData');
 
-    // Show information in a SnackBar
+    bool isAluno = alunoData != null;
+    bool isProfessor = false;
+    bool isCoordenacao = false;
+
+    try {
+      // Verifica na coleção 'professores'
+      QuerySnapshot<Map<String, dynamic>> professoresQuery =
+          await FirebaseFirestore.instance
+              .collection('professores')
+              .where('cpf', isEqualTo: matriculaCpf)
+              .get();
+
+      isProfessor = professoresQuery.docs.isNotEmpty;
+
+      // Se não for professor, verifica na coleção 'coordenacao'
+      if (!isProfessor) {
+        QuerySnapshot<Map<String, dynamic>> coordenacaoQuery =
+            await FirebaseFirestore.instance
+                .collection('coordenacao')
+                .where('cpf', isEqualTo: matriculaCpf)
+                .get();
+
+        isCoordenacao = coordenacaoQuery.docs.isNotEmpty;
+      }
+    } catch (e) {
+      print('Erro ao verificar tipo de usuário: $e');
+      // Tratar erro, mostrar mensagem, etc.
+    }
+
+    // Construir a mensagem da SnackBar com base no tipo de usuário
+    String userTypeText = _getUserTypeText(isAluno, isProfessor, isCoordenacao);
+    String snackBarMessage = 'Login bem-sucedido como $userTypeText';
+
+    // Mostrar SnackBar
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Login bem-sucedido. Detalhes: $alunoData'),
+        content: Text(snackBarMessage),
         duration: Duration(seconds: 3),
       ),
     );
 
+    // Navegar para a próxima tela
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
         builder: (context) => MySchoolApp(
           matriculaCpf: matriculaCpf,
-          alunoData: alunoData ?? {},
+          alunoData: alunoData,
+          userType: _getUserTypeText(isAluno, isProfessor, isCoordenacao),
         ),
       ),
     );
+  }
+
+  String _getUserTypeText(bool isAluno, bool isProfessor, bool isCoordenacao) {
+    if (isAluno) {
+      return 'Aluno';
+    } else if (isCoordenacao) {
+      return 'Coordenacao';
+    } else if (isProfessor) {
+      return 'Professor';
+    } else {
+      return 'Tipo de usuário desconhecido';
+    }
   }
 
   @override

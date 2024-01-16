@@ -16,9 +16,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 class MySchoolApp extends StatelessWidget {
   final String matriculaCpf;
   final Map<String, dynamic>? alunoData;
+  final String userType; // Adicione esta linha
 
-  const MySchoolApp({Key? key, required this.matriculaCpf, this.alunoData})
-      : super(key: key);
+  const MySchoolApp({
+    Key? key,
+    required this.matriculaCpf,
+    this.alunoData,
+    required this.userType,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -26,6 +31,7 @@ class MySchoolApp extends StatelessWidget {
       home: MyHomePage(
         matriculaCpf: matriculaCpf,
         alunoData: alunoData,
+        userType: userType,
       ), // Pass alunoData here
       debugShowCheckedModeBanner: false,
       routes: {
@@ -50,9 +56,18 @@ class MySchoolApp extends StatelessWidget {
 class MyHomePage extends StatelessWidget {
   final String matriculaCpf;
   final Map<String, dynamic>? alunoData;
+  final String userType; // Adicione esta linha
 
-  MyHomePage({Key? key, required this.matriculaCpf, this.alunoData})
+  MyHomePage(
+      {Key? key,
+      required this.matriculaCpf,
+      this.alunoData,
+      required this.userType})
       : super(key: key);
+
+  bool get isAluno => alunoData != null;
+  bool get isProfessor => alunoData == null && !isAluno;
+  bool get isCoordenacao => alunoData == null && !isAluno && !isProfessor;
 
   void _signOut(BuildContext context) async {
     try {
@@ -66,6 +81,12 @@ class MyHomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    print('Tipo de usuário: $userType');
+
+    print('isAluno: $isAluno');
+  print('isProfessor: $isProfessor');
+  print('isCoordenacao: $isCoordenacao');
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Escola App'),
@@ -173,16 +194,20 @@ class MyHomePage extends StatelessWidget {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Adicione a lógica para adicionar novos avisos aqui
-          Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => CadastroFuncionarioScreen()));
-        },
-        child: Icon(Icons.add),
-      ),
+      floatingActionButton: userType == 'isCoordenacao'
+          ? FloatingActionButton(
+              onPressed: () {
+                // Adicione a lógica para adicionar novos avisos aqui
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CadastroFuncionarioScreen(),
+                  ),
+                );
+              },
+              child: Icon(Icons.add),
+            )
+          : null,
     );
   }
 }
