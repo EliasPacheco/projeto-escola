@@ -194,7 +194,7 @@ class MyHomePage extends StatelessWidget {
           ),
         ],
       ),
-      floatingActionButton: userType == 'isCoordenacao'
+      floatingActionButton: userType == 'Coordenacao'
           ? FloatingActionButton(
               onPressed: () {
                 // Adicione a lógica para adicionar novos avisos aqui

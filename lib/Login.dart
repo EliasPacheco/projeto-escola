@@ -148,24 +148,26 @@ class _LoginPageState extends State<LoginPage> {
     bool isCoordenacao = false;
 
     try {
-      // Verifica na coleção 'professores'
-      QuerySnapshot<Map<String, dynamic>> professoresQuery =
+      // Verifica na coleção 'coordenacao'
+      QuerySnapshot<Map<String, dynamic>> coordenacaoQuery =
           await FirebaseFirestore.instance
-              .collection('professores')
+              .collection('coordenacao')
               .where('cpf', isEqualTo: matriculaCpf)
               .get();
 
-      isProfessor = professoresQuery.docs.isNotEmpty;
-
-      // Se não for professor, verifica na coleção 'coordenacao'
-      if (!isProfessor) {
-        QuerySnapshot<Map<String, dynamic>> coordenacaoQuery =
+      if (coordenacaoQuery.docs.isNotEmpty) {
+        isCoordenacao = true;
+      } else {
+        // Se não for coordenador, verifica na coleção 'professores'
+        QuerySnapshot<Map<String, dynamic>> professoresQuery =
             await FirebaseFirestore.instance
-                .collection('coordenacao')
+                .collection('professores')
                 .where('cpf', isEqualTo: matriculaCpf)
                 .get();
 
-        isCoordenacao = coordenacaoQuery.docs.isNotEmpty;
+        if (professoresQuery.docs.isNotEmpty) {
+          isProfessor = true;
+        }
       }
     } catch (e) {
       print('Erro ao verificar tipo de usuário: $e');
@@ -173,7 +175,13 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     // Construir a mensagem da SnackBar com base no tipo de usuário
-    String userTypeText = _getUserTypeText(isAluno, isProfessor, isCoordenacao);
+    String userTypeText = isAluno
+        ? 'Aluno'
+        : isCoordenacao
+            ? 'Coordenacao'
+            : isProfessor
+                ? 'Professor'
+                : 'Tipo de usuário desconhecido';
     String snackBarMessage = 'Login bem-sucedido como $userTypeText';
 
     // Mostrar SnackBar
@@ -191,19 +199,19 @@ class _LoginPageState extends State<LoginPage> {
         builder: (context) => MySchoolApp(
           matriculaCpf: matriculaCpf,
           alunoData: alunoData,
-          userType: _getUserTypeText(isAluno, isProfessor, isCoordenacao),
+          userType: userTypeText,
         ),
       ),
     );
   }
 
   String _getUserTypeText(bool isAluno, bool isProfessor, bool isCoordenacao) {
-    if (isAluno) {
-      return 'Aluno';
-    } else if (isCoordenacao) {
+    if (isCoordenacao) {
       return 'Coordenacao';
     } else if (isProfessor) {
       return 'Professor';
+    } else if (isAluno) {
+      return 'Aluno';
     } else {
       return 'Tipo de usuário desconhecido';
     }
