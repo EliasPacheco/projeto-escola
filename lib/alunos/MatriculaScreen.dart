@@ -90,7 +90,11 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
                 maskFormatter: dataNascimentoFormatter,
                 keyboardType: TextInputType.number,
               ),
-              _buildTextField(matriculaController, 'Matrícula'),
+              _buildTextField(
+                matriculaController,
+                'Matrícula',
+                keyboardType: TextInputType.number,
+              ),
               SizedBox(height: 20),
               _buildTextField(
                   enderecoResponsavel1Controller, 'Endereço do Responsável 1'),
@@ -314,7 +318,7 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
       'dataNascimento': dataNascimentoController.text,
       'naturalidade': naturalidadeController.text,
       'dataMatricula': dataMatriculaController.text,
-      'Matricula': matriculaController.text,
+      'matricula': matriculaController.text,
       'enderecoResponsavel1': enderecoResponsavel1Controller.text,
       'cpfResponsavel1': cpfResponsavel1Controller.text,
       'telefoneResponsavel1': telefoneResponsavel1Controller.text,

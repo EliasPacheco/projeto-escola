@@ -42,35 +42,45 @@ class _LoginPageState extends State<LoginPage> {
       String matriculaCpf = _matriculaCpfController.text.trim();
       String senha = _senhaController.text.trim();
 
+      print('Matrícula/CPF: $matriculaCpf');
+      print('Senha: $senha');
+
+      // Verifica na coleção 'coordenacao'
       QuerySnapshot<Map<String, dynamic>> coordenacaoQuery =
+          await FirebaseFirestore.instance
+              .collection('coordenacao')
+              .where('cpf', isEqualTo: matriculaCpf)
+              .where('senha', isEqualTo: senha)
+              .get();
+
+      if (coordenacaoQuery.docs.isNotEmpty) {
+        _handleSuccessfulLogin(matriculaCpf);
+        return;
+      }
+
+      // Se não encontrar na 'coordenacao', verifica na coleção 'professores'
+      QuerySnapshot<Map<String, dynamic>> professoresQuery =
           await FirebaseFirestore.instance
               .collection('professores')
               .where('cpf', isEqualTo: matriculaCpf)
               .where('senha', isEqualTo: senha)
               .get();
 
-      if (coordenacaoQuery.docs.isEmpty) {
-        QuerySnapshot<Map<String, dynamic>> professoresQuery =
-            await FirebaseFirestore.instance
-                .collection('coordenacao')
-                .where('cpf', isEqualTo: matriculaCpf)
-                .where('senha', isEqualTo: senha)
-                .get();
-
-        if (professoresQuery.docs.isEmpty) {
-          throw FirebaseAuthException(
-            code: 'user-not-found',
-            message: 'Usuário não encontrado nas coleções especificadas',
-          );
-        }
+      if (professoresQuery.docs.isNotEmpty) {
+        _handleSuccessfulLogin(matriculaCpf);
+        return;
       }
 
-      print('Login bem-sucedido: $matriculaCpf');
+      // Se não encontrar em 'professores', verifica na coleção 'alunos'
+      bool userFound = await _checkAlunos(matriculaCpf, senha);
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => MySchoolApp()),
-      );
+      if (!userFound) {
+        throw FirebaseAuthException(
+          code: 'user-not-found',
+          message:
+              'Credenciais inválidas. Usuário não encontrado nas coleções especificadas.',
+        );
+      }
     } on FirebaseAuthException catch (e) {
       print('Erro de login: $e');
       // Tratar erro, mostrar mensagem, etc.
@@ -78,6 +88,52 @@ class _LoginPageState extends State<LoginPage> {
       print('Erro inesperado: $e');
       // Tratar erro inesperado
     }
+  }
+
+  Future<bool> _checkAlunos(String matriculaCpf, String senha) async {
+    List<String> turmas = [
+      'Maternal',
+      'Infantil I',
+      'Infantil II',
+      '1º Ano',
+      '2º Ano',
+      '3º Ano',
+      '4º Ano',
+      '5º Ano',
+      '6º Ano',
+    ];
+
+    for (String turma in turmas) {
+      QuerySnapshot<Map<String, dynamic>> alunosQuery = await FirebaseFirestore
+          .instance
+          .collection('alunos/$turma/alunos')
+          .where('cpfResponsavel1', isEqualTo: matriculaCpf)
+          .get();
+
+      for (QueryDocumentSnapshot<Map<String, dynamic>> alunoSnapshot
+          in alunosQuery.docs) {
+        CollectionReference<Map<String, dynamic>> turmaCollection =
+            FirebaseFirestore.instance.collection('alunos/$turma/alunos');
+
+        QuerySnapshot<Map<String, dynamic>> alunoInfoQuery =
+            await turmaCollection.where('matricula', isEqualTo: senha).get();
+
+        if (alunoInfoQuery.docs.isNotEmpty) {
+          _handleSuccessfulLogin(matriculaCpf);
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  void _handleSuccessfulLogin(String matriculaCpf) {
+    print('Login bem-sucedido: $matriculaCpf');
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => MySchoolApp()),
+    );
   }
 
   @override
