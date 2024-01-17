@@ -1,10 +1,13 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
-
-class StudentScreen extends StatelessWidget {
-
+class StudentScreen extends StatefulWidget {
   final String matriculaCpf;
-  final Map<String, dynamic>? alunoData; // Adicione esta linha
+  final Map<String, dynamic>? alunoData;
 
   const StudentScreen({
     Key? key,
@@ -13,7 +16,147 @@ class StudentScreen extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  _StudentScreenState createState() => _StudentScreenState();
+}
+
+class _StudentScreenState extends State<StudentScreen> {
+  late String nome;
+  late String serie;
+  late String dataNascimento;
+  late String matricula;
+  String? _imageUrl;
+
+  bool _isLoadingImage = false;
+  bool _isImageLoading = false;
+
+  late ImagePicker _imagePicker;
+  PickedFile? _pickedFile;
+
+  // Firestore reference
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  @override
+  void initState() {
+    super.initState();
+    nome = widget.alunoData?['nome'] ?? 'Nome não disponível';
+    serie = widget.alunoData?['serie'] ?? 'Série não disponível';
+    dataNascimento = widget.alunoData?['dataNascimento'] ??
+        'Data de nascimento não disponível';
+    matricula = widget.alunoData?['matricula'] ?? 'Matrícula não disponível';
+    _imagePicker = ImagePicker();
+    _imageUrl = widget.alunoData?['imageUrl'];
+  }
+
+  final FirebaseStorage _firebaseStorage = FirebaseStorage.instance;
+
+// Função para atualizar o documento do Firestore com a URL da imagem
+  // Função para atualizar o documento do Firestore com o URL da imagem
+  Future<void> _updateImageUrl(String imageUrl) async {
+    try {
+      print('Updating Firestore with image URL: $imageUrl');
+
+      // Obtenha as informações do aluno
+      String nome = widget.alunoData?['nome'] ?? '';
+      String serie = widget.alunoData?['serie'] ?? '';
+      String dataNascimento = widget.alunoData?['dataNascimento'] ?? '';
+      String matricula = widget.alunoData?['matricula'] ?? '';
+
+      // Obtenha a turma do aluno
+      String turma = widget.alunoData?['turma'] ?? 'OutraTurma';
+
+      // Construa a referência para a coleção de alunos na turma
+      CollectionReference alunosRef =
+          _firestore.collection('alunos/$turma/alunos');
+
+      // Faça uma consulta para encontrar documentos com informações iguais às do usuário
+      QuerySnapshot querySnapshot = await alunosRef
+          .where('nome', isEqualTo: nome)
+          .where('serie', isEqualTo: serie)
+          .where('dataNascimento', isEqualTo: dataNascimento)
+          .where('matricula', isEqualTo: matricula)
+          .get();
+
+      // Atualize a URL real da imagem em cada documento encontrado
+      for (QueryDocumentSnapshot documentSnapshot in querySnapshot.docs) {
+        await documentSnapshot.reference.update({
+          'imageUrl': imageUrl,
+        });
+      }
+    } catch (erro) {
+      print('Erro ao atualizar URL da imagem: $erro');
+    }
+  }
+
+// Função para fazer o upload da imagem para o Firebase Storage
+  Future<void> _uploadImageToStorage(File imageFile) async {
+    try {
+      setState(() {
+        _isLoadingImage = true;
+      });
+
+      // Obtain the class of the student
+      String turma = widget.alunoData?['turma'] ?? 'OutraTurma';
+
+      // Construa o caminho do arquivo no Firebase Storage com extensão .jpg
+      String storagePath = 'alunos/$turma/${nome}_image.jpg';
+
+      // Remova caracteres especiais do caminho (opcional)
+      storagePath = storagePath.replaceAll(' ', '_');
+
+      print('Uploading image to storage: $storagePath');
+
+      // Create a reference to the file in Firebase Storage
+      Reference storageRef = _firebaseStorage.ref().child(storagePath);
+
+      // Upload the file to Firebase Storage
+      UploadTask uploadTask = storageRef.putFile(imageFile);
+
+      // Wait for the upload to complete
+      await uploadTask.whenComplete(() {});
+
+      // Obtain the download URL of the newly uploaded file
+      String imageUrl = await storageRef.getDownloadURL();
+
+      print('Image uploaded successfully. URL: $imageUrl');
+
+      // Update Firestore with the image URL
+      await _updateImageUrl(imageUrl);
+
+      // Atualize a interface do usuário para exibir a imagem carregada
+      setState(() {
+        _pickedFile = PickedFile(imageFile.path);
+        _isLoadingImage = false;
+      });
+    } catch (error) {
+      print('Error uploading image to Storage: $error');
+      setState(() {
+        _isLoadingImage = false;
+      });
+    }
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      PickedFile? pickedFile =
+          await _imagePicker.getImage(source: ImageSource.gallery);
+
+      if (pickedFile != null) {
+        setState(() {
+          _pickedFile = pickedFile;
+          _imageUrl = null;
+        });
+
+        // Faça o upload da imagem para o Firebase Storage
+        await _uploadImageToStorage(File(pickedFile.path));
+      }
+    } catch (error) {
+      print('Erro ao escolher a imagem: $error');
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    print('Aluno Data: ${widget.alunoData ?? "Nenhum dado de aluno"}');
     return Scaffold(
       appBar: AppBar(
         title: Text('Perfil do Aluno'),
@@ -23,24 +166,91 @@ class StudentScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            buildStudentPhoto(),
+            InkWell(
+              onTap: _pickImage,
+              child: CircleAvatar(
+                radius: 100,
+                backgroundColor: Colors.grey,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    if (_pickedFile == null && _imageUrl != null)
+                      FutureBuilder(
+                        future: _loadNetworkImage(_imageUrl!),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.done) {
+                            return ClipOval(
+                              child: snapshot.data as Widget,
+                            );
+                          } else if (snapshot.hasError) {
+                            print(
+                                'Erro ao carregar a imagem: ${snapshot.error}');
+                            return Icon(
+                              Icons.error_outline,
+                              size: 40,
+                              color: Colors.white,
+                            );
+                          } else {
+                            return SizedBox(); // Nada a ser exibido enquanto a imagem está sendo carregada
+                          }
+                        },
+                      ),
+                    if (_isImageLoading)
+                      CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    if (_pickedFile != null)
+                      ClipOval(
+                        child: Image.file(
+                          File(_pickedFile!.path),
+                          width: 200,
+                          height: 200,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
             SizedBox(height: 20),
-            buildStudentInfo('Nome:', 'Elias Pacheco', Icons.person),
-            buildStudentInfo('Série:', '9º Ano', Icons.school),
-            buildStudentInfo('Data de Nascimento:', '01/01/2005', Icons.calendar_today),
-            buildStudentInfo('Matrícula:', '123456', Icons.confirmation_number),
+            buildStudentInfo('Nome:', nome, Icons.person),
+            buildStudentInfo('Série:', serie, Icons.school),
+            buildStudentInfo(
+                'Data de Nascimento:', dataNascimento, Icons.calendar_today),
+            buildStudentInfo(
+                'Matrícula:', matricula, Icons.confirmation_number),
           ],
         ),
       ),
     );
   }
 
-  Widget buildStudentPhoto() {
-    return CircleAvatar(
-      radius: 100,
-      backgroundImage: AssetImage(
-          'assets/eu.jpg'), // Substitua pelo caminho da foto do aluno
-    );
+// Nova função para carregar imagens da rede com tratamento de erros
+  Future<Widget> _loadNetworkImage(String imageUrl) async {
+    try {
+      return Image.network(
+        imageUrl,
+        width: 200,
+        height: 200,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          print('Erro ao carregar a imagem da rede: $error');
+          return Icon(
+            Icons.error_outline,
+            size: 40,
+            color: Colors.white,
+          );
+        },
+      );
+    } catch (error) {
+      print('Erro ao carregar a imagem da rede: $error');
+      return Icon(
+        Icons.error_outline,
+        size: 40,
+        color: Colors.white,
+      );
+    }
   }
 
   Widget buildStudentInfo(String label, String value, IconData icon) {

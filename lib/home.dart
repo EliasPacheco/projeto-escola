@@ -1,11 +1,11 @@
 import 'package:escola/Login.dart';
 import 'package:escola/alunos/AgendaScreen.dart';
 import 'package:escola/alunos/AlunoHome.dart';
-import 'package:escola/alunos/AvisosScreen.dart';
 import 'package:escola/alunos/ChatScreen.dart';
 import 'package:escola/alunos/ConteudosScreen.dart';
 import 'package:escola/alunos/HorariosScreen.dart';
 import 'package:escola/alunos/MatriculaScreen.dart';
+import 'package:escola/alunos/AvisosScreen.dart';
 import 'package:escola/alunos/OcorrenciasScreen.dart';
 import 'package:escola/alunos/StudentScreen.dart';
 import 'package:escola/financeiro/FinanceiroHome.dart';
@@ -18,14 +18,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 class MySchoolApp extends StatelessWidget {
   final String matriculaCpf;
   final Map<String, dynamic>? alunoData;
-  final String userType;
   final Map<String, dynamic>? professorData;
+  final String userType; // Adicione esta linha
 
   const MySchoolApp({
     Key? key,
     required this.matriculaCpf,
-    required this.userType,
     this.alunoData,
+    required this.userType,
     this.professorData,
   }) : super(key: key);
 
@@ -162,6 +162,7 @@ class MyHomePage extends StatelessWidget {
                   arguments: {
                     'userType': userType,
                     'professorData': professorData,
+                    //'alunoUid': alunoData?['uid'], // Passa o UID do aluno
                   },
                 );
               } else {

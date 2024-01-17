@@ -309,6 +309,8 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
     }
   }
 
+  String alunoUid = "";
+
   void _realizarMatricula() {
     Map<String, dynamic> alunoData = {
       'nome': nomeController.text,
@@ -329,7 +331,8 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
     };
 
     // Gere um UID único para o aluno
-    String alunoUid = alunosCollection.doc().id;
+    alunoUid = alunosCollection.doc().id;
+    alunoData['uid'] = alunoUid;
 
     // Adicione o aluno à coleção de séries
     alunosCollection
