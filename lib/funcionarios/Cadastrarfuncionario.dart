@@ -82,22 +82,22 @@ class _ChooseMateriasDialogState extends State<ChooseMateriasDialog> {
       title: Text('Escolher Matérias'),
       content: SingleChildScrollView(
         child: Column(
-        children: widget.materiasOptions.map((materia) {
-          return CheckboxListTile(
-            title: Text(materia),
-            value: widget.selectedMaterias.contains(materia),
-            onChanged: (bool? value) {
-              setState(() {
-                if (value!) {
-                  widget.selectedMaterias.add(materia);
-                } else {
-                  widget.selectedMaterias.remove(materia);
-                }
-              });
-            },
-          );
-        }).toList(),
-      ),
+          children: widget.materiasOptions.map((materia) {
+            return CheckboxListTile(
+              title: Text(materia),
+              value: widget.selectedMaterias.contains(materia),
+              onChanged: (bool? value) {
+                setState(() {
+                  if (value!) {
+                    widget.selectedMaterias.add(materia);
+                  } else {
+                    widget.selectedMaterias.remove(materia);
+                  }
+                });
+              },
+            );
+          }).toList(),
+        ),
       ),
       actions: [
         ElevatedButton(
@@ -348,7 +348,6 @@ class _CadastroFuncionarioFormState extends State<CadastroFuncionarioForm> {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-        child: Expanded(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -468,6 +467,6 @@ class _CadastroFuncionarioFormState extends State<CadastroFuncionarioForm> {
           ),
         ],
       ),
-    ));
+    );
   }
 }
