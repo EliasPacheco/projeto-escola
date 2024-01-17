@@ -4,6 +4,8 @@ import 'package:escola/home.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
+import 'auth_provider.dart' as localAuthProvider;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,6 +38,7 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   TextEditingController _matriculaCpfController = TextEditingController();
   TextEditingController _senhaController = TextEditingController();
+  String userTypeText = '';
 
   bool _isCoordenacao = false;
 
@@ -182,6 +185,8 @@ class _LoginPageState extends State<LoginPage> {
             : isProfessor
                 ? 'Professor'
                 : 'Tipo de usuário desconhecido';
+    Provider.of<localAuthProvider.LocalAuthProvider>(context, listen: false)
+        .setUserType(userTypeText);
     String snackBarMessage = 'Login bem-sucedido como $userTypeText';
 
     // Mostrar SnackBar

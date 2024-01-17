@@ -12,6 +12,8 @@ import 'package:escola/suporte/SuporteScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
+import 'auth_provider.dart' as localAuthProvider;
 
 class MySchoolApp extends StatelessWidget {
   final String matriculaCpf;
@@ -27,6 +29,8 @@ class MySchoolApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    String userType =
+        Provider.of<localAuthProvider.LocalAuthProvider>(context).userType;
     return MaterialApp(
       home: MyHomePage(
         matriculaCpf: matriculaCpf,

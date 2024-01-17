@@ -218,6 +218,10 @@ class _AlunoHomeState extends State<AlunoHome> {
                             value: 'opcao2',
                             child: Text('Boletim'),
                           ),
+                          PopupMenuItem<String>(
+                            value: 'opcao3',
+                            child: Text('Financeiro'),
+                          ),
                         ];
                       },
                       onSelected: (String value) {
