@@ -161,15 +161,45 @@ class _LoginPageState extends State<LoginPage> {
       if (coordenacaoQuery.docs.isNotEmpty) {
         isCoordenacao = true;
       } else {
-        // Se não for coordenador, verifica na coleção 'professores'
-        QuerySnapshot<Map<String, dynamic>> professoresQuery =
-            await FirebaseFirestore.instance
-                .collection('professores')
-                .where('cpf', isEqualTo: matriculaCpf)
-                .get();
+        // Se não for coordenador, verifica na coleção 'alunos'
+        alunoData =
+            await _checkAlunos(matriculaCpf, _senhaController.text.trim());
+        if (alunoData != null) {
+          isAluno = true;
+        } else {
+          // Se não for aluno, verifica na coleção 'professores'
+          QuerySnapshot<Map<String, dynamic>> professoresQuery =
+              await FirebaseFirestore.instance
+                  .collection('professores')
+                  .where('cpf', isEqualTo: matriculaCpf)
+                  .get();
 
-        if (professoresQuery.docs.isNotEmpty) {
-          isProfessor = true;
+          if (professoresQuery.docs.isNotEmpty) {
+            isProfessor = true;
+
+            // Obtém as informações do professor
+            Map<String, dynamic> professorData =
+                professoresQuery.docs.first.data();
+
+            // Adicione o envio das informações para a próxima tela
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => MySchoolApp(
+                  matriculaCpf: matriculaCpf,
+                  alunoData: alunoData,
+                  userType: 'Professor',
+                  professorData:
+                      isProfessor ? professorData : <String, dynamic>{},
+                ),
+              ),
+            );
+
+            print(
+                'Informações do professor enviadas para a próxima tela: $professorData');
+
+            return;
+          }
         }
       }
     } catch (e) {
@@ -178,13 +208,7 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     // Construir a mensagem da SnackBar com base no tipo de usuário
-    String userTypeText = isAluno
-        ? 'Aluno'
-        : isCoordenacao
-            ? 'Coordenacao'
-            : isProfessor
-                ? 'Professor'
-                : 'Tipo de usuário desconhecido';
+    String userTypeText = _getUserTypeText(isAluno, isProfessor, isCoordenacao);
     Provider.of<localAuthProvider.LocalAuthProvider>(context, listen: false)
         .setUserType(userTypeText);
     String snackBarMessage = 'Login bem-sucedido como $userTypeText';
@@ -197,17 +221,19 @@ class _LoginPageState extends State<LoginPage> {
       ),
     );
 
-    // Navegar para a próxima tela
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => MySchoolApp(
-          matriculaCpf: matriculaCpf,
-          alunoData: alunoData,
-          userType: userTypeText,
+    // Navegar para a próxima tela, se não for um professor
+    if (!isProfessor) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => MySchoolApp(
+            matriculaCpf: matriculaCpf,
+            alunoData: alunoData,
+            userType: userTypeText,
+          ),
         ),
-      ),
-    );
+      );
+    }
   }
 
   String _getUserTypeText(bool isAluno, bool isProfessor, bool isCoordenacao) {

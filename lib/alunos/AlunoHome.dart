@@ -16,9 +16,13 @@ class Aluno {
 
 class AlunoHome extends StatefulWidget {
   final String userType;
+  final Map<String, dynamic>? professorData; // Adicione esta linha
 
-  // Adicione este construtor
-  const AlunoHome({Key? key, required this.userType}) : super(key: key);
+  const AlunoHome({
+    Key? key,
+    required this.userType,
+    this.professorData,
+  }) : super(key: key);
 
   @override
   _AlunoHomeState createState() => _AlunoHomeState();
@@ -138,30 +142,47 @@ class _AlunoHomeState extends State<AlunoHome> {
 
   @override
   Widget build(BuildContext context) {
+    print(
+        'Professor Data: ${widget.professorData ?? "Nenhum dado de professor"}');
+    print('Tipo de usuário: ${widget.userType ?? "Nenhum tipo de usuário"}');
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Lista de Alunos'),
         actions: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: DropdownButton<String>(
-              value: selectedAno,
-              onChanged: (String? newValue) {
-                setState(() {
-                  selectedAno = newValue!;
-                });
+          if (widget.userType == 'Coordenacao' ||
+              widget.userType == 'Professor')
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: DropdownButton<String>(
+                value: selectedAno,
+                onChanged: (String? newValue) {
+                  setState(() {
+                    selectedAno = newValue!;
+                  });
 
-                // Chama a função para filtrar os alunos com base no novo ano selecionado
-                filtrarPorAno(selectedAno);
-              },
-              items: anos.map<DropdownMenuItem<String>>((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
+                  // Chama a função para filtrar os alunos com base no novo ano selecionado
+                  filtrarPorAno(selectedAno);
+                },
+                items: (widget.userType == 'Professor')
+                    ? widget.professorData!['series']
+                        .map<DropdownMenuItem<String>>((serie) {
+                        return DropdownMenuItem<String>(
+                          value: serie
+                              as String, // Converter explicitamente para String
+                          child: Text(serie),
+                        );
+                      }).toList()
+                    : (widget.userType == 'Coordenacao')
+                        ? anos.map<DropdownMenuItem<String>>((String value) {
+                            return DropdownMenuItem<String>(
+                              value: value,
+                              child: Text(value),
+                            );
+                          }).toList()
+                        : [],
+              ),
             ),
-          ),
         ],
       ),
       body: Column(

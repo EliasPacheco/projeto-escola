@@ -1,10 +1,10 @@
 import 'package:escola/Login.dart';
 import 'package:escola/alunos/AlunoHome.dart';
+import 'package:escola/alunos/AvisosScreen.dart';
 import 'package:escola/alunos/ChatScreen.dart';
 import 'package:escola/alunos/ConteudosScreen.dart';
 import 'package:escola/alunos/HorariosScreen.dart';
 import 'package:escola/alunos/MatriculaScreen.dart';
-import 'package:escola/alunos/AvisosScreen.dart';
 import 'package:escola/alunos/OcorrenciasScreen.dart';
 import 'package:escola/financeiro/FinanceiroHome.dart';
 import 'package:escola/funcionarios/Cadastrarfuncionario.dart';
@@ -12,35 +12,34 @@ import 'package:escola/suporte/SuporteScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:provider/provider.dart';
-import 'auth_provider.dart' as localAuthProvider;
 
 class MySchoolApp extends StatelessWidget {
   final String matriculaCpf;
   final Map<String, dynamic>? alunoData;
-  final String userType; // Adicione esta linha
+  final String userType;
+  final Map<String, dynamic>? professorData;
 
   const MySchoolApp({
     Key? key,
     required this.matriculaCpf,
-    this.alunoData,
     required this.userType,
+    this.alunoData,
+    this.professorData,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    String userType =
-        Provider.of<localAuthProvider.LocalAuthProvider>(context).userType;
     return MaterialApp(
       home: MyHomePage(
         matriculaCpf: matriculaCpf,
         alunoData: alunoData,
         userType: userType,
-      ), // Pass alunoData here
+      ),
       debugShowCheckedModeBanner: false,
       routes: {
         'alunos/AlunoHome': (context) => AlunoHome(
               userType: userType,
+              professorData: professorData, // Passe as informações do professor
             ),
         'financeiro/FinanceiroHome': (context) => FinanceiroHome(),
         'alunos/AvisosScreen': (context) => AvisosHome(),
@@ -63,14 +62,16 @@ class MySchoolApp extends StatelessWidget {
 class MyHomePage extends StatelessWidget {
   final String matriculaCpf;
   final Map<String, dynamic>? alunoData;
-  final String userType; // Adicione esta linha
+  final String userType;
+  final Map<String, dynamic>? professorData;
 
-  MyHomePage(
-      {Key? key,
-      required this.matriculaCpf,
-      this.alunoData,
-      required this.userType})
-      : super(key: key);
+  MyHomePage({
+    Key? key,
+    required this.matriculaCpf,
+    this.alunoData,
+    required this.userType,
+    this.professorData,
+  }) : super(key: key);
 
   bool get isAluno => alunoData != null;
   bool get isProfessor => alunoData == null && !isAluno;
@@ -79,7 +80,13 @@ class MyHomePage extends StatelessWidget {
   void _signOut(BuildContext context) async {
     try {
       await FirebaseAuth.instance.signOut();
-      Navigator.pushNamed(context, 'Login');
+      Navigator.pushReplacementNamed(
+        context,
+        'Login',
+        arguments: {
+          'professorData': professorData,
+        },
+      );
     } catch (e) {
       print('Erro ao fazer logout: $e');
       // Trate o erro, mostre uma mensagem, etc.
@@ -118,17 +125,16 @@ class MyHomePage extends StatelessWidget {
           MyCard(
             title: 'Comunicados',
             icon: FontAwesomeIcons.bell,
-            cardColor: Colors.white, // Alterado para branco
+            cardColor: Colors.white,
             borderColor: Color.fromARGB(255, 59, 16, 212),
             onTap: () {
               Navigator.pushNamed(context, 'alunos/AvisosScreen');
             },
           ),
           MyCard(
-            //icon: FontAwesomeIcons.fileAlt,
             title: 'Alunos',
             icon: FontAwesomeIcons.userGraduate,
-            cardColor: Colors.white, // Alterado para branco
+            cardColor: Colors.white,
             borderColor: Color.fromARGB(255, 59, 16, 212),
             onTap: () {
               Navigator.pushNamed(
@@ -136,6 +142,7 @@ class MyHomePage extends StatelessWidget {
                 'alunos/AlunoHome',
                 arguments: {
                   'userType': userType,
+                  'professorData': professorData,
                 },
               );
             },
@@ -143,7 +150,7 @@ class MyHomePage extends StatelessWidget {
           MyCard(
             title: 'Financeiro',
             icon: FontAwesomeIcons.handHoldingDollar,
-            cardColor: Colors.white, // Alterado para branco
+            cardColor: Colors.white,
             borderColor: Color.fromARGB(255, 59, 16, 212),
             onTap: () {
               Navigator.pushNamed(context, 'financeiro/FinanceiroHome');
@@ -152,7 +159,7 @@ class MyHomePage extends StatelessWidget {
           MyCard(
             title: 'Agenda',
             icon: FontAwesomeIcons.calendarCheck,
-            cardColor: Colors.white, // Alterado para branco
+            cardColor: Colors.white,
             borderColor: Color.fromARGB(255, 59, 16, 212),
             onTap: () {},
           ),
@@ -170,6 +177,7 @@ class MyHomePage extends StatelessWidget {
                   'matriculaCpf': matriculaCpf,
                   'alunoData': alunoData,
                   'userType': userType,
+                  'professorData': professorData,
                 },
               );
             },
@@ -177,7 +185,7 @@ class MyHomePage extends StatelessWidget {
           MyCard(
             title: 'Conteúdos',
             icon: FontAwesomeIcons.book,
-            cardColor: Colors.white, // Alterado para branco
+            cardColor: Colors.white,
             borderColor: Color.fromARGB(255, 59, 16, 212),
             onTap: () {
               //Navigator.pushNamed(context, 'alunos/ConteudosScreen');
@@ -186,7 +194,7 @@ class MyHomePage extends StatelessWidget {
           MyCard(
             title: 'Chat',
             icon: FontAwesomeIcons.solidCommentDots,
-            cardColor: Colors.white, // Alterado para branco
+            cardColor: Colors.white,
             borderColor: Color.fromARGB(255, 59, 16, 212),
             onTap: () {
               Navigator.pushNamed(context, 'alunos/ChatScreen');
@@ -195,7 +203,7 @@ class MyHomePage extends StatelessWidget {
           MyCard(
             title: 'Horários',
             icon: FontAwesomeIcons.calendarAlt,
-            cardColor: Colors.white, // Alterado para branco
+            cardColor: Colors.white,
             borderColor: Color.fromARGB(255, 59, 16, 212),
             onTap: () {
               Navigator.pushNamed(context, 'alunos/HorariosScreen');
@@ -204,7 +212,7 @@ class MyHomePage extends StatelessWidget {
           MyCard(
             title: 'Suporte',
             icon: FontAwesomeIcons.solidCircleUser,
-            cardColor: Colors.white, // Alterado para branco
+            cardColor: Colors.white,
             borderColor: Color.fromARGB(255, 59, 16, 212),
             onTap: () {
               Navigator.pushNamed(context, 'suporte/SuporteScreen');
@@ -256,16 +264,17 @@ class MyCard extends StatelessWidget {
             elevation: 4.0,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10.0),
-              side:
-                  BorderSide(color: borderColor), // Adicionado para borda roxa
+              side: BorderSide(
+                color: borderColor,
+              ),
             ),
-            color: cardColor, // Alterado para cor de fundo branca
+            color: cardColor,
             child: Padding(
               padding: EdgeInsets.all(16.0),
               child: Icon(
                 icon,
                 size: 50.0,
-                color: borderColor, // Alterado para roxo
+                color: borderColor,
               ),
             ),
           ),
