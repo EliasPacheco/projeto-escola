@@ -1,0 +1,225 @@
+import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+class AgendaCards extends StatefulWidget {
+  @override
+  _AgendaCardsState createState() => _AgendaCardsState();
+}
+
+class _AgendaCardsState extends State<AgendaCards> {
+  final _formKey = GlobalKey<FormState>();
+  TextEditingController _tituloController = TextEditingController();
+  TextEditingController _descricaoController = TextEditingController();
+  TextEditingController _dataController = TextEditingController();
+  DateTime? _selectedDate;
+  String? _selectedOption;
+
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _selectedDate = picked;
+        _dataController.text = "${picked.day}/${picked.month}/${picked.year}";
+      });
+    }
+  }
+
+  Future<void> _enviarParaFirestore() async {
+    try {
+      String titulo = _tituloController.text;
+      String descricao = _descricaoController.text;
+      String data = _dataController.text;
+
+      if (_selectedOption != null) {
+        if (_selectedOption == 'Todas as turmas') {
+          // Se a opção for "Todas as turmas", criar um documento para cada turma
+          for (String turma in [
+            'Maternal',
+            'Infantil I',
+            'Infantil II',
+            '1º Ano',
+            '2º Ano',
+            '3º Ano',
+            '4º Ano',
+            '5º Ano',
+            '6º Ano',
+          ]) {
+            await FirebaseFirestore.instance
+                .collection('agenda')
+                .doc(turma)
+                .collection('agenda')
+                .add({
+              'titulo': titulo,
+              'descricao': descricao,
+              'data': data,
+            });
+          }
+        } else {
+          // Se a opção não for "Todas as turmas", criar um documento na subcoleção correspondente à opção
+          await FirebaseFirestore.instance
+              .collection('agenda')
+              .doc(_selectedOption)
+              .collection('agenda')
+              .add({
+            'titulo': titulo,
+            'descricao': descricao,
+            'data': data,
+          });
+        }
+      } else {
+        print('Nenhuma opção selecionada.');
+      }
+    } catch (e) {
+      print('Erro ao enviar dados para o Firestore: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Adicionar Comunicados'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextFormField(
+                controller: _tituloController,
+                decoration: InputDecoration(
+                  labelText: 'Título',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor, insira o título';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 16.0),
+              TextFormField(
+                controller: _descricaoController,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  labelText: 'Descrição',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor, insira a descrição';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 16.0),
+              InkWell(
+                onTap: () {
+                  _selectDate(context);
+                },
+                child: TextFormField(
+                  controller: _dataController,
+                  decoration: InputDecoration(
+                    labelText: 'Data',
+                    border: OutlineInputBorder(),
+                    suffixIcon: Icon(Icons.calendar_today),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Por favor, insira a data';
+                    }
+                    return null;
+                  },
+                  onTap: () {
+                    _selectDate(context);
+                  },
+                ),
+              ),
+              SizedBox(height: 16.0),
+              DropdownButton<String>(
+                value: _selectedOption,
+                onChanged: (String? newValue) {
+                  setState(() {
+                    _selectedOption = newValue;
+                  });
+                },
+                items: [
+                  'Maternal',
+                  'Infantil I',
+                  'Infantil II',
+                  '1º Ano',
+                  '2º Ano',
+                  '3º Ano',
+                  '4º Ano',
+                  '5º Ano',
+                  '6º Ano',
+                ].map<DropdownMenuItem<String>>((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+                hint: Text('Selecione a opção'),
+              ),
+              SizedBox(height: 16.0),
+              ElevatedButton(
+                onPressed: () {
+                  if (_formKey.currentState!.validate()) {
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: Text('Dados do Formulário'),
+                          content: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text('Título: ${_tituloController.text}'),
+                              Text('Descrição: ${_descricaoController.text}'),
+                              Text('Data: ${_dataController.text}'),
+                              Text(
+                                  'Opção: ${_selectedOption ?? "Nenhuma opção selecionada"}'),
+                            ],
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                              },
+                              child: Text('Cancelar'),
+                            ),
+                            ElevatedButton(
+                              onPressed: () {
+                                _enviarParaFirestore();
+                                // Limpa os controladores após chamar _enviarParaFirestore
+                                _tituloController.clear();
+                                _descricaoController.clear();
+                                _dataController.clear();
+                                _selectedOption = null;
+                                Navigator.of(context).pop();
+                              },
+                              child: Text('OK'),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  }
+                },
+                child: Text('Enviar'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

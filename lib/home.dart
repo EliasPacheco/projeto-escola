@@ -1,4 +1,5 @@
 import 'package:escola/Login.dart';
+import 'package:escola/alunos/AgendaScreen.dart';
 import 'package:escola/alunos/AlunoHome.dart';
 import 'package:escola/alunos/AvisosScreen.dart';
 import 'package:escola/alunos/ChatScreen.dart';
@@ -60,6 +61,11 @@ class MySchoolApp extends StatelessWidget {
         'alunos/ChatScreen': (context) => ChatScreen(),
         'alunos/HorariosScreen': (context) => HorariosScreen(),
         'Login': (context) => LoginPage(),
+        'alunos/AgendaScreen': (context) => AgendaScreen(
+              matriculaCpf: matriculaCpf,
+              alunoData: alunoData,
+              userType: userType,
+            ),
       },
     );
   }
@@ -174,7 +180,9 @@ class MyHomePage extends StatelessWidget {
             icon: FontAwesomeIcons.calendarCheck,
             cardColor: Colors.white,
             borderColor: Color.fromARGB(255, 59, 16, 212),
-            onTap: () {},
+            onTap: () {
+              Navigator.pushNamed(context, 'alunos/AgendaScreen');
+            },
           ),
           MyCard(
             title: 'Ocorrências',
