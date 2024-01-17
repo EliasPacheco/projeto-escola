@@ -41,8 +41,14 @@ class MySchoolApp extends StatelessWidget {
               userType: userType,
               professorData: professorData, // Passe as informações do professor
             ),
-        'financeiro/FinanceiroHome': (context) => FinanceiroHome(),
-        'alunos/AvisosScreen': (context) => AvisosHome(),
+        'financeiro/FinanceiroHome': (context) => FinanceiroHome(
+              userType: userType,
+            ),
+        'alunos/AvisosScreen': (context) => AvisosHome(
+              matriculaCpf: matriculaCpf,
+              alunoData: alunoData,
+              userType: userType,
+            ),
         'alunos/MatriculaScreen': (context) => MatriculaScreen(),
         'alunos/OcorrenciasScreen': (context) => OcorrenciasScreen(
               matriculaCpf: matriculaCpf,
@@ -111,6 +117,7 @@ class MyHomePage extends StatelessWidget {
         actions: [
           IconButton(
             icon: Icon(Icons.exit_to_app),
+            color: Colors.red,
             onPressed: () {
               // Adicione a lógica para fazer logout aqui
               _signOut(context);
@@ -153,7 +160,13 @@ class MyHomePage extends StatelessWidget {
             cardColor: Colors.white,
             borderColor: Color.fromARGB(255, 59, 16, 212),
             onTap: () {
-              Navigator.pushNamed(context, 'financeiro/FinanceiroHome');
+              Navigator.pushNamed(
+                context,
+                'financeiro/FinanceiroHome',
+                arguments: {
+                  'userType': userType,
+                },
+              );
             },
           ),
           MyCard(

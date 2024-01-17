@@ -30,8 +30,7 @@ class _FormaCardState extends State<FormaCard> {
   TextEditingController _descricaoController = TextEditingController();
   TextEditingController _dataController = TextEditingController();
   DateTime? _selectedDate;
-  String?
-      _selectedOption; // Variável para armazenar a opção selecionada no DropdownButton
+  String? _selectedOption;
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
@@ -51,15 +50,15 @@ class _FormaCardState extends State<FormaCard> {
   Future<void> _enviarParaFirestore() async {
     try {
       if (_selectedOption != null) {
-        // Criar um documento com o nome da opção dentro da coleção "comunicados"
+        // Criar um documento com data e hora dentro da subcoleção correspondente à opção
         await FirebaseFirestore.instance
             .collection('comunicados')
             .doc(_selectedOption)
-            .set({
+            .collection('comunicados')
+            .add({
           'titulo': _tituloController.text,
           'descricao': _descricaoController.text,
           'data': _dataController.text,
-          'opcao': _selectedOption,
         });
       } else {
         print('Nenhuma opção selecionada.');
@@ -134,7 +133,6 @@ class _FormaCardState extends State<FormaCard> {
                 ),
               ),
               SizedBox(height: 16.0),
-              // DropdownButton para escolher a opção desejada
               DropdownButton<String>(
                 value: _selectedOption,
                 onChanged: (String? newValue) {
@@ -146,20 +144,19 @@ class _FormaCardState extends State<FormaCard> {
                   'Maternal',
                   'Infantil I',
                   'Infantil II',
-                  '1º ano',
-                  '2º ano',
-                  '3º ano',
-                  '4º ano',
-                  '5º ano',
-                  '6º ano',
+                  '1º Ano',
+                  '2º Ano',
+                  '3º Ano',
+                  '4º Ano',
+                  '5º Ano',
+                  '6º Ano',
                 ].map<DropdownMenuItem<String>>((String value) {
                   return DropdownMenuItem<String>(
                     value: value,
                     child: Text(value),
                   );
                 }).toList(),
-                hint: Text(
-                    'Selecione a opção'), // Texto exibido quando nenhuma opção está selecionada
+                hint: Text('Selecione a opção'),
               ),
               SizedBox(height: 16.0),
               ElevatedButton(
@@ -178,7 +175,6 @@ class _FormaCardState extends State<FormaCard> {
                               Text('Descrição: ${_descricaoController.text}'),
                               Text('Data: ${_dataController.text}'),
                               Text('Opção: ${_selectedOption ?? "Nenhuma opção selecionada"}'),
-
                             ],
                           ),
                           actions: [
@@ -194,8 +190,7 @@ class _FormaCardState extends State<FormaCard> {
                                 _tituloController.clear();
                                 _descricaoController.clear();
                                 _dataController.clear();
-                                _selectedOption =
-                                    null; // Limpar a opção selecionada
+                                _selectedOption = null;
                                 Navigator.of(context).pop();
                               },
                               child: Text('OK'),

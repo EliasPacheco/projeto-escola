@@ -1,23 +1,13 @@
 import 'package:flutter/material.dart';
 
-void main() {
-  runApp(MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'App de Finanças',
-      theme: ThemeData(
-        primarySwatch: Colors.green,
-      ),
-      home: FinanceiroHome(),
-    );
-  }
-}
-
 class FinanceiroHome extends StatefulWidget {
+  final String userType;
+
+  const FinanceiroHome({
+    Key? key,
+    required this.userType,
+  }) : super(key: key);
+
   @override
   _FinanceiroHomeState createState() => _FinanceiroHomeState();
 }
@@ -26,13 +16,25 @@ class _FinanceiroHomeState extends State<FinanceiroHome> {
   List<Transacao> transacoes = [
     Transacao('Pagamento mensalidade Elias', Icons.attach_money, Colors.green),
     Transacao('Pagamento do veaco José', Icons.attach_money, Colors.green),
-    Transacao('Pagamento do fi da minha janta', Icons.attach_money, Colors.green),
-    Transacao('Pagamento do fi da minha marmita', Icons.attach_money, Colors.green),
+    Transacao(
+        'Pagamento do fi da minha janta', Icons.attach_money, Colors.green),
+    Transacao(
+        'Pagamento do fi da minha marmita', Icons.attach_money, Colors.green),
     Transacao('Pagamento da vea do salgado', Icons.attach_money, Colors.green),
     Transacao('Pagamento do nego Gabriel', Icons.attach_money, Colors.green),
   ];
 
-  List<String> anos = ['Maternal', 'Infantil I', 'Infantil II', '1º Ano', '2º Ano', '3º Ano', '4º Ano', '5º Ano', '6º Ano'];
+  List<String> anos = [
+    'Maternal',
+    'Infantil I',
+    'Infantil II',
+    '1º Ano',
+    '2º Ano',
+    '3º Ano',
+    '4º Ano',
+    '5º Ano',
+    '6º Ano'
+  ];
   String selectedAno = 'Maternal';
 
   void filtrarPorAno(String selectedAno) {
@@ -48,24 +50,25 @@ class _FinanceiroHomeState extends State<FinanceiroHome> {
       appBar: AppBar(
         title: Text('Financeiro'),
         actions: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: DropdownButton<String>(
-              value: selectedAno,
-              onChanged: (String? newValue) {
-                setState(() {
-                  selectedAno = newValue!;
-                  filtrarPorAno(selectedAno);
-                });
-              },
-              items: anos.map<DropdownMenuItem<String>>((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
+          if (widget.userType == 'Coordenacao')
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: DropdownButton<String>(
+                value: selectedAno,
+                onChanged: (String? newValue) {
+                  setState(() {
+                    selectedAno = newValue!;
+                    filtrarPorAno(selectedAno);
+                  });
+                },
+                items: anos.map<DropdownMenuItem<String>>((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+              ),
             ),
-          ),
         ],
       ),
       body: ListView.builder(
