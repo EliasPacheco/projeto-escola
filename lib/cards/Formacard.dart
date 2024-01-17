@@ -49,17 +49,46 @@ class _FormaCardState extends State<FormaCard> {
 
   Future<void> _enviarParaFirestore() async {
     try {
+      String titulo = _tituloController.text;
+      String descricao = _descricaoController.text;
+      String data = _dataController.text;
+
       if (_selectedOption != null) {
-        // Criar um documento com data e hora dentro da subcoleção correspondente à opção
-        await FirebaseFirestore.instance
-            .collection('comunicados')
-            .doc(_selectedOption)
-            .collection('comunicados')
-            .add({
-          'titulo': _tituloController.text,
-          'descricao': _descricaoController.text,
-          'data': _dataController.text,
-        });
+        if (_selectedOption == 'Todas as turmas') {
+          // Se a opção for "Todas as turmas", criar um documento para cada turma
+          for (String turma in [
+            'Maternal',
+            'Infantil I',
+            'Infantil II',
+            '1º Ano',
+            '2º Ano',
+            '3º Ano',
+            '4º Ano',
+            '5º Ano',
+            '6º Ano',
+          ]) {
+            await FirebaseFirestore.instance
+                .collection('comunicados')
+                .doc(turma)
+                .collection('comunicados')
+                .add({
+              'titulo': titulo,
+              'descricao': descricao,
+              'data': data,
+            });
+          }
+        } else {
+          // Se a opção não for "Todas as turmas", criar um documento na subcoleção correspondente à opção
+          await FirebaseFirestore.instance
+              .collection('comunicados')
+              .doc(_selectedOption)
+              .collection('comunicados')
+              .add({
+            'titulo': titulo,
+            'descricao': descricao,
+            'data': data,
+          });
+        }
       } else {
         print('Nenhuma opção selecionada.');
       }
@@ -141,6 +170,7 @@ class _FormaCardState extends State<FormaCard> {
                   });
                 },
                 items: [
+                  'Todas as turmas', // Adiciona a opção "Todas as turmas"
                   'Maternal',
                   'Infantil I',
                   'Infantil II',
@@ -174,7 +204,8 @@ class _FormaCardState extends State<FormaCard> {
                               Text('Título: ${_tituloController.text}'),
                               Text('Descrição: ${_descricaoController.text}'),
                               Text('Data: ${_dataController.text}'),
-                              Text('Opção: ${_selectedOption ?? "Nenhuma opção selecionada"}'),
+                              Text(
+                                  'Opção: ${_selectedOption ?? "Nenhuma opção selecionada"}'),
                             ],
                           ),
                           actions: [
@@ -187,6 +218,7 @@ class _FormaCardState extends State<FormaCard> {
                             ElevatedButton(
                               onPressed: () {
                                 _enviarParaFirestore();
+                                // Limpa os controladores após chamar _enviarParaFirestore
                                 _tituloController.clear();
                                 _descricaoController.clear();
                                 _dataController.clear();
