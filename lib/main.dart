@@ -8,7 +8,9 @@ import 'auth_provider.dart' as localAuthProvider;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   runApp(
     ChangeNotifierProvider<localAuthProvider.LocalAuthProvider>(

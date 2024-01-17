@@ -90,6 +90,10 @@ class MyHomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     print('Tipo de usuário: $userType');
 
+    bool isAluno = userType == 'Aluno';
+    bool isProfessor = userType == 'Professor';
+    bool isCoordenacao = userType == 'Coordenacao';
+
     print('isAluno: $isAluno');
     print('isProfessor: $isProfessor');
     print('isCoordenacao: $isCoordenacao');
