@@ -7,6 +7,7 @@ import 'package:escola/alunos/ConteudosScreen.dart';
 import 'package:escola/alunos/HorariosScreen.dart';
 import 'package:escola/alunos/MatriculaScreen.dart';
 import 'package:escola/alunos/OcorrenciasScreen.dart';
+import 'package:escola/alunos/StudentScreen.dart';
 import 'package:escola/financeiro/FinanceiroHome.dart';
 import 'package:escola/funcionarios/Cadastrarfuncionario.dart';
 import 'package:escola/suporte/SuporteScreen.dart';
@@ -61,6 +62,10 @@ class MySchoolApp extends StatelessWidget {
         'alunos/ChatScreen': (context) => ChatScreen(),
         'alunos/HorariosScreen': (context) => HorariosScreen(),
         'Login': (context) => LoginPage(),
+        'alunos/StudentScreen': (context) => StudentScreen(
+              matriculaCpf: matriculaCpf,
+              alunoData: alunoData,
+            ),
         'alunos/AgendaScreen': (context) => AgendaScreen(
               matriculaCpf: matriculaCpf,
               alunoData: alunoData,
@@ -150,14 +155,25 @@ class MyHomePage extends StatelessWidget {
             cardColor: Colors.white,
             borderColor: Color.fromARGB(255, 59, 16, 212),
             onTap: () {
-              Navigator.pushNamed(
-                context,
-                'alunos/AlunoHome',
-                arguments: {
-                  'userType': userType,
-                  'professorData': professorData,
-                },
-              );
+              if (userType == 'Aluno') {
+                Navigator.pushNamed(
+                  context,
+                  'alunos/StudentScreen',
+                  arguments: {
+                    'userType': userType,
+                    'professorData': professorData,
+                  },
+                );
+              } else {
+                Navigator.pushNamed(
+                  context,
+                  'alunos/AlunoHome',
+                  arguments: {
+                    'userType': userType,
+                    'professorData': professorData,
+                  },
+                );
+              }
             },
           ),
           MyCard(
