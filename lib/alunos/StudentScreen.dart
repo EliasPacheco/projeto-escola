@@ -1,3 +1,5 @@
+import 'package:escola/alunos/AlunoHome.dart';
+import 'package:escola/financeiro/FinanceiroScreen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -8,10 +10,12 @@ import 'package:firebase_storage/firebase_storage.dart';
 class StudentScreen extends StatefulWidget {
   final String matriculaCpf;
   final Map<String, dynamic>? alunoData;
+  final String userType;
 
   const StudentScreen({
     Key? key,
     required this.matriculaCpf,
+    required this.userType,
     this.alunoData,
   }) : super(key: key);
 
@@ -305,6 +309,24 @@ class _StudentScreenState extends State<StudentScreen> {
                     Icons.calendar_today),
                 buildStudentInfo(
                     'Matrícula:', matricula, Icons.confirmation_number),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => FinanceiroScreen(
+                          userType: widget.userType,
+                          aluno: Aluno(
+                            nome: widget.alunoData?['nome'],
+                            serie: widget.alunoData?['serie'],
+                            documentId: widget.alunoData?['uid'],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                  child: Text('Ir para Financeiro'),
+                )
               ],
             ),
           );

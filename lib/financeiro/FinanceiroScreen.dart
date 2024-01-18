@@ -42,7 +42,7 @@ class FinanceiroScreen extends StatelessWidget {
             );
           } else if (snapshot.hasError) {
             return Center(
-              child: Text('Erro ao carregar os dados do Firestore.'),
+              child: Text('Sem pagamentos a realizar'),
             );
           } else {
             List<Map<String, dynamic>> dadosFinanceiros =

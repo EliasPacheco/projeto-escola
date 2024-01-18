@@ -1,6 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:escola/alunos/MatriculaScreen.dart';
+import 'package:escola/cards/Financeirocard.dart';
+import 'package:escola/financeiro/FinanceiroScreen.dart';
 import 'package:flutter/material.dart';
+import 'package:escola/alunos/AlunoHome.dart';
+import 'package:escola/alunos/AlunoHome.dart' as AlunoHomePackage;
 
 class Aluno {
   final String documentId;
@@ -111,7 +114,8 @@ class _FinanceiroHomeState extends State<FinanceiroHome> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text('Enviar mensagem'),
-          content: Text('Deseja enviar uma mensagem para o $aluno para notificar de atraso na mensalidade?'),
+          content: Text(
+              'Deseja enviar uma mensagem para o $aluno para notificar de atraso na mensalidade?'),
           actions: [
             TextButton(
               onPressed: () {
@@ -236,7 +240,8 @@ class _FinanceiroHomeState extends State<FinanceiroHome> {
                           ),
                         ),
                         SizedBox(
-                            width: 8.0), // Espaçamento entre o avatar e o texto
+                            width:
+                                10.0), // Espaçamento entre o avatar e o texto
                         Text('${alunosFiltrados[index].nome}'),
                       ],
                     ),
@@ -247,11 +252,29 @@ class _FinanceiroHomeState extends State<FinanceiroHome> {
                             value: 'opcao1',
                             child: Text('Enviar mensagem'),
                           ),
+                          PopupMenuItem<String>(
+                            value: 'opcao2',
+                            child: Text('Financeiro'),
+                          ),
                         ];
                       },
                       onSelected: (String value) {
                         if (value == 'opcao1') {
                           exibirModalPresencaFalta(alunosFiltrados[index].nome);
+                        } else if (value == 'opcao2') {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => FinanceiroScreen(
+                                userType: widget.userType,
+                                aluno: AlunoHomePackage.Aluno(
+                                  nome: alunosFiltrados[index].nome,
+                                  serie: alunosFiltrados[index].serie,
+                                  documentId: alunosFiltrados[index].documentId,
+                                ),
+                              ),
+                            ),
+                          );
                         }
                       },
                     ),

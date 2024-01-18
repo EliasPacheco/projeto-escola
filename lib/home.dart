@@ -9,11 +9,14 @@ import 'package:escola/alunos/AvisosScreen.dart';
 import 'package:escola/alunos/OcorrenciasScreen.dart';
 import 'package:escola/alunos/StudentScreen.dart';
 import 'package:escola/financeiro/FinanceiroHome.dart';
+import 'package:escola/financeiro/FinanceiroScreen.dart';
 import 'package:escola/funcionarios/Cadastrarfuncionario.dart';
 import 'package:escola/suporte/SuporteScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:escola/alunos/AlunoHome.dart' as AlunoHomePackage;
+
 
 class MySchoolApp extends StatelessWidget {
   final String matriculaCpf;
@@ -67,6 +70,7 @@ class MySchoolApp extends StatelessWidget {
         'alunos/StudentScreen': (context) => StudentScreen(
               matriculaCpf: matriculaCpf,
               alunoData: alunoData,
+              userType: userType,
             ),
         'alunos/AgendaScreen': (context) => AgendaScreen(
               matriculaCpf: matriculaCpf,
@@ -185,13 +189,30 @@ class MyHomePage extends StatelessWidget {
             cardColor: Colors.white,
             borderColor: Color.fromARGB(255, 59, 16, 212),
             onTap: () {
-              Navigator.pushNamed(
-                context,
-                'financeiro/FinanceiroHome',
-                arguments: {
-                  'userType': userType,
-                },
-              );
+              if (userType == 'Aluno') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => FinanceiroScreen(
+                      userType: userType,
+                      aluno: AlunoHomePackage.Aluno(
+                        nome: alunoData?['nome'],
+                        serie: alunoData?['serie'],
+                        documentId: alunoData?['uid'],
+                      ),
+                    ),
+                  ),
+                );
+              } else {
+                Navigator.pushNamed(
+                  context,
+                  'financeiro/FinanceiroHome',
+                  arguments: {
+                    'userType': userType,
+                    'professorData': professorData,
+                  },
+                );
+              }
             },
           ),
           MyCard(
