@@ -24,7 +24,7 @@ class _AgendaCardsState extends State<AgendaCards> {
     if (picked != null && picked != _selectedDate) {
       setState(() {
         _selectedDate = picked;
-        _dataController.text = "${picked.day}/${picked.month}/${picked.year}";
+        _dataController.text = "${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}";
       });
     }
   }

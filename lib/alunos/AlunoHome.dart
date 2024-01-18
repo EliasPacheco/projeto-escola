@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:escola/alunos/MatriculaScreen.dart';
+import 'package:escola/financeiro/FinanceiroScreen.dart';
 import 'package:flutter/material.dart';
 
 class Aluno {
@@ -16,12 +17,14 @@ class Aluno {
 
 class AlunoHome extends StatefulWidget {
   final String userType;
-  final Map<String, dynamic>? professorData; // Adicione esta linha
+  final Map<String, dynamic>? professorData;
+  final Map<String, dynamic>? alunoData;
 
   const AlunoHome({
     Key? key,
     required this.userType,
     this.professorData,
+    this.alunoData,
   }) : super(key: key);
 
   @override
@@ -250,6 +253,16 @@ class _AlunoHomeState extends State<AlunoHome> {
                           exibirModalPresencaFalta(alunosFiltrados[index].nome);
                         } else if (value == 'opcao2') {
                           // Adicione lógica para a opção Boletim
+                        } else if (value == 'opcao3') {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => FinanceiroScreen(
+                                userType: widget.userType,
+                                aluno: alunosFiltrados[index],
+                              ),
+                            ),
+                          );
                         }
                       },
                     ),

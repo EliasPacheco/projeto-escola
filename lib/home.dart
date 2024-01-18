@@ -41,10 +41,12 @@ class MySchoolApp extends StatelessWidget {
       routes: {
         'alunos/AlunoHome': (context) => AlunoHome(
               userType: userType,
-              professorData: professorData, // Passe as informações do professor
+              professorData: professorData,
+              alunoData: alunoData,
             ),
         'financeiro/FinanceiroHome': (context) => FinanceiroHome(
               userType: userType,
+              professorData: professorData,
             ),
         'alunos/AvisosScreen': (context) => AvisosHome(
               matriculaCpf: matriculaCpf,

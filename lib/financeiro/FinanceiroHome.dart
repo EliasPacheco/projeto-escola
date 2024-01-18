@@ -1,11 +1,27 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:escola/alunos/MatriculaScreen.dart';
 import 'package:flutter/material.dart';
+
+class Aluno {
+  final String documentId;
+  final String nome;
+  final String serie;
+
+  Aluno({
+    required this.documentId,
+    required this.nome,
+    required this.serie,
+  });
+}
 
 class FinanceiroHome extends StatefulWidget {
   final String userType;
+  final Map<String, dynamic>? professorData;
 
   const FinanceiroHome({
     Key? key,
     required this.userType,
+    this.professorData,
   }) : super(key: key);
 
   @override
@@ -13,17 +29,7 @@ class FinanceiroHome extends StatefulWidget {
 }
 
 class _FinanceiroHomeState extends State<FinanceiroHome> {
-  List<Transacao> transacoes = [
-    Transacao('Pagamento mensalidade Elias', Icons.attach_money, Colors.green),
-    Transacao('Pagamento do veaco José', Icons.attach_money, Colors.green),
-    Transacao(
-        'Pagamento do fi da minha janta', Icons.attach_money, Colors.green),
-    Transacao(
-        'Pagamento do fi da minha marmita', Icons.attach_money, Colors.green),
-    Transacao('Pagamento da vea do salgado', Icons.attach_money, Colors.green),
-    Transacao('Pagamento do nego Gabriel', Icons.attach_money, Colors.green),
-  ];
-
+  late List<Aluno> alunos;
   List<String> anos = [
     'Maternal',
     'Infantil I',
@@ -36,21 +42,115 @@ class _FinanceiroHomeState extends State<FinanceiroHome> {
     '6º Ano'
   ];
   String selectedAno = 'Maternal';
+  List<Aluno> alunosFiltrados = [];
 
-  void filtrarPorAno(String selectedAno) {
+  @override
+  void initState() {
+    super.initState();
+    // Chama a função para buscar os alunos ao inicializar o widget
+    buscarAlunos();
+  }
+
+  // Função para buscar os dados da coleção "alunos" no Firestore
+  Future<void> buscarAlunos() async {
+    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+        .collection('alunos') // Use a coleção principal 'alunos'
+        .doc(selectedAno)
+        .collection('alunos')
+        .get();
+
     setState(() {
-      // Lógica para filtrar os alunos pelo ano selecionado
-      // Aqui você pode adicionar a lógica específica conforme necessário
+      alunos = querySnapshot.docs.map((DocumentSnapshot document) {
+        return Aluno(
+          documentId: document.id,
+          nome: (document['nome'] ?? '').toString(),
+          serie: (document['serie'] ?? '').toString(),
+        );
+      }).toList();
+
+      alunosFiltrados = List.from(alunos);
     });
+  }
+
+  void filtrarAlunos(String query) {
+    setState(() {
+      alunosFiltrados = alunos
+          .where((aluno) =>
+              aluno.nome.toLowerCase().contains(query.toLowerCase()) &&
+              aluno.serie == selectedAno)
+          .toList();
+    });
+  }
+
+  void resetFiltro() {
+    setState(() {
+      alunosFiltrados =
+          alunos.where((aluno) => aluno.serie == selectedAno).toList();
+    });
+  }
+
+  void filtrarPorAno(String selectedAno) async {
+    // Atualiza o estado com o novo ano selecionado
+    setState(() {
+      this.selectedAno = selectedAno;
+    });
+
+    // Chama a função para buscar os alunos novamente com o novo ano
+    await buscarAlunos();
+
+    // Filtra os alunos com base no novo ano
+    setState(() {
+      alunosFiltrados =
+          alunos.where((aluno) => aluno.serie == selectedAno).toList();
+    });
+  }
+
+  void exibirModalPresencaFalta(String aluno) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Enviar mensagem'),
+          content: Text('Deseja enviar uma mensagem para o $aluno para notificar de atraso na mensalidade?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                // Adicione lógica para tratar a presença do aluno aqui
+              },
+              child: Text('Enviar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  String _getDataAtual() {
+    DateTime dataAtual = DateTime.now();
+    String formattedDate =
+        "${dataAtual.day.toString().padLeft(2, '0')}/${dataAtual.month.toString().padLeft(2, '0')}";
+    return formattedDate;
   }
 
   @override
   Widget build(BuildContext context) {
+    print(
+        'Professor Data: ${widget.professorData ?? "Nenhum dado de professor"}');
+    print('Tipo de usuário: ${widget.userType ?? "Nenhum tipo de usuário"}');
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Financeiro'),
         actions: [
-          if (widget.userType == 'Coordenacao')
+          if (widget.userType == 'Coordenacao' ||
+              widget.userType == 'Professor')
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: DropdownButton<String>(
@@ -58,47 +158,110 @@ class _FinanceiroHomeState extends State<FinanceiroHome> {
                 onChanged: (String? newValue) {
                   setState(() {
                     selectedAno = newValue!;
-                    filtrarPorAno(selectedAno);
                   });
+
+                  // Chama a função para filtrar os alunos com base no novo ano selecionado
+                  filtrarPorAno(selectedAno);
                 },
-                items: anos.map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
+                items: (widget.userType == 'Professor')
+                    ? widget.professorData!['series']
+                        .map<DropdownMenuItem<String>>((serie) {
+                        return DropdownMenuItem<String>(
+                          value: serie
+                              as String, // Converter explicitamente para String
+                          child: Text(serie),
+                        );
+                      }).toList()
+                    : (widget.userType == 'Coordenacao')
+                        ? anos.map<DropdownMenuItem<String>>((String value) {
+                            return DropdownMenuItem<String>(
+                              value: value,
+                              child: Text(value),
+                            );
+                          }).toList()
+                        : [],
               ),
             ),
         ],
       ),
-      body: ListView.builder(
-        itemCount: transacoes.length,
-        itemBuilder: (context, index) {
-          return Card(
-            elevation: 2.0,
-            margin: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-            child: ListTile(
-              contentPadding: EdgeInsets.all(8.0),
-              title: Text(
-                transacoes[index].descricao,
-                style: TextStyle(fontWeight: FontWeight.bold),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15.0),
               ),
-              leading: CircleAvatar(
-                backgroundColor: transacoes[index].cor,
-                child: Icon(transacoes[index].icone, color: Colors.white),
+              elevation: 4.0,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: TextField(
+                  onChanged: (query) {
+                    if (query.isEmpty) {
+                      resetFiltro();
+                    } else {
+                      filtrarAlunos(query);
+                    }
+                  },
+                  decoration: InputDecoration(
+                    hintText: 'Pesquisar Alunos',
+                    prefixIcon: Icon(Icons.search),
+                    border: InputBorder.none,
+                  ),
+                ),
               ),
             ),
-          );
-        },
+          ),
+          Expanded(
+            child: Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(20.0),
+                  topRight: Radius.circular(20.0),
+                ),
+              ),
+              elevation: 4.0,
+              margin: EdgeInsets.zero,
+              child: ListView.builder(
+                itemCount: alunosFiltrados.length,
+                itemBuilder: (context, index) {
+                  return ListTile(
+                    title: Row(
+                      children: [
+                        CircleAvatar(
+                          backgroundColor: Colors.green,
+                          child: Icon(
+                            Icons.attach_money,
+                            color: Colors.white,
+                          ),
+                        ),
+                        SizedBox(
+                            width: 8.0), // Espaçamento entre o avatar e o texto
+                        Text('${alunosFiltrados[index].nome}'),
+                      ],
+                    ),
+                    trailing: PopupMenuButton<String>(
+                      itemBuilder: (context) {
+                        return [
+                          PopupMenuItem<String>(
+                            value: 'opcao1',
+                            child: Text('Enviar mensagem'),
+                          ),
+                        ];
+                      },
+                      onSelected: (String value) {
+                        if (value == 'opcao1') {
+                          exibirModalPresencaFalta(alunosFiltrados[index].nome);
+                        }
+                      },
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
-}
-
-class Transacao {
-  final String descricao;
-  final IconData icone;
-  final Color cor;
-
-  Transacao(this.descricao, this.icone, this.cor);
 }

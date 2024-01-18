@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
+import 'package:flutter/services.dart';
 
 void main() {
   runApp(MyApp());
@@ -9,42 +11,49 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Adicionar Ocorrências',
+      title: 'Adicionar Finanças',
       theme: ThemeData(
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: OcorrenciaCard(),
+      home: FinanceiroCard(),
     );
   }
 }
 
-class OcorrenciaCard extends StatefulWidget {
+class FinanceiroCard extends StatefulWidget {
   @override
-  _OcorrenciaCardState createState() => _OcorrenciaCardState();
+  _FinanceiroCardState createState() => _FinanceiroCardState();
 }
 
-class _OcorrenciaCardState extends State<OcorrenciaCard> {
+class _FinanceiroCardState extends State<FinanceiroCard> {
   final _formKey = GlobalKey<FormState>();
-  TextEditingController _tituloController = TextEditingController();
-  TextEditingController _descricaoController = TextEditingController();
-  TextEditingController _dataController = TextEditingController();
+  TextEditingController _mesAnoController = TextEditingController();
+  TextEditingController _vencimentoController = TextEditingController();
+  TextEditingController _valorController = TextEditingController();
   TextEditingController _alunoController = TextEditingController();
-  DateTime? _selectedDate;
+  DateTime? _selectedMesAno;
+  DateTime? _selectedVencimento;
   String? _selectedOption;
   List<String> _alunosDaOpcao = [];
 
-  Future<void> _selectDate(BuildContext context) async {
+  Future<void> _selectDate(
+      BuildContext context, TextEditingController controller,
+      {bool showDay = true}) async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime(2101),
     );
-    if (picked != null && picked != _selectedDate) {
+
+    if (picked != null) {
+      String formattedDate = showDay
+          ? "${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}"
+          : "${picked.month.toString().padLeft(2, '0')}/${picked.year}";
+
       setState(() {
-        _selectedDate = picked;
-        _dataController.text = "${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}";
+        controller.text = formattedDate;
       });
     }
   }
@@ -89,9 +98,10 @@ class _OcorrenciaCardState extends State<OcorrenciaCard> {
             (aluno) => aluno['nome'] == _alunoController.text)['uid'];
 
         Map<String, dynamic> ocorrencia = {
-          'titulo': _tituloController.text,
-          'descricao': _descricaoController.text,
-          'data': _dataController.text,
+          'mesAno': _mesAnoController.text,
+          'vencimento': _vencimentoController.text,
+          'valor': _valorController.text,
+          'pagou': false,  // Adicionando a informação "pagou" como false
         };
 
         DocumentReference alunoRef = FirebaseFirestore.instance
@@ -101,12 +111,12 @@ class _OcorrenciaCardState extends State<OcorrenciaCard> {
             .doc(alunoUid); // Usando o UID do aluno
 
         await alunoRef.update({
-          'ocorrencias': FieldValue.arrayUnion([ocorrencia]),
+          'financeiro': FieldValue.arrayUnion([ocorrencia]),
         });
 
-        _tituloController.clear();
-        _descricaoController.clear();
-        _dataController.clear();
+        _mesAnoController.clear();
+        _vencimentoController.clear();
+        _valorController.clear();
         _alunoController.clear();
         _selectedOption = null;
       } else {
@@ -149,7 +159,7 @@ class _OcorrenciaCardState extends State<OcorrenciaCard> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Adicionar Ocorrências'),
+        title: Text('Adicionar Finanças'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -159,56 +169,70 @@ class _OcorrenciaCardState extends State<OcorrenciaCard> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                TextFormField(
-                  controller: _tituloController,
-                  decoration: InputDecoration(
-                    labelText: 'Título',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor, insira o título';
-                    }
-                    return null;
-                  },
-                ),
-                SizedBox(height: 16.0),
-                TextFormField(
-                  controller: _descricaoController,
-                  maxLines: 3,
-                  decoration: InputDecoration(
-                    labelText: 'Descrição',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor, insira a descrição';
-                    }
-                    return null;
-                  },
-                ),
-                SizedBox(height: 16.0),
                 InkWell(
                   onTap: () {
-                    _selectDate(context);
+                    _selectDate(context, _mesAnoController, showDay: false);
                   },
                   child: TextFormField(
-                    controller: _dataController,
+                    controller: _mesAnoController,
                     decoration: InputDecoration(
-                      labelText: 'Data',
+                      labelText: 'Mês/Ano',
                       border: OutlineInputBorder(),
                       suffixIcon: Icon(Icons.calendar_today),
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Por favor, insira a data';
+                        return 'Por favor, insira o Mês/Ano';
                       }
                       return null;
                     },
                     onTap: () {
-                      _selectDate(context);
+                      _selectDate(context, _mesAnoController, showDay: false);
                     },
                   ),
+                ),
+                SizedBox(height: 16.0),
+                InkWell(
+                  onTap: () {
+                    _selectDate(context, _vencimentoController);
+                  },
+                  child: TextFormField(
+                    controller: _vencimentoController,
+                    decoration: InputDecoration(
+                      labelText: 'Vencimento',
+                      border: OutlineInputBorder(),
+                      suffixIcon: Icon(Icons.calendar_today),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Por favor, insira a data de Vencimento';
+                      }
+                      return null;
+                    },
+                    onTap: () {
+                      _selectDate(context, _vencimentoController);
+                    },
+                  ),
+                ),
+                SizedBox(height: 16.0),
+                TextFormField(
+                  controller: _valorController,
+                  keyboardType: TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(
+                        RegExp(r'^\d+\.?\d{0,2}$')),
+                  ],
+                  decoration: InputDecoration(
+                    labelText: 'Valor',
+                    border: OutlineInputBorder(),
+                    prefixText: 'R\$ ',
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Por favor, insira o valor';
+                    }
+                    return null;
+                  },
                 ),
                 SizedBox(height: 16.0),
                 DropdownButton<String>(
@@ -300,9 +324,10 @@ class _OcorrenciaCardState extends State<OcorrenciaCard> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text('Título: ${_tituloController.text}'),
-                                Text('Descrição: ${_descricaoController.text}'),
-                                Text('Data: ${_dataController.text}'),
+                                Text('Mês/Ano: ${_mesAnoController.text}'),
+                                Text(
+                                    'Vencimento: ${_vencimentoController.text}'),
+                                Text('Valor: R\$ ${_valorController.text}'),
                                 Text('Aluno: ${_alunoController.text}'),
                                 Text(
                                     'Opção: ${_selectedOption ?? "Nenhuma opção selecionada"}'),
@@ -328,9 +353,9 @@ class _OcorrenciaCardState extends State<OcorrenciaCard> {
                               ElevatedButton(
                                 onPressed: () {
                                   _enviarParaFirestore();
-                                  _tituloController.clear();
-                                  _descricaoController.clear();
-                                  _dataController.clear();
+                                  _mesAnoController.clear();
+                                  _vencimentoController.clear();
+                                  _valorController.clear();
                                   _alunoController.clear();
                                   _selectedOption = null;
                                   Navigator.of(context).pop();
