@@ -66,7 +66,6 @@ class _StudentScreenState extends State<StudentScreen> {
 
   final FirebaseStorage _firebaseStorage = FirebaseStorage.instance;
 
-// Função para atualizar o documento do Firestore com a URL da imagem
   // Função para atualizar o documento do Firestore com o URL da imagem
   Future<void> _updateImageUrl(String imageUrl) async {
     try {
@@ -171,18 +170,26 @@ class _StudentScreenState extends State<StudentScreen> {
     }
   }
 
+  bool _hasImage() {
+    return _pickedFile != null || _imageUrl != null;
+  }
+
   @override
   Widget build(BuildContext context) {
     print('Aluno Data: ${widget.alunoData ?? "Nenhum dado de aluno"}');
+    String primeiroNome = nome.split(' ')[0];
     return Scaffold(
       appBar: AppBar(
-        title: Text('Perfil do Aluno'),
+        title: Text('Perfil do $primeiroNome'),
       ),
       body: StreamBuilder<DocumentSnapshot>(
         stream: _studentStream,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return CircularProgressIndicator();
+            // Use o widget Center para centralizar o CircularProgressIndicator
+            return Center(
+              child: CircularProgressIndicator(),
+            );
           }
 
           if (!snapshot.hasData ||
@@ -191,16 +198,26 @@ class _StudentScreenState extends State<StudentScreen> {
             return Text('Erro ao carregar dados do aluno');
           }
 
-          Map<String, dynamic> alunoData =
-              snapshot.data!.data() as Map<String, dynamic>;
+          Map<String, dynamic>? alunoData =
+              snapshot.data!.data() as Map<String, dynamic>?;
 
-          // Atualize as variáveis de estado com os novos dados
-          nome = alunoData['nome'] ?? 'Nome não disponível';
-          serie = alunoData['serie'] ?? 'Série não disponível';
-          dataNascimento = alunoData['dataNascimento'] ??
-              'Data de nascimento não disponível';
-          matricula = alunoData['matricula'] ?? 'Matrícula não disponível';
-          _imageUrl = alunoData['imageUrl'];
+          // Verifica se a URL da imagem foi atualizada
+          String? imageUrl = alunoData?['imageUrl'];
+          if (imageUrl != null && imageUrl != _imageUrl) {
+            // Adie a chamada do setState para o próximo frame usando Future.microtask
+            Future.microtask(() {
+              // Atualize as variáveis de estado com os novos dados
+              setState(() {
+                nome = alunoData?['nome'] ?? 'Nome não disponível';
+                serie = alunoData?['serie'] ?? 'Série não disponível';
+                dataNascimento = alunoData?['dataNascimento'] ??
+                    'Data de nascimento não disponível';
+                matricula =
+                    alunoData?['matricula'] ?? 'Matrícula não disponível';
+                _imageUrl = imageUrl;
+              });
+            });
+          }
 
           return Padding(
             padding: const EdgeInsets.all(16.0),
@@ -215,41 +232,67 @@ class _StudentScreenState extends State<StudentScreen> {
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
-                        if (_pickedFile == null && _imageUrl != null)
-                          FutureBuilder(
-                            future: _loadNetworkImage(_imageUrl!),
-                            builder: (context, snapshot) {
-                              if (snapshot.connectionState ==
-                                  ConnectionState.done) {
-                                return ClipOval(
-                                  child: snapshot.data as Widget,
-                                );
-                              } else if (snapshot.hasError) {
-                                print(
-                                    'Erro ao carregar a imagem: ${snapshot.error}');
-                                return Icon(
-                                  Icons.error_outline,
-                                  size: 40,
+                        if (!_hasImage())
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.camera_alt,
+                                size: 40,
+                                color: Colors.white,
+                              ),
+                              SizedBox(height: 8),
+                              Text(
+                                'Clique aqui para escolher uma foto',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 16,
                                   color: Colors.white,
-                                );
-                              } else {
-                                return SizedBox(); // Nada a ser exibido enquanto a imagem está sendo carregada
-                              }
-                            },
+                                ),
+                              ),
+                            ],
                           ),
-                        if (_isImageLoading)
+                        if (!_hasImage() && _isImageLoading)
                           CircularProgressIndicator(
                             valueColor:
                                 AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
-                        if (_pickedFile != null)
-                          ClipOval(
-                            child: Image.file(
-                              File(_pickedFile!.path),
-                              width: 200,
-                              height: 200,
-                              fit: BoxFit.cover,
-                            ),
+                        if (_hasImage())
+                          Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              if (_pickedFile == null && _imageUrl != null)
+                                FutureBuilder(
+                                  future: _loadNetworkImage(_imageUrl!),
+                                  builder: (context, snapshot) {
+                                    if (snapshot.connectionState ==
+                                        ConnectionState.done) {
+                                      return ClipOval(
+                                        child: snapshot.data as Widget,
+                                      );
+                                    } else if (snapshot.hasError) {
+                                      print(
+                                          'Erro ao carregar a imagem: ${snapshot.error}');
+                                      return Icon(
+                                        Icons.error_outline,
+                                        size: 40,
+                                        color: Colors.white,
+                                      );
+                                    } else {
+                                      return SizedBox();
+                                    }
+                                  },
+                                ),
+                              if (_pickedFile != null)
+                                ClipOval(
+                                  child: Image.file(
+                                    File(_pickedFile!.path),
+                                    width: 200,
+                                    height: 200,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                            ],
                           ),
                       ],
                     ),
