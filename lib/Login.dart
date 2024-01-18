@@ -262,7 +262,7 @@ class _LoginPageState extends State<LoginPage> {
             TextField(
               controller: _matriculaCpfController,
               decoration: InputDecoration(
-                labelText: 'Matrícula ou CPF',
+                labelText: 'CPF',
                 icon: Icon(Icons.person),
               ),
               keyboardType: TextInputType.number,
@@ -272,7 +272,7 @@ class _LoginPageState extends State<LoginPage> {
             TextField(
               controller: _senhaController,
               decoration: InputDecoration(
-                labelText: 'Senha',
+                labelText: 'Matrícula',
                 icon: Icon(Icons.lock),
               ),
               keyboardType: TextInputType.number,
