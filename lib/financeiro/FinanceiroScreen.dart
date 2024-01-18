@@ -1,125 +1,102 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:escola/alunos/AlunoHome.dart';
 import 'package:escola/cards/Financeirocard.dart';
 import 'package:flutter/material.dart';
 
 class FinanceiroScreen extends StatelessWidget {
-
   final String userType;
   final Aluno aluno;
-
 
   FinanceiroScreen({
     Key? key,
     required this.userType,
     required this.aluno,
   }) : super(key: key);
-  // Dados fictícios para exemplo
-  final List<String> meses = [
-    'Janeiro/2023',
-    'Fevereiro/2023',
-    'Março/2023',
-    'Abril/2023',
-    'Maio/2023',
-    'Junho/2023',
-    'Jul/2023',
-    'Ago/2023',
-    'Set/2023',
-    'Out/2023',
-    'Nov/2023',
-    'Dezembro/2023',
-  ];
-
-  final List<String> vencimentos = [
-    '15/01',
-    '15/02',
-    '15/03',
-    '15/04',
-    '15/05',
-    '15/06',
-    '15/07',
-    '15/08',
-    '15/09',
-    '15/10',
-    '15/11',
-    '15/12',
-  ];
-
-  final List<String> valores = [
-    'R\$ 300,00',
-    'R\$ 300,00',
-    'R\$ 300,00',
-    'R\$ 300,00',
-    'R\$ 300,00',
-    'R\$ 300,00',
-    'R\$ 300,00',
-    'R\$ 300,00',
-    'R\$ 300,00',
-    'R\$ 300,00',
-    'R\$ 300,00',
-    'R\$ 300,00',
-  ];
-
-  final List<bool> pagas = [
-    true,
-    false,
-    false,
-    false,
-    false,
-    false,
-    false,
-    false,
-    false,
-    false,
-    false,
-    false,
-  ];
 
   @override
   Widget build(BuildContext context) {
-
-    print('Tipo: ${userType ?? "Nenhum dado de aluno"}');
-    print('Informações do Aluno: ${aluno.nome}, ${aluno.serie}, ${aluno.documentId},');
+    Stream<List<Map<String, dynamic>>> buscarInformacoesFinanceirasAluno() {
+      return FirebaseFirestore.instance
+          .collection('alunos')
+          .doc(aluno.serie)
+          .collection('alunos')
+          .doc(aluno.documentId)
+          .snapshots()
+          .map<List<Map<String, dynamic>>>((documentSnapshot) {
+        // Obtenha os dados financeiros do aluno do documentSnapshot
+        return List<Map<String, dynamic>>.from(
+            documentSnapshot['financeiro'] ?? []);
+      });
+    }
 
     return Scaffold(
       appBar: AppBar(
         title: Text('Financeiro'),
       ),
-      body: ListView.builder(
-        itemCount: meses.length,
-        itemBuilder: (context, index) {
-          return Card(
-            elevation: 2.0,
-            margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-            child: ListTile(
-              contentPadding: EdgeInsets.all(16.0),
-              title: Text(meses[index]),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(height: 8.0),
-                  Text('Vencimento: ${vencimentos[index]}'),
-                  Text('Valor: ${valores[index]}'),
-                  SizedBox(height: 8.0),
-                  Row(
-                    children: [
-                      Icon(
-                        pagas[index] ? Icons.check_circle : Icons.error,
-                        color: pagas[index] ? Colors.green : Colors.red,
-                      ),
-                      SizedBox(width: 8.0),
-                      Text(
-                        pagas[index] ? 'Mensalidade Paga' : 'Mensalidade Não Paga',
-                        style: TextStyle(
-                          color: pagas[index] ? Colors.green : Colors.red,
-                          fontWeight: FontWeight.bold,
+      body: StreamBuilder(
+        stream: buscarInformacoesFinanceirasAluno(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(
+              child: CircularProgressIndicator(),
+            );
+          } else if (snapshot.hasError) {
+            return Center(
+              child: Text('Erro ao carregar os dados do Firestore.'),
+            );
+          } else {
+            List<Map<String, dynamic>> dadosFinanceiros =
+                snapshot.data as List<Map<String, dynamic>>;
+
+            return ListView.builder(
+              itemCount: dadosFinanceiros.length,
+              itemBuilder: (context, index) {
+                Map<String, dynamic> infoFinanceira = dadosFinanceiros[index];
+
+                return Card(
+                  elevation: 2.0,
+                  margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                  child: ListTile(
+                    contentPadding: EdgeInsets.all(16.0),
+                    title: Text(infoFinanceira['mesAno']),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(height: 8.0),
+                        Text('Vencimento: ${infoFinanceira['vencimento']}'),
+                        Text('Valor: R\$ ${infoFinanceira['valor']},00'),
+                        SizedBox(height: 8.0),
+                        Row(
+                          children: [
+                            Icon(
+                              infoFinanceira['pagou']
+                                  ? Icons.check_circle
+                                  : Icons.error,
+                              color: infoFinanceira['pagou']
+                                  ? Colors.green
+                                  : Colors.red,
+                            ),
+                            SizedBox(width: 8.0),
+                            Text(
+                              infoFinanceira['pagou']
+                                  ? 'Mensalidade Paga'
+                                  : 'Mensalidade Não Paga',
+                              style: TextStyle(
+                                color: infoFinanceira['pagou']
+                                    ? Colors.green
+                                    : Colors.red,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ],
-              ),
-            ),
-          );
+                );
+              },
+            );
+          }
         },
       ),
       floatingActionButton: userType == 'Coordenacao'
@@ -139,4 +116,3 @@ class FinanceiroScreen extends StatelessWidget {
     );
   }
 }
-
