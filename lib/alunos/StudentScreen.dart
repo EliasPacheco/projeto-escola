@@ -35,6 +35,8 @@ class _StudentScreenState extends State<StudentScreen> {
   // Firestore reference
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  late Stream<DocumentSnapshot> _studentStream;
+
   @override
   void initState() {
     super.initState();
@@ -45,6 +47,21 @@ class _StudentScreenState extends State<StudentScreen> {
     matricula = widget.alunoData?['matricula'] ?? 'Matrícula não disponível';
     _imagePicker = ImagePicker();
     _imageUrl = widget.alunoData?['imageUrl'];
+
+    // Configure o stream para ouvir as alterações no documento do aluno
+    String turma = widget.alunoData?['turma'] ?? 'OutraTurma';
+    String uid = widget.alunoData?['uid'] ?? '';
+
+    try {
+      _studentStream = _firestore
+          .collection('alunos')
+          .doc(turma)
+          .collection('alunos')
+          .doc(uid) // Use o UID como o identificador do documento
+          .snapshots();
+    } catch (error) {
+      print('Erro ao configurar o stream: $error');
+    }
   }
 
   final FirebaseStorage _firebaseStorage = FirebaseStorage.instance;
@@ -161,67 +178,94 @@ class _StudentScreenState extends State<StudentScreen> {
       appBar: AppBar(
         title: Text('Perfil do Aluno'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            InkWell(
-              onTap: _pickImage,
-              child: CircleAvatar(
-                radius: 100,
-                backgroundColor: Colors.grey,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    if (_pickedFile == null && _imageUrl != null)
-                      FutureBuilder(
-                        future: _loadNetworkImage(_imageUrl!),
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.done) {
-                            return ClipOval(
-                              child: snapshot.data as Widget,
-                            );
-                          } else if (snapshot.hasError) {
-                            print(
-                                'Erro ao carregar a imagem: ${snapshot.error}');
-                            return Icon(
-                              Icons.error_outline,
-                              size: 40,
-                              color: Colors.white,
-                            );
-                          } else {
-                            return SizedBox(); // Nada a ser exibido enquanto a imagem está sendo carregada
-                          }
-                        },
-                      ),
-                    if (_isImageLoading)
-                      CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    if (_pickedFile != null)
-                      ClipOval(
-                        child: Image.file(
-                          File(_pickedFile!.path),
-                          width: 200,
-                          height: 200,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                  ],
+      body: StreamBuilder<DocumentSnapshot>(
+        stream: _studentStream,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return CircularProgressIndicator();
+          }
+
+          if (!snapshot.hasData ||
+              snapshot.data == null ||
+              snapshot.data!.data() == null) {
+            return Text('Erro ao carregar dados do aluno');
+          }
+
+          Map<String, dynamic> alunoData =
+              snapshot.data!.data() as Map<String, dynamic>;
+
+          // Atualize as variáveis de estado com os novos dados
+          nome = alunoData['nome'] ?? 'Nome não disponível';
+          serie = alunoData['serie'] ?? 'Série não disponível';
+          dataNascimento = alunoData['dataNascimento'] ??
+              'Data de nascimento não disponível';
+          matricula = alunoData['matricula'] ?? 'Matrícula não disponível';
+          _imageUrl = alunoData['imageUrl'];
+
+          return Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                InkWell(
+                  onTap: _pickImage,
+                  child: CircleAvatar(
+                    radius: 100,
+                    backgroundColor: Colors.grey,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        if (_pickedFile == null && _imageUrl != null)
+                          FutureBuilder(
+                            future: _loadNetworkImage(_imageUrl!),
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState ==
+                                  ConnectionState.done) {
+                                return ClipOval(
+                                  child: snapshot.data as Widget,
+                                );
+                              } else if (snapshot.hasError) {
+                                print(
+                                    'Erro ao carregar a imagem: ${snapshot.error}');
+                                return Icon(
+                                  Icons.error_outline,
+                                  size: 40,
+                                  color: Colors.white,
+                                );
+                              } else {
+                                return SizedBox(); // Nada a ser exibido enquanto a imagem está sendo carregada
+                              }
+                            },
+                          ),
+                        if (_isImageLoading)
+                          CircularProgressIndicator(
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        if (_pickedFile != null)
+                          ClipOval(
+                            child: Image.file(
+                              File(_pickedFile!.path),
+                              width: 200,
+                              height: 200,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
+                SizedBox(height: 20),
+                buildStudentInfo('Nome:', nome, Icons.person),
+                buildStudentInfo('Série:', serie, Icons.school),
+                buildStudentInfo('Data de Nascimento:', dataNascimento,
+                    Icons.calendar_today),
+                buildStudentInfo(
+                    'Matrícula:', matricula, Icons.confirmation_number),
+              ],
             ),
-            SizedBox(height: 20),
-            buildStudentInfo('Nome:', nome, Icons.person),
-            buildStudentInfo('Série:', serie, Icons.school),
-            buildStudentInfo(
-                'Data de Nascimento:', dataNascimento, Icons.calendar_today),
-            buildStudentInfo(
-                'Matrícula:', matricula, Icons.confirmation_number),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
