@@ -245,39 +245,43 @@ class _FinanceiroHomeState extends State<FinanceiroHome> {
                         Text('${alunosFiltrados[index].nome}'),
                       ],
                     ),
-                    trailing: PopupMenuButton<String>(
-                      itemBuilder: (context) {
-                        return [
-                          PopupMenuItem<String>(
-                            value: 'opcao1',
-                            child: Text('Enviar mensagem'),
-                          ),
-                          PopupMenuItem<String>(
-                            value: 'opcao2',
-                            child: Text('Financeiro'),
-                          ),
-                        ];
-                      },
-                      onSelected: (String value) {
-                        if (value == 'opcao1') {
-                          exibirModalPresencaFalta(alunosFiltrados[index].nome);
-                        } else if (value == 'opcao2') {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => FinanceiroScreen(
-                                userType: widget.userType,
-                                aluno: AlunoHomePackage.Aluno(
-                                  nome: alunosFiltrados[index].nome,
-                                  serie: alunosFiltrados[index].serie,
-                                  documentId: alunosFiltrados[index].documentId,
+                    trailing: widget.userType == 'Coordenacao'
+                        ? PopupMenuButton<String>(
+                            itemBuilder: (context) {
+                              return [
+                                PopupMenuItem<String>(
+                                  value: 'opcao1',
+                                  child: Text('Enviar mensagem'),
                                 ),
-                              ),
-                            ),
-                          );
-                        }
-                      },
-                    ),
+                                PopupMenuItem<String>(
+                                  value: 'opcao2',
+                                  child: Text('Financeiro'),
+                                ),
+                              ];
+                            },
+                            onSelected: (String value) {
+                              if (value == 'opcao1') {
+                                exibirModalPresencaFalta(
+                                    alunosFiltrados[index].nome);
+                              } else if (value == 'opcao2') {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => FinanceiroScreen(
+                                      userType: widget.userType,
+                                      aluno: AlunoHomePackage.Aluno(
+                                        nome: alunosFiltrados[index].nome,
+                                        serie: alunosFiltrados[index].serie,
+                                        documentId:
+                                            alunosFiltrados[index].documentId,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }
+                            },
+                          )
+                        : null,
                   );
                 },
               ),

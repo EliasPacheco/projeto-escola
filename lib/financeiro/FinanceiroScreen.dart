@@ -13,22 +13,29 @@ class FinanceiroScreen extends StatelessWidget {
     required this.aluno,
   }) : super(key: key);
 
+  Stream<List<Map<String, dynamic>>> buscarInformacoesFinanceirasAluno() {
+    return FirebaseFirestore.instance
+        .collection('alunos')
+        .doc(aluno.serie)
+        .collection('alunos')
+        .doc(aluno.documentId)
+        .snapshots()
+        .map<List<Map<String, dynamic>>>((documentSnapshot) {
+      if (documentSnapshot.exists && documentSnapshot.data() != null) {
+        Map<String, dynamic>? data = documentSnapshot.data();
+        if (data != null && data.containsKey('financeiro')) {
+          List<Map<String, dynamic>> dadosFinanceiros =
+              List<Map<String, dynamic>>.from(data['financeiro'] ?? []);
+
+          return dadosFinanceiros;
+        }
+      }
+      return []; // Retorna uma lista vazia se os dados não estiverem presentes ou não tiverem a estrutura correta
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    Stream<List<Map<String, dynamic>>> buscarInformacoesFinanceirasAluno() {
-      return FirebaseFirestore.instance
-          .collection('alunos')
-          .doc(aluno.serie)
-          .collection('alunos')
-          .doc(aluno.documentId)
-          .snapshots()
-          .map<List<Map<String, dynamic>>>((documentSnapshot) {
-        // Obtenha os dados financeiros do aluno do documentSnapshot
-        return List<Map<String, dynamic>>.from(
-            documentSnapshot['financeiro'] ?? []);
-      });
-    }
-
     return Scaffold(
       appBar: AppBar(
         title: Text('Financeiro'),
@@ -64,7 +71,7 @@ class FinanceiroScreen extends StatelessWidget {
                       children: [
                         SizedBox(height: 8.0),
                         Text('Vencimento: ${infoFinanceira['vencimento']}'),
-                        Text('Valor: R\$ ${infoFinanceira['valor']},00'),
+                        Text('Valor: R\$ ${infoFinanceira['valor']}'),
                         SizedBox(height: 8.0),
                         Row(
                           children: [
@@ -92,6 +99,11 @@ class FinanceiroScreen extends StatelessWidget {
                         ),
                       ],
                     ),
+                    onTap: () {
+                      if (userType == 'Coordenacao') {
+                        _mostrarDialogo(context, infoFinanceira);
+                      }
+                    },
                   ),
                 );
               },
@@ -102,7 +114,6 @@ class FinanceiroScreen extends StatelessWidget {
       floatingActionButton: userType == 'Coordenacao'
           ? FloatingActionButton(
               onPressed: () {
-                // Adicione a lógica para adicionar novos avisos aqui
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -113,6 +124,104 @@ class FinanceiroScreen extends StatelessWidget {
               child: Icon(Icons.add),
             )
           : null,
+    );
+  }
+
+  _mostrarDialogo(BuildContext context, Map<String, dynamic> infoFinanceira) {
+    if (userType != 'Coordenacao') {
+      return;
+    }
+    TextEditingController mesAnoController =
+        TextEditingController(text: infoFinanceira['mesAno']);
+    TextEditingController vencimentoController =
+        TextEditingController(text: infoFinanceira['vencimento']);
+    TextEditingController valorController =
+        TextEditingController(text: infoFinanceira['valor'].toString());
+    bool pagou = infoFinanceira['pagou'];
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            return AlertDialog(
+              title: Text('Editar Informações Financeiras'),
+              contentPadding: EdgeInsets.all(16.0),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: mesAnoController,
+                    decoration: InputDecoration(labelText: 'Mês/Ano'),
+                  ),
+                  TextField(
+                    controller: vencimentoController,
+                    decoration: InputDecoration(labelText: 'Vencimento'),
+                  ),
+                  TextField(
+                    controller: valorController,
+                    decoration: InputDecoration(labelText: 'Valor'),
+                  ),
+                  Row(
+                    children: [
+                      Text('Pagou:'),
+                      Checkbox(
+                        value: pagou,
+                        onChanged: (value) {
+                          setState(() {
+                            // Atualiza o estado da variável 'pagou' quando o usuário marca/desmarca a caixa de seleção
+                            pagou = value ?? false;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    // Lógica para salvar as alterações
+                    String novoMesAno = mesAnoController.text;
+                    String novoVencimento = vencimentoController.text;
+                    double novoValor = double.parse(valorController.text);
+
+                    // Remove a entrada antiga do array
+                    FirebaseFirestore.instance
+                        .collection('alunos')
+                        .doc(aluno.serie)
+                        .collection('alunos')
+                        .doc(aluno.documentId)
+                        .update({
+                      'financeiro': FieldValue.arrayRemove([infoFinanceira]),
+                    });
+
+                    // Adiciona a entrada atualizada ao array
+                    FirebaseFirestore.instance
+                        .collection('alunos')
+                        .doc(aluno.serie)
+                        .collection('alunos')
+                        .doc(aluno.documentId)
+                        .update({
+                      'financeiro': FieldValue.arrayUnion([
+                        {
+                          'mesAno': novoMesAno,
+                          'vencimento': novoVencimento,
+                          'valor': novoValor,
+                          'pagou': pagou,
+                        }
+                      ]),
+                    });
+
+                    Navigator.of(context).pop();
+                  },
+                  child: Text('Salvar'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 }

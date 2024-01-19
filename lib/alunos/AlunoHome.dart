@@ -238,14 +238,16 @@ class _AlunoHomeState extends State<AlunoHome> {
                             value: 'opcao1',
                             child: Text('Presença/Falta'),
                           ),
-                          PopupMenuItem<String>(
-                            value: 'opcao2',
-                            child: Text('Boletim'),
-                          ),
-                          PopupMenuItem<String>(
-                            value: 'opcao3',
-                            child: Text('Financeiro'),
-                          ),
+                          if (widget.userType == 'Coordenacao')
+                            PopupMenuItem<String>(
+                              value: 'opcao2',
+                              child: Text('Boletim'),
+                            ),
+                          if (widget.userType == 'Coordenacao') 
+                            PopupMenuItem<String>(
+                              value: 'opcao3',
+                              child: Text('Financeiro'),
+                            ),
                         ];
                       },
                       onSelected: (String value) {

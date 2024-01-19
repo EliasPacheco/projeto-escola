@@ -50,10 +50,12 @@ class _OcorrenciasScreenState extends State<OcorrenciasScreen> {
 
   @override
   Widget build(BuildContext context) {
+    String primeiroNome = nomeAluno.split(' ')[0];
+
     return Scaffold(
       appBar: AppBar(
         title: Text(nomeAluno.isNotEmpty
-            ? 'Ocorrências de $nomeAluno'
+            ? 'Ocorrências de $primeiroNome'
             : 'Ocorrências Escolares'),
       ),
       body: widget.alunoData == null
