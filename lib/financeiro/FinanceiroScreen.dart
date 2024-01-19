@@ -2,7 +2,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:escola/alunos/AlunoHome.dart';
 import 'package:escola/cards/Financeirocard.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:brasil_fields/brasil_fields.dart';
+import 'package:flutter/services.dart';
 
 class FinanceiroScreen extends StatelessWidget {
   final String userType;
@@ -51,6 +54,17 @@ class FinanceiroScreen extends StatelessWidget {
     'Transferência Bancária': Icons.account_balance,
     'Boleto': Icons.receipt,
   };
+
+  String _formatMonthYear(String text) {
+    final buffer = StringBuffer();
+    for (int i = 0; i < text.length; i++) {
+      buffer.write(text[i]);
+      if (i == 1 && text.length > 2) {
+        buffer.write('/');
+      }
+    }
+    return buffer.toString();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -198,14 +212,36 @@ class FinanceiroScreen extends StatelessWidget {
                   TextField(
                     controller: mesAnoController,
                     decoration: InputDecoration(labelText: 'Mês/Ano'),
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(6),
+                      TextInputFormatter.withFunction(
+                        (oldValue, newValue) {
+                          final newText = newValue.text;
+                          final formattedDate = _formatMonthYear(newText);
+                          return newValue.copyWith(
+                            text: formattedDate,
+                            selection: TextSelection.collapsed(
+                                offset: formattedDate.length),
+                          );
+                        },
+                      ),
+                    ],
                   ),
                   TextField(
                     controller: vencimentoController,
                     decoration: InputDecoration(labelText: 'Vencimento'),
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      DataInputFormatter(),
+                    ],
                   ),
                   TextField(
                     controller: valorController,
                     decoration: InputDecoration(labelText: 'Valor'),
+                    keyboardType: TextInputType.number,
                   ),
                   SizedBox(
                     height: 8,

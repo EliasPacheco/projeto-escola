@@ -6,6 +6,8 @@ import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'auth_provider.dart' as localAuthProvider;
+import 'package:brasil_fields/brasil_fields.dart'; // Adicionado pacote brasil_fields
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -266,7 +268,10 @@ class _LoginPageState extends State<LoginPage> {
                 icon: Icon(Icons.person),
               ),
               keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                CpfInputFormatter(),
+              ],
             ),
             SizedBox(height: 16.0),
             TextField(
