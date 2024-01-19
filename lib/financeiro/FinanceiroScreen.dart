@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:escola/alunos/AlunoHome.dart';
 import 'package:escola/cards/Financeirocard.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class FinanceiroScreen extends StatelessWidget {
   final String userType;
@@ -34,6 +35,12 @@ class FinanceiroScreen extends StatelessWidget {
     });
   }
 
+  String obterDataAtualFormatada() {
+    var agora = DateTime.now();
+    var formatter = DateFormat('dd/MM/yyyy');
+    return formatter.format(agora);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -55,10 +62,23 @@ class FinanceiroScreen extends StatelessWidget {
             List<Map<String, dynamic>> dadosFinanceiros =
                 snapshot.data as List<Map<String, dynamic>>;
 
+            // Ordena os dadosFinanceiros pela chave 'mesAno'
+            dadosFinanceiros.sort((a, b) {
+              DateTime dataA = DateFormat('MM/yyyy').parse(a['mesAno']);
+              DateTime dataB = DateFormat('MM/yyyy').parse(b['mesAno']);
+              return dataA.compareTo(dataB);
+            });
+
             return ListView.builder(
               itemCount: dadosFinanceiros.length,
               itemBuilder: (context, index) {
                 Map<String, dynamic> infoFinanceira = dadosFinanceiros[index];
+
+                // Verifica se a data de vencimento está atrasada
+                DateTime dataVencimento = DateFormat('dd/MM/yyyy')
+                    .parse(infoFinanceira['vencimento']);
+                bool vencimentoAtrasado =
+                    dataVencimento.isBefore(DateTime.now());
 
                 return Card(
                   elevation: 2.0,
@@ -72,6 +92,9 @@ class FinanceiroScreen extends StatelessWidget {
                         SizedBox(height: 8.0),
                         Text('Vencimento: ${infoFinanceira['vencimento']}'),
                         Text('Valor: R\$ ${infoFinanceira['valor']}'),
+                        if (infoFinanceira['pagou'])
+                          Text(
+                              'Data de pagamento: ${obterDataAtualFormatada()}'),
                         SizedBox(height: 8.0),
                         Row(
                           children: [
@@ -81,17 +104,23 @@ class FinanceiroScreen extends StatelessWidget {
                                   : Icons.error,
                               color: infoFinanceira['pagou']
                                   ? Colors.green
-                                  : Colors.red,
+                                  : (vencimentoAtrasado
+                                      ? Colors.red
+                                      : Colors.orange),
                             ),
                             SizedBox(width: 8.0),
                             Text(
                               infoFinanceira['pagou']
                                   ? 'Mensalidade Paga'
-                                  : 'Mensalidade Não Paga',
+                                  : (vencimentoAtrasado
+                                      ? 'Mensalidade em atraso'
+                                      : 'Aguardando pagamento'),
                               style: TextStyle(
                                 color: infoFinanceira['pagou']
                                     ? Colors.green
-                                    : Colors.red,
+                                    : (vencimentoAtrasado
+                                        ? Colors.red
+                                        : Colors.orange),
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -162,6 +191,11 @@ class FinanceiroScreen extends StatelessWidget {
                     controller: valorController,
                     decoration: InputDecoration(labelText: 'Valor'),
                   ),
+                  if (infoFinanceira['pagou'])
+                    Text(
+                      'Data de pagamento: ${obterDataAtualFormatada()}',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                   Row(
                     children: [
                       Text('Pagou:'),
@@ -183,16 +217,21 @@ class FinanceiroScreen extends StatelessWidget {
                   onPressed: () {
                     Navigator.of(context).pop();
                   },
-                    child: Text(
-                      'Voltar'
-                    )
-                  ),
+                  child: Text('Voltar'),
+                ),
                 TextButton(
                   onPressed: () {
                     // Lógica para salvar as alterações
                     String novoMesAno = mesAnoController.text;
                     String novoVencimento = vencimentoController.text;
                     double novoValor = double.parse(valorController.text);
+
+                    // Armazena a data de pagamento atual se Pagou for true
+                    DateTime dataPagamento = infoFinanceira['pagou']
+                        ? DateTime.now()
+                        : (infoFinanceira['dataPagamento'] != null
+                            ? DateTime.parse(infoFinanceira['dataPagamento'])
+                            : DateTime.now());
 
                     // Remove a entrada antiga do array
                     FirebaseFirestore.instance
@@ -217,6 +256,9 @@ class FinanceiroScreen extends StatelessWidget {
                           'vencimento': novoVencimento,
                           'valor': novoValor,
                           'pagou': pagou,
+                          'dataPagamento': pagou
+                              ? DateFormat('dd/MM/yyyy').format(dataPagamento)
+                              : null, // Salva a data de pagamento se Pagou for true
                         }
                       ]),
                     });
