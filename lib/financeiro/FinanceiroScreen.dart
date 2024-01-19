@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:escola/alunos/AlunoHome.dart';
 import 'package:escola/cards/Financeirocard.dart';
@@ -22,6 +24,19 @@ class FinanceiroScreen extends StatefulWidget {
 }
 
 class _FinanceiroScreenState extends State<FinanceiroScreen> {
+  String selectedYear = DateTime.now().year.toString();
+  List<String> availableYears = [];
+
+  late StreamController<List<String>> _yearsController;
+
+  @override
+  void initState() {
+    super.initState();
+    _yearsController = StreamController<List<String>>.broadcast();
+  }
+
+  Stream<List<String>> get yearsStream => _yearsController.stream;
+
   Stream<List<Map<String, dynamic>>> buscarInformacoesFinanceirasAluno() {
     return FirebaseFirestore.instance
         .collection('alunos')
@@ -36,11 +51,20 @@ class _FinanceiroScreenState extends State<FinanceiroScreen> {
           List<Map<String, dynamic>> dadosFinanceiros =
               List<Map<String, dynamic>>.from(data['financeiro'] ?? []);
 
+          // Atualiza os anos disponíveis no stream
+          _yearsController.add(_getAvailableYears(dadosFinanceiros));
+
           return dadosFinanceiros;
         }
       }
       return []; // Retorna uma lista vazia se os dados não estiverem presentes ou não tiverem a estrutura correta
     });
+  }
+
+  @override
+  void dispose() {
+    _yearsController.close();
+    super.dispose();
   }
 
   String obterDataAtualFormatada() {
@@ -89,6 +113,29 @@ class _FinanceiroScreenState extends State<FinanceiroScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Financeiro'),
+        actions: [
+          StreamBuilder<List<String>>(
+            stream: yearsStream,
+            initialData: [],
+            builder: (context, snapshot) {
+              List<String> years = snapshot.data!;
+              return DropdownButton<String>(
+                value: selectedYear,
+                items: years.map((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+                onChanged: (String? newValue) {
+                  setState(() {
+                    selectedYear = newValue!;
+                  });
+                },
+              );
+            },
+          ),
+        ],
       ),
       body: StreamBuilder(
         stream: buscarInformacoesFinanceirasAluno(),
@@ -105,17 +152,23 @@ class _FinanceiroScreenState extends State<FinanceiroScreen> {
             List<Map<String, dynamic>> dadosFinanceiros =
                 snapshot.data as List<Map<String, dynamic>>;
 
-            // Ordena os dadosFinanceiros pela chave 'mesAno'
-            dadosFinanceiros.sort((a, b) {
+            // Filtra os dadosFinanceiros para incluir apenas o ano selecionado
+            List<Map<String, dynamic>> dadosFiltrados = dadosFinanceiros
+                .where((infoFinanceira) =>
+                    infoFinanceira['mesAno'].endsWith(selectedYear))
+                .toList();
+
+            // Ordena os dadosFinanceiros filtrados pela chave 'mesAno'
+            dadosFiltrados.sort((a, b) {
               DateTime dataA = DateFormat('MM/yyyy').parse(a['mesAno']);
               DateTime dataB = DateFormat('MM/yyyy').parse(b['mesAno']);
               return dataA.compareTo(dataB);
             });
 
             return ListView.builder(
-              itemCount: dadosFinanceiros.length,
+              itemCount: dadosFiltrados.length,
               itemBuilder: (context, index) {
-                Map<String, dynamic> infoFinanceira = dadosFinanceiros[index];
+                Map<String, dynamic> infoFinanceira = dadosFiltrados[index];
 
                 DateTime dataVencimento = DateFormat('dd/MM/yyyy')
                     .parse(infoFinanceira['vencimento']);
@@ -208,6 +261,20 @@ class _FinanceiroScreenState extends State<FinanceiroScreen> {
             )
           : null,
     );
+  }
+
+  List<String> _getAvailableYears(List<Map<String, dynamic>> dadosFinanceiros) {
+    Set<String> yearsSet = Set<String>();
+
+    for (Map<String, dynamic> infoFinanceira in dadosFinanceiros) {
+      String year = infoFinanceira['mesAno'].substring(3); // Extract the year
+      yearsSet.add(year);
+    }
+
+    List<String> sortedYears = yearsSet.toList();
+    sortedYears.sort((a, b) => a.compareTo(b)); // Sort in descending order
+
+    return sortedYears;
   }
 
   _mostrarDialogo(BuildContext context, Map<String, dynamic> infoFinanceira) {
