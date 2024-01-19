@@ -41,6 +41,17 @@ class FinanceiroScreen extends StatelessWidget {
     return formatter.format(agora);
   }
 
+  String selectedPaymentOption = 'Dinheiro';
+
+  Map<String, IconData> formaPagamentoIcons = {
+    'Dinheiro': Icons.attach_money,
+    'Pix': Icons.qr_code,
+    'Cartão de Crédito': Icons.credit_card,
+    'Cartão de Débito': Icons.credit_card,
+    'Transferência Bancária': Icons.account_balance,
+    'Boleto': Icons.receipt,
+  };
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -95,6 +106,9 @@ class FinanceiroScreen extends StatelessWidget {
                         if (infoFinanceira['pagou'])
                           Text(
                               'Data de pagamento: ${obterDataAtualFormatada()}'),
+                        if (infoFinanceira['pagou'])
+                          Text(
+                              'Forma de pagamento: ${infoFinanceira['formaPagamento']}'),
                         SizedBox(height: 8.0),
                         Row(
                           children: [
@@ -167,6 +181,8 @@ class FinanceiroScreen extends StatelessWidget {
     TextEditingController valorController =
         TextEditingController(text: infoFinanceira['valor'].toString());
     bool pagou = infoFinanceira['pagou'];
+    String selectedPaymentOption =
+        infoFinanceira['formaPagamento'] ?? 'Dinheiro';
 
     showDialog(
       context: context,
@@ -174,7 +190,7 @@ class FinanceiroScreen extends StatelessWidget {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setState) {
             return AlertDialog(
-              title: Text('Editar Informações Financeiras'),
+              title: Text('Editar Informações'),
               contentPadding: EdgeInsets.all(16.0),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -191,11 +207,48 @@ class FinanceiroScreen extends StatelessWidget {
                     controller: valorController,
                     decoration: InputDecoration(labelText: 'Valor'),
                   ),
-                  if (infoFinanceira['pagou'])
-                    Text(
-                      'Data de pagamento: ${obterDataAtualFormatada()}',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                  SizedBox(
+                    height: 8,
+                  ),
+                  Container(
+                    alignment: Alignment.topLeft,
+                    child: Text('Forma de Pagamento:'),
+                  ),
+                  DropdownButton<String>(
+                    value: selectedPaymentOption,
+                    items: formaPagamentoIcons.keys.map((forma) {
+                      return DropdownMenuItem<String>(
+                        value: forma,
+                        child: Row(
+                          children: [
+                            Icon(
+                              formaPagamentoIcons[forma],
+                              color: Colors.blue,
+                            ),
+                            SizedBox(width: 8.0),
+                            Text(forma),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        selectedPaymentOption = value!;
+                      });
+                    },
+                    hint: Text('Forma de Pagamento'),
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 16.0,
                     ),
+                    icon: Icon(Icons.arrow_downward, color: Colors.blue),
+                    elevation: 2,
+                    isExpanded: true,
+                    underline: Container(
+                      height: 2,
+                      color: Colors.blue,
+                    ),
+                  ),
                   Row(
                     children: [
                       Text('Pagou:'),
@@ -203,7 +256,6 @@ class FinanceiroScreen extends StatelessWidget {
                         value: pagou,
                         onChanged: (value) {
                           setState(() {
-                            // Atualiza o estado da variável 'pagou' quando o usuário marca/desmarca a caixa de seleção
                             pagou = value ?? false;
                           });
                         },
@@ -225,6 +277,8 @@ class FinanceiroScreen extends StatelessWidget {
                     String novoMesAno = mesAnoController.text;
                     String novoVencimento = vencimentoController.text;
                     double novoValor = double.parse(valorController.text);
+
+                    String novaFormaPagamento = selectedPaymentOption;
 
                     // Armazena a data de pagamento atual se Pagou for true
                     DateTime dataPagamento = infoFinanceira['pagou']
@@ -258,7 +312,8 @@ class FinanceiroScreen extends StatelessWidget {
                           'pagou': pagou,
                           'dataPagamento': pagou
                               ? DateFormat('dd/MM/yyyy').format(dataPagamento)
-                              : null, // Salva a data de pagamento se Pagou for true
+                              : null,
+                          'formaPagamento': novaFormaPagamento,
                         }
                       ]),
                     });
