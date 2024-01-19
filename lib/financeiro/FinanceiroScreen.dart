@@ -66,6 +66,19 @@ class FinanceiroScreen extends StatelessWidget {
     return buffer.toString();
   }
 
+  bool _isVencimentoHoje(DateTime dataVencimento) {
+    DateTime hoje = DateTime.now();
+    hoje = DateTime(
+        hoje.year, hoje.month, hoje.day); // Zerando horas, minutos e segundos
+
+    print('Data de Vencimento: $dataVencimento');
+    print('Data de Hoje: $hoje');
+
+    return dataVencimento.year == hoje.year &&
+        dataVencimento.month == hoje.month &&
+        dataVencimento.day == hoje.day;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -99,9 +112,11 @@ class FinanceiroScreen extends StatelessWidget {
               itemBuilder: (context, index) {
                 Map<String, dynamic> infoFinanceira = dadosFinanceiros[index];
 
-                // Verifica se a data de vencimento está atrasada
                 DateTime dataVencimento = DateFormat('dd/MM/yyyy')
                     .parse(infoFinanceira['vencimento']);
+
+                bool mesmoDiaDoVencimento = _isVencimentoHoje(dataVencimento);
+
                 bool vencimentoAtrasado =
                     dataVencimento.isBefore(DateTime.now());
 
@@ -132,23 +147,29 @@ class FinanceiroScreen extends StatelessWidget {
                                   : Icons.error,
                               color: infoFinanceira['pagou']
                                   ? Colors.green
-                                  : (vencimentoAtrasado
-                                      ? Colors.red
-                                      : Colors.orange),
+                                  : (mesmoDiaDoVencimento
+                                      ? Colors.orange
+                                      : (vencimentoAtrasado
+                                          ? Colors.red
+                                          : Colors.orange)),
                             ),
                             SizedBox(width: 8.0),
                             Text(
                               infoFinanceira['pagou']
                                   ? 'Mensalidade Paga'
-                                  : (vencimentoAtrasado
-                                      ? 'Mensalidade em atraso'
-                                      : 'Aguardando pagamento'),
+                                  : (_isVencimentoHoje(dataVencimento)
+                                      ? 'Aguardando pagamento (Vence Hoje)'
+                                      : (vencimentoAtrasado
+                                          ? 'Mensalidade em atraso'
+                                          : 'Aguardando pagamento')),
                               style: TextStyle(
                                 color: infoFinanceira['pagou']
                                     ? Colors.green
-                                    : (vencimentoAtrasado
-                                        ? Colors.red
-                                        : Colors.orange),
+                                    : (_isVencimentoHoje(dataVencimento)
+                                        ? Colors.orange
+                                        : (vencimentoAtrasado
+                                            ? Colors.red
+                                            : Colors.orange)),
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
