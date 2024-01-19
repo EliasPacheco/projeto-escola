@@ -9,11 +9,13 @@ class Aluno {
   final String documentId;
   final String nome;
   final String serie;
+  final bool pagou;
 
   Aluno({
     required this.documentId,
     required this.nome,
     required this.serie,
+    required this.pagou,
   });
 }
 
@@ -50,29 +52,60 @@ class _FinanceiroHomeState extends State<FinanceiroHome> {
   @override
   void initState() {
     super.initState();
-    // Chama a função para buscar os alunos ao inicializar o widget
+    mesAno = _getDataAtual();
     buscarAlunos();
   }
 
-  // Função para buscar os dados da coleção "alunos" no Firestore
+  late String mesAno;
+
   Future<void> buscarAlunos() async {
-    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-        .collection('alunos') // Use a coleção principal 'alunos'
+    mesAno = _getDataAtual();
+
+    FirebaseFirestore.instance
+        .collection('alunos')
         .doc(selectedAno)
         .collection('alunos')
-        .get();
+        .snapshots()
+        .listen((QuerySnapshot querySnapshot) {
+      setState(() {
+        alunos = querySnapshot.docs.map((DocumentSnapshot document) {
+          Map<String, dynamic> data = document.data() as Map<String, dynamic>;
 
-    setState(() {
-      alunos = querySnapshot.docs.map((DocumentSnapshot document) {
-        return Aluno(
-          documentId: document.id,
-          nome: (document['nome'] ?? '').toString(),
-          serie: (document['serie'] ?? '').toString(),
-        );
-      }).toList();
+          if (data.containsKey('financeiro')) {
+            List<Map<String, dynamic>> financeiroData =
+                List<Map<String, dynamic>>.from(data['financeiro']);
 
-      alunosFiltrados = List.from(alunos);
+            bool pagouAluno = financeiroData.any((element) {
+              String mesAnoAluno = element['mesAno'] ?? '';
+              return mesAnoAluno == mesAno && (element['pagou'] ?? false);
+            });
+
+            return Aluno(
+              documentId: document.id,
+              nome: (data['nome'] ?? '').toString(),
+              serie: (data['serie'] ?? '').toString(),
+              pagou: pagouAluno,
+            );
+          } else {
+            return Aluno(
+              documentId: document.id,
+              nome: (data['nome'] ?? '').toString(),
+              serie: (data['serie'] ?? '').toString(),
+              pagou: false,
+            );
+          }
+        }).toList();
+
+        alunosFiltrados = List.from(alunos);
+      });
     });
+  }
+
+  String _getDataAtual() {
+    DateTime dataAtual = DateTime.now();
+    String formattedDate =
+        "${dataAtual.month.toString().padLeft(2, '0')}/${dataAtual.year.toString()}";
+    return formattedDate;
   }
 
   void filtrarAlunos(String query) {
@@ -93,15 +126,12 @@ class _FinanceiroHomeState extends State<FinanceiroHome> {
   }
 
   void filtrarPorAno(String selectedAno) async {
-    // Atualiza o estado com o novo ano selecionado
     setState(() {
       this.selectedAno = selectedAno;
     });
 
-    // Chama a função para buscar os alunos novamente com o novo ano
     await buscarAlunos();
 
-    // Filtra os alunos com base no novo ano
     setState(() {
       alunosFiltrados =
           alunos.where((aluno) => aluno.serie == selectedAno).toList();
@@ -126,7 +156,6 @@ class _FinanceiroHomeState extends State<FinanceiroHome> {
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                // Adicione lógica para tratar a presença do aluno aqui
               },
               child: Text('Enviar'),
             ),
@@ -136,19 +165,8 @@ class _FinanceiroHomeState extends State<FinanceiroHome> {
     );
   }
 
-  String _getDataAtual() {
-    DateTime dataAtual = DateTime.now();
-    String formattedDate =
-        "${dataAtual.day.toString().padLeft(2, '0')}/${dataAtual.month.toString().padLeft(2, '0')}";
-    return formattedDate;
-  }
-
   @override
   Widget build(BuildContext context) {
-    print(
-        'Professor Data: ${widget.professorData ?? "Nenhum dado de professor"}');
-    print('Tipo de usuário: ${widget.userType ?? "Nenhum tipo de usuário"}');
-
     return Scaffold(
       appBar: AppBar(
         title: Text('Financeiro'),
@@ -164,15 +182,13 @@ class _FinanceiroHomeState extends State<FinanceiroHome> {
                     selectedAno = newValue!;
                   });
 
-                  // Chama a função para filtrar os alunos com base no novo ano selecionado
                   filtrarPorAno(selectedAno);
                 },
                 items: (widget.userType == 'Professor')
                     ? widget.professorData!['series']
                         .map<DropdownMenuItem<String>>((serie) {
                         return DropdownMenuItem<String>(
-                          value: serie
-                              as String, // Converter explicitamente para String
+                          value: serie as String,
                           child: Text(serie),
                         );
                       }).toList()
@@ -233,15 +249,19 @@ class _FinanceiroHomeState extends State<FinanceiroHome> {
                     title: Row(
                       children: [
                         CircleAvatar(
-                          backgroundColor: Colors.green,
+                          backgroundColor: (alunosFiltrados[index].pagou)
+                              ? Colors.green
+                              : Colors.red,
                           child: Icon(
-                            Icons.attach_money,
+                            (alunosFiltrados[index].pagou)
+                                ? Icons.check_circle
+                                : Icons.error,
                             color: Colors.white,
                           ),
                         ),
                         SizedBox(
-                            width:
-                                10.0), // Espaçamento entre o avatar e o texto
+                          width: 10.0,
+                        ),
                         Text('${alunosFiltrados[index].nome}'),
                       ],
                     ),
