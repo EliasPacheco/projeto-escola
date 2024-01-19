@@ -7,7 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:brasil_fields/brasil_fields.dart';
 import 'package:flutter/services.dart';
 
-class FinanceiroScreen extends StatelessWidget {
+class FinanceiroScreen extends StatefulWidget {
   final String userType;
   final Aluno aluno;
 
@@ -17,12 +17,17 @@ class FinanceiroScreen extends StatelessWidget {
     required this.aluno,
   }) : super(key: key);
 
+  @override
+  State<FinanceiroScreen> createState() => _FinanceiroScreenState();
+}
+
+class _FinanceiroScreenState extends State<FinanceiroScreen> {
   Stream<List<Map<String, dynamic>>> buscarInformacoesFinanceirasAluno() {
     return FirebaseFirestore.instance
         .collection('alunos')
-        .doc(aluno.serie)
+        .doc(widget.aluno.serie)
         .collection('alunos')
-        .doc(aluno.documentId)
+        .doc(widget.aluno.documentId)
         .snapshots()
         .map<List<Map<String, dynamic>>>((documentSnapshot) {
       if (documentSnapshot.exists && documentSnapshot.data() != null) {
@@ -178,7 +183,7 @@ class FinanceiroScreen extends StatelessWidget {
                       ],
                     ),
                     onTap: () {
-                      if (userType == 'Coordenacao') {
+                      if (widget.userType == 'Coordenacao') {
                         _mostrarDialogo(context, infoFinanceira);
                       }
                     },
@@ -189,7 +194,7 @@ class FinanceiroScreen extends StatelessWidget {
           }
         },
       ),
-      floatingActionButton: userType == 'Coordenacao'
+      floatingActionButton: widget.userType == 'Coordenacao'
           ? FloatingActionButton(
               onPressed: () {
                 Navigator.push(
@@ -206,7 +211,7 @@ class FinanceiroScreen extends StatelessWidget {
   }
 
   _mostrarDialogo(BuildContext context, Map<String, dynamic> infoFinanceira) {
-    if (userType != 'Coordenacao') {
+    if (widget.userType != 'Coordenacao') {
       return;
     }
     TextEditingController mesAnoController =
@@ -347,9 +352,9 @@ class FinanceiroScreen extends StatelessWidget {
                     // Remove a entrada antiga do array
                     FirebaseFirestore.instance
                         .collection('alunos')
-                        .doc(aluno.serie)
+                        .doc(widget.aluno.serie)
                         .collection('alunos')
-                        .doc(aluno.documentId)
+                        .doc(widget.aluno.documentId)
                         .update({
                       'financeiro': FieldValue.arrayRemove([infoFinanceira]),
                     });
@@ -357,9 +362,9 @@ class FinanceiroScreen extends StatelessWidget {
                     // Adiciona a entrada atualizada ao array
                     FirebaseFirestore.instance
                         .collection('alunos')
-                        .doc(aluno.serie)
+                        .doc(widget.aluno.serie)
                         .collection('alunos')
-                        .doc(aluno.documentId)
+                        .doc(widget.aluno.documentId)
                         .update({
                       'financeiro': FieldValue.arrayUnion([
                         {
