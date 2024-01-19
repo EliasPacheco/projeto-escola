@@ -47,31 +47,30 @@ class _AlunoHomeState extends State<AlunoHome> {
   String selectedAno = 'Maternal';
   List<Aluno> alunosFiltrados = [];
 
+  late Stream<List<Aluno>> alunosStream;
+
   @override
   void initState() {
     super.initState();
-    // Chama a função para buscar os alunos ao inicializar o widget
-    buscarAlunos();
+    // Inicializa o stream ao selecionar o ano
+    alunosStream = buscarAlunosStream(selectedAno);
   }
 
-  // Função para buscar os dados da coleção "alunos" no Firestore
-  Future<void> buscarAlunos() async {
-    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-        .collection('alunos') // Use a coleção principal 'alunos'
+  // Função para buscar os dados da coleção "alunos" no Firestore em forma de Stream
+  Stream<List<Aluno>> buscarAlunosStream(String selectedAno) {
+    return FirebaseFirestore.instance
+        .collection('alunos')
         .doc(selectedAno)
         .collection('alunos')
-        .get();
-
-    setState(() {
-      alunos = querySnapshot.docs.map((DocumentSnapshot document) {
+        .snapshots()
+        .map((QuerySnapshot querySnapshot) {
+      return querySnapshot.docs.map((DocumentSnapshot document) {
         return Aluno(
           documentId: document.id,
           nome: (document['nome'] ?? '').toString(),
           serie: (document['serie'] ?? '').toString(),
         );
       }).toList();
-
-      alunosFiltrados = List.from(alunos);
     });
   }
 
@@ -92,19 +91,11 @@ class _AlunoHomeState extends State<AlunoHome> {
     });
   }
 
-  void filtrarPorAno(String selectedAno) async {
-    // Atualiza o estado com o novo ano selecionado
+  void filtrarPorAno(String selectedAno) {
     setState(() {
       this.selectedAno = selectedAno;
-    });
-
-    // Chama a função para buscar os alunos novamente com o novo ano
-    await buscarAlunos();
-
-    // Filtra os alunos com base no novo ano
-    setState(() {
-      alunosFiltrados =
-          alunos.where((aluno) => aluno.serie == selectedAno).toList();
+      // Atualiza o stream com o novo ano selecionado
+      alunosStream = buscarAlunosStream(selectedAno);
     });
   }
 
@@ -171,8 +162,7 @@ class _AlunoHomeState extends State<AlunoHome> {
                     ? widget.professorData!['series']
                         .map<DropdownMenuItem<String>>((serie) {
                         return DropdownMenuItem<String>(
-                          value: serie
-                              as String, // Converter explicitamente para String
+                          value: serie as String,
                           child: Text(serie),
                         );
                       }).toList()
@@ -226,48 +216,69 @@ class _AlunoHomeState extends State<AlunoHome> {
               ),
               elevation: 4.0,
               margin: EdgeInsets.zero,
-              child: ListView.builder(
-                itemCount: alunosFiltrados.length,
-                itemBuilder: (context, index) {
-                  return ListTile(
-                    title: Text('${alunosFiltrados[index].nome}'),
-                    trailing: PopupMenuButton<String>(
-                      itemBuilder: (context) {
-                        return [
-                          PopupMenuItem<String>(
-                            value: 'opcao1',
-                            child: Text('Presença/Falta'),
-                          ),
-                          if (widget.userType == 'Coordenacao')
-                            PopupMenuItem<String>(
-                              value: 'opcao2',
-                              child: Text('Boletim'),
-                            ),
-                          if (widget.userType == 'Coordenacao') 
-                            PopupMenuItem<String>(
-                              value: 'opcao3',
-                              child: Text('Financeiro'),
-                            ),
-                        ];
-                      },
-                      onSelected: (String value) {
-                        if (value == 'opcao1') {
-                          exibirModalPresencaFalta(alunosFiltrados[index].nome);
-                        } else if (value == 'opcao2') {
-                          // Adicione lógica para a opção Boletim
-                        } else if (value == 'opcao3') {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => FinanceiroScreen(
-                                userType: widget.userType,
-                                aluno: alunosFiltrados[index],
+              child: StreamBuilder<List<Aluno>>(
+                stream: alunosStream,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Center(child: CircularProgressIndicator());
+                  }
+
+                  alunos = snapshot.data ?? [];
+                  alunosFiltrados = alunos
+                      .where((aluno) => aluno.serie == selectedAno)
+                      .toList();
+
+                  if (alunosFiltrados.isEmpty) {
+                    return Center(
+                      child: Text('Sem alunos nessa turma'),
+                    );
+                  }
+
+                  return ListView.builder(
+                    itemCount: alunosFiltrados.length,
+                    itemBuilder: (context, index) {
+                      return ListTile(
+                        title: Text('${alunosFiltrados[index].nome}'),
+                        trailing: PopupMenuButton<String>(
+                          itemBuilder: (context) {
+                            return [
+                              PopupMenuItem<String>(
+                                value: 'opcao1',
+                                child: Text('Presença/Falta'),
                               ),
-                            ),
-                          );
-                        }
-                      },
-                    ),
+                              if (widget.userType == 'Coordenacao')
+                                PopupMenuItem<String>(
+                                  value: 'opcao2',
+                                  child: Text('Boletim'),
+                                ),
+                              if (widget.userType == 'Coordenacao')
+                                PopupMenuItem<String>(
+                                  value: 'opcao3',
+                                  child: Text('Financeiro'),
+                                ),
+                            ];
+                          },
+                          onSelected: (String value) {
+                            if (value == 'opcao1') {
+                              exibirModalPresencaFalta(
+                                  alunosFiltrados[index].nome);
+                            } else if (value == 'opcao2') {
+                              // Adicione lógica para a opção Boletim
+                            } else if (value == 'opcao3') {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => FinanceiroScreen(
+                                    userType: widget.userType,
+                                    aluno: alunosFiltrados[index],
+                                  ),
+                                ),
+                              );
+                            }
+                          },
+                        ),
+                      );
+                    },
                   );
                 },
               ),
