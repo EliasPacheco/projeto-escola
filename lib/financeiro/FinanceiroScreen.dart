@@ -181,6 +181,14 @@ class FinanceiroScreen extends StatelessWidget {
               actions: [
                 TextButton(
                   onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                    child: Text(
+                      'Voltar'
+                    )
+                  ),
+                TextButton(
+                  onPressed: () {
                     // Lógica para salvar as alterações
                     String novoMesAno = mesAnoController.text;
                     String novoVencimento = vencimentoController.text;
