@@ -75,7 +75,12 @@ class _MySchoolAppState extends State<MySchoolApp> {
             ),
         'suporte/SuporteScreen': (context) => SuporteScreen(),
         'alunos/ChatScreen': (context) => ChatScreen(),
-        'alunos/HorariosScreen': (context) => HorariosScreen(),
+        'alunos/HorariosScreen': (context) => HorariosScreen(
+              matriculaCpf: widget.matriculaCpf,
+              alunoData: widget.alunoData,
+              userType: widget.userType,
+              professorData: widget.professorData,
+            ),
         'Login': (context) => LoginPage(),
         'alunos/StudentScreen': (context) => StudentScreen(
               matriculaCpf: widget.matriculaCpf,
