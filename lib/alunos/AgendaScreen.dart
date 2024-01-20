@@ -1,3 +1,4 @@
+import 'package:escola/alunos/AlunoHome.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:escola/cards/Agendacards.dart';
@@ -8,12 +9,14 @@ class AgendaScreen extends StatefulWidget {
   final String matriculaCpf;
   final Map<String, dynamic>? alunoData;
   final String userType;
+  final Map<String, dynamic>? professorData;
 
   AgendaScreen({
     Key? key,
     required this.matriculaCpf,
     this.alunoData,
     required this.userType,
+    this.professorData,
   }) : super(key: key);
 
   @override
@@ -22,6 +25,21 @@ class AgendaScreen extends StatefulWidget {
 
 class _AgendaScreenState extends State<AgendaScreen> {
   String? serieAluno;
+  String selectedAno = 'Maternal';
+
+  late Stream<List<Aluno>> alunosStream;
+
+  List<String> anos = [
+    'Maternal',
+    'Infantil I',
+    'Infantil II',
+    '1º Ano',
+    '2º Ano',
+    '3º Ano',
+    '4º Ano',
+    '5º Ano',
+    '6º Ano'
+  ];
 
   Map<String, Color> cardColors = {};
 
@@ -36,6 +54,31 @@ class _AgendaScreenState extends State<AgendaScreen> {
     }
   }
 
+  Stream<List<Aluno>> buscarAlunosStream(String selectedAno) {
+    return FirebaseFirestore.instance
+        .collection('alunos')
+        .doc(selectedAno)
+        .collection('alunos')
+        .snapshots()
+        .map((QuerySnapshot querySnapshot) {
+      return querySnapshot.docs.map((DocumentSnapshot document) {
+        return Aluno(
+          documentId: document.id,
+          nome: (document['nome'] ?? '').toString(),
+          serie: (document['serie'] ?? '').toString(),
+        );
+      }).toList();
+    });
+  }
+
+  void filtrarPorAno(String selectedAno) {
+    setState(() {
+      this.selectedAno = selectedAno;
+      // Atualiza o stream com o novo ano selecionado
+      alunosStream = buscarAlunosStream(selectedAno);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     print('Aluno Data: ${widget.alunoData ?? "Nenhum dado de professor"}');
@@ -43,17 +86,63 @@ class _AgendaScreenState extends State<AgendaScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Agenda Escolar'),
+        actions: [
+          if (widget.userType == 'Coordenacao' ||
+              widget.userType == 'Professor')
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: DropdownButton<String>(
+                value: selectedAno,
+                onChanged: (String? newValue) {
+                  setState(() {
+                    selectedAno = newValue!;
+                  });
+
+                  // Chama a função para filtrar os alunos com base no novo ano selecionado
+                  filtrarPorAno(selectedAno);
+                },
+                items: (widget.userType == 'Professor')
+                    ? widget.professorData!['series']
+                        .map<DropdownMenuItem<String>>((serie) {
+                        return DropdownMenuItem<String>(
+                          value: serie as String,
+                          child: Text(serie),
+                        );
+                      }).toList()
+                    : (widget.userType == 'Coordenacao')
+                        ? anos.map<DropdownMenuItem<String>>((String value) {
+                            return DropdownMenuItem<String>(
+                              value: value,
+                              child: Text(value),
+                            );
+                          }).toList()
+                        : [],
+              ),
+            ),
+        ],
       ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('agenda')
-            .doc(widget.alunoData?['turma'])
-            .collection('agenda')
-            .snapshots(),
+      body: FutureBuilder<QuerySnapshot>(
+        future: (widget.userType == 'Aluno')
+            ? FirebaseFirestore.instance
+                .collection('agenda')
+                .doc(widget.alunoData?['turma'])
+                .collection('agenda')
+                .get()
+            : FirebaseFirestore.instance
+                .collection('agenda')
+                .doc(selectedAno)
+                .collection('agenda')
+                .get(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(
               child: CircularProgressIndicator(),
+            );
+          }
+
+          if (snapshot.hasError) {
+            return Center(
+              child: Text('Erro ao carregar os dados'),
             );
           }
 
@@ -73,78 +162,52 @@ class _AgendaScreenState extends State<AgendaScreen> {
             itemCount: documentos.length,
             itemBuilder: (context, index) {
               if (index >= documentos.length) {
-                return Container(); // Adicionando um tratamento para índice inválido
+                return Container();
               }
 
               var aviso = documentos[index];
 
-              // Verificar se o campo 'turma' existe no caminho do documento
-              var turmaAgenda = aviso.reference.parent?.parent?.id;
-              if (turmaAgenda == null) {
-                print('Agenda sem turma ou caminho inválido: $aviso');
-                return Container(); // Ou qualquer outro tratamento que desejar
-              }
-
-              // Verificar se o aluno pertence à mesma turma do Agenda
-              if (widget.alunoData?['turma'] == turmaAgenda) {
-                print('Agenda exibido para o aluno: ${aviso.data()}');
-                print('Conteúdo do documento:');
-                Map<String, dynamic>? dataMap =
-                    aviso.data() as Map<String, dynamic>?;
-                if (dataMap != null) {
-                  dataMap.forEach((key, value) {
-                    print('$key: $value');
-                  });
-                } else {
-                  print('Nenhum dado disponível.');
-                }
-
-                return GestureDetector(
-                  onTap: () {
-                    _showDialog(aviso);
-                  },
-                  child: Card(
-                    key: Key(aviso.id),
-                    elevation: 2.0,
-                    margin:
-                        EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                    color: cardColors[aviso
-                        .id], // Adicione esta linha para definir a cor do cartão
-                    child: ListTile(
-                      contentPadding: EdgeInsets.all(8.0),
-                      title: Text(
-                        aviso['titulo'] ?? 'Sem Título',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 17),
-                      ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            aviso['descricao'] ?? 'Sem Descrição',
-                          ),
-                          SizedBox(height: 8.0),
-                          Row(
-                            children: [
-                              Icon(Icons.calendar_today, size: 16.0),
-                              SizedBox(width: 4.0),
-                              Text(
-                                aviso['data'] ?? 'Sem Data',
-                                style: TextStyle(
-                                  color: Color.fromARGB(255, 116, 115, 115),
-                                ),
+              // Restante do código para exibir os comunicados
+              return GestureDetector(
+                onTap: () {
+                  _showDialog(aviso);
+                },
+                child: Card(
+                  key: Key(aviso.id),
+                  elevation: 2.0,
+                  margin: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                  color: cardColors[aviso.id],
+                  child: ListTile(
+                    contentPadding: EdgeInsets.all(8.0),
+                    title: Text(
+                      aviso['titulo'] ?? 'Sem Título',
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+                    ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          aviso['descricao'] ?? 'Sem Descrição',
+                        ),
+                        SizedBox(height: 8.0),
+                        Row(
+                          children: [
+                            Icon(Icons.calendar_today, size: 16.0),
+                            SizedBox(width: 4.0),
+                            Text(
+                              aviso['data'] ?? 'Sem Data',
+                              style: TextStyle(
+                                color: Color.fromARGB(255, 116, 115, 115),
                               ),
-                            ],
-                          ),
-                        ],
-                      ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-                );
-              } else {
-                print('Agenda não exibido para o aluno: $aviso');
-                return Container();
-              }
+                ),
+              );
             },
           );
         },

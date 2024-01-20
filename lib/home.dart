@@ -17,7 +17,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:escola/alunos/AlunoHome.dart' as AlunoHomePackage;
 
-class MySchoolApp extends StatelessWidget {
+class MySchoolApp extends StatefulWidget {
   final String matriculaCpf;
   final Map<String, dynamic>? alunoData;
   final Map<String, dynamic>? professorData;
@@ -32,53 +32,61 @@ class MySchoolApp extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  State<MySchoolApp> createState() => _MySchoolAppState();
+}
+
+class _MySchoolAppState extends State<MySchoolApp> {
+  @override
   Widget build(BuildContext context) {
     return MaterialApp(
       home: MyHomePage(
-        matriculaCpf: matriculaCpf,
-        alunoData: alunoData,
-        userType: userType,
+        matriculaCpf: widget.matriculaCpf,
+        alunoData: widget.alunoData,
+        userType: widget.userType,
       ),
       debugShowCheckedModeBanner: false,
       routes: {
         'alunos/AlunoHome': (context) => AlunoHome(
-              userType: userType,
-              professorData: professorData,
-              alunoData: alunoData,
+              userType: widget.userType,
+              professorData: widget.professorData,
+              alunoData: widget.alunoData,
             ),
         'financeiro/FinanceiroHome': (context) => FinanceiroHome(
-              userType: userType,
-              professorData: professorData,
+              userType: widget.userType,
+              professorData: widget.professorData,
             ),
         'alunos/AvisosScreen': (context) => AvisosHome(
-              matriculaCpf: matriculaCpf,
-              alunoData: alunoData,
-              userType: userType,
+              matriculaCpf: widget.matriculaCpf,
+              alunoData: widget.alunoData,
+              userType: widget.userType,
+              professorData: widget.professorData,
             ),
         'alunos/MatriculaScreen': (context) => MatriculaScreen(),
         'alunos/OcorrenciasScreen': (context) => OcorrenciasScreen(
-              matriculaCpf: matriculaCpf,
-              alunoData: alunoData,
-              userType: userType,
+              matriculaCpf: widget.matriculaCpf,
+              alunoData: widget.alunoData,
+              userType: widget.userType,
             ),
         'alunos/ConteudosScreen': (context) => ConteudosScreen(
-              matriculaCpf: matriculaCpf,
-              alunoData: alunoData,
-              userType: userType,
+              matriculaCpf: widget.matriculaCpf,
+              alunoData: widget.alunoData,
+              userType: widget.userType,
+              professorData: widget.professorData,
             ),
         'suporte/SuporteScreen': (context) => SuporteScreen(),
         'alunos/ChatScreen': (context) => ChatScreen(),
         'alunos/HorariosScreen': (context) => HorariosScreen(),
         'Login': (context) => LoginPage(),
         'alunos/StudentScreen': (context) => StudentScreen(
-              matriculaCpf: matriculaCpf,
-              alunoData: alunoData,
-              userType: userType,
+              matriculaCpf: widget.matriculaCpf,
+              alunoData: widget.alunoData,
+              userType: widget.userType,
             ),
         'alunos/AgendaScreen': (context) => AgendaScreen(
-              matriculaCpf: matriculaCpf,
-              alunoData: alunoData,
-              userType: userType,
+              matriculaCpf: widget.matriculaCpf,
+              alunoData: widget.alunoData,
+              userType: widget.userType,
+              professorData: widget.professorData,
             ),
       },
     );
@@ -187,38 +195,38 @@ class MyHomePage extends StatelessWidget {
             },
           ),
           if (userType != 'Professor')
-          MyCard(
-            title: 'Financeiro',
-            icon: FontAwesomeIcons.handHoldingDollar,
-            cardColor: Colors.white,
-            borderColor: Color.fromARGB(255, 59, 16, 212),
-            onTap: () {
-              if (userType == 'Aluno') {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => FinanceiroScreen(
-                      userType: userType,
-                      aluno: AlunoHomePackage.Aluno(
-                        nome: alunoData?['nome'],
-                        serie: alunoData?['serie'],
-                        documentId: alunoData?['uid'],
+            MyCard(
+              title: 'Financeiro',
+              icon: FontAwesomeIcons.handHoldingDollar,
+              cardColor: Colors.white,
+              borderColor: Color.fromARGB(255, 59, 16, 212),
+              onTap: () {
+                if (userType == 'Aluno') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => FinanceiroScreen(
+                        userType: userType,
+                        aluno: AlunoHomePackage.Aluno(
+                          nome: alunoData?['nome'],
+                          serie: alunoData?['serie'],
+                          documentId: alunoData?['uid'],
+                        ),
                       ),
                     ),
-                  ),
-                );
-              } else {
-                Navigator.pushNamed(
-                  context,
-                  'financeiro/FinanceiroHome',
-                  arguments: {
-                    'userType': userType,
-                    'professorData': professorData,
-                  },
-                );
-              }
-            },
-          ),
+                  );
+                } else {
+                  Navigator.pushNamed(
+                    context,
+                    'financeiro/FinanceiroHome',
+                    arguments: {
+                      'userType': userType,
+                      'professorData': professorData,
+                    },
+                  );
+                }
+              },
+            ),
           MyCard(
             title: 'Agenda',
             icon: FontAwesomeIcons.calendarCheck,
@@ -229,25 +237,25 @@ class MyHomePage extends StatelessWidget {
             },
           ),
           if (userType != 'Professor')
-          MyCard(
-            title: 'Ocorrências',
-            icon: FontAwesomeIcons.circleExclamation,
-            cardColor: Colors.white,
-            borderColor: Color.fromARGB(255, 59, 16, 212),
-            onTap: () {
-              print('Detalhes do alunoData enviado: $alunoData');
-              Navigator.pushNamed(
-                context,
-                'alunos/OcorrenciasScreen',
-                arguments: {
-                  'matriculaCpf': matriculaCpf,
-                  'alunoData': alunoData,
-                  'userType': userType,
-                  'professorData': professorData,
-                },
-              );
-            },
-          ),
+            MyCard(
+              title: 'Ocorrências',
+              icon: FontAwesomeIcons.circleExclamation,
+              cardColor: Colors.white,
+              borderColor: Color.fromARGB(255, 59, 16, 212),
+              onTap: () {
+                print('Detalhes do alunoData enviado: $alunoData');
+                Navigator.pushNamed(
+                  context,
+                  'alunos/OcorrenciasScreen',
+                  arguments: {
+                    'matriculaCpf': matriculaCpf,
+                    'alunoData': alunoData,
+                    'userType': userType,
+                    'professorData': professorData,
+                  },
+                );
+              },
+            ),
           MyCard(
             title: 'Conteúdos',
             icon: FontAwesomeIcons.book,
@@ -258,15 +266,15 @@ class MyHomePage extends StatelessWidget {
             },
           ),
           if (userType != 'Professor')
-          MyCard(
-            title: 'Chat',
-            icon: FontAwesomeIcons.solidCommentDots,
-            cardColor: Colors.white,
-            borderColor: Color.fromARGB(255, 59, 16, 212),
-            onTap: () {
-              Navigator.pushNamed(context, 'alunos/ChatScreen');
-            },
-          ),
+            MyCard(
+              title: 'Chat',
+              icon: FontAwesomeIcons.solidCommentDots,
+              cardColor: Colors.white,
+              borderColor: Color.fromARGB(255, 59, 16, 212),
+              onTap: () {
+                Navigator.pushNamed(context, 'alunos/ChatScreen');
+              },
+            ),
           MyCard(
             title: 'Horários',
             icon: FontAwesomeIcons.calendarAlt,
@@ -277,15 +285,15 @@ class MyHomePage extends StatelessWidget {
             },
           ),
           if (userType != 'Professor')
-          MyCard(
-            title: 'Suporte',
-            icon: FontAwesomeIcons.solidCircleUser,
-            cardColor: Colors.white,
-            borderColor: Color.fromARGB(255, 59, 16, 212),
-            onTap: () {
-              Navigator.pushNamed(context, 'suporte/SuporteScreen');
-            },
-          ),
+            MyCard(
+              title: 'Suporte',
+              icon: FontAwesomeIcons.solidCircleUser,
+              cardColor: Colors.white,
+              borderColor: Color.fromARGB(255, 59, 16, 212),
+              onTap: () {
+                Navigator.pushNamed(context, 'suporte/SuporteScreen');
+              },
+            ),
         ],
       ),
       floatingActionButton: userType == 'Coordenacao'

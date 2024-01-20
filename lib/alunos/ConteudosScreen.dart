@@ -1,3 +1,4 @@
+import 'package:escola/alunos/AlunoHome.dart';
 import 'package:escola/cards/Conteudocard.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -12,12 +13,14 @@ class ConteudosScreen extends StatefulWidget {
   final String matriculaCpf;
   final Map<String, dynamic>? alunoData;
   final String userType;
+  final Map<String, dynamic>? professorData;
 
   ConteudosScreen({
     Key? key,
     required this.matriculaCpf,
     this.alunoData,
     required this.userType,
+    this.professorData,
   }) : super(key: key);
 
   @override
@@ -51,12 +54,22 @@ class _ConteudosScreenState extends State<ConteudosScreen> {
 
   Future<void> _downloadDocumento(String documento) async {
     try {
-      var conteudoQuery = await FirebaseFirestore.instance
-          .collection('conteudos')
-          .doc(widget.alunoData?['turma'])
-          .collection('conteudos')
-          .where('arquivos', arrayContains: documento)
-          .get();
+      var conteudoQuery;
+      if (widget.userType == 'Aluno') {
+        conteudoQuery = await FirebaseFirestore.instance
+            .collection('conteudos')
+            .doc(widget.alunoData?['turma'])
+            .collection('conteudos')
+            .where('arquivos', arrayContains: documento)
+            .get();
+      } else {
+        conteudoQuery = await FirebaseFirestore.instance
+            .collection('conteudos')
+            .doc(selectedAno)
+            .collection('conteudos')
+            .where('arquivos', arrayContains: documento)
+            .get();
+      }
 
       if (conteudoQuery.docs.isNotEmpty) {
         var conteudo = conteudoQuery.docs[0].data();
@@ -107,6 +120,7 @@ class _ConteudosScreenState extends State<ConteudosScreen> {
         }
       } else {
         _showErroDialog('Documento não encontrado no Firestore.');
+        print('Documento não encontrado no Firestore.');
       }
     } catch (e) {
       print('Erro ao baixar o documento: $e');
@@ -191,6 +205,47 @@ class _ConteudosScreenState extends State<ConteudosScreen> {
     );
   }
 
+  String selectedAno = 'Maternal';
+
+  late Stream<List<Aluno>> alunosStream;
+
+  List<String> anos = [
+    'Maternal',
+    'Infantil I',
+    'Infantil II',
+    '1º Ano',
+    '2º Ano',
+    '3º Ano',
+    '4º Ano',
+    '5º Ano',
+    '6º Ano'
+  ];
+
+  Stream<List<Aluno>> buscarAlunosStream(String selectedAno) {
+    return FirebaseFirestore.instance
+        .collection('alunos')
+        .doc(selectedAno)
+        .collection('alunos')
+        .snapshots()
+        .map((QuerySnapshot querySnapshot) {
+      return querySnapshot.docs.map((DocumentSnapshot document) {
+        return Aluno(
+          documentId: document.id,
+          nome: (document['nome'] ?? '').toString(),
+          serie: (document['serie'] ?? '').toString(),
+        );
+      }).toList();
+    });
+  }
+
+  void filtrarPorAno(String selectedAno) {
+    setState(() {
+      this.selectedAno = selectedAno;
+      // Atualiza o stream com o novo ano selecionado
+      alunosStream = buscarAlunosStream(selectedAno);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     print('Aluno Data: ${widget.alunoData ?? "Nenhum dado de professor"}');
@@ -198,18 +253,64 @@ class _ConteudosScreenState extends State<ConteudosScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Conteudos Escolares'),
+        title: Text('Conteudos'),
+        actions: [
+          if (widget.userType == 'Coordenacao' ||
+              widget.userType == 'Professor')
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: DropdownButton<String>(
+                value: selectedAno,
+                onChanged: (String? newValue) {
+                  setState(() {
+                    selectedAno = newValue!;
+                  });
+
+                  // Chama a função para filtrar os alunos com base no novo ano selecionado
+                  filtrarPorAno(selectedAno);
+                },
+                items: (widget.userType == 'Professor')
+                    ? widget.professorData!['series']
+                        .map<DropdownMenuItem<String>>((serie) {
+                        return DropdownMenuItem<String>(
+                          value: serie as String,
+                          child: Text(serie),
+                        );
+                      }).toList()
+                    : (widget.userType == 'Coordenacao')
+                        ? anos.map<DropdownMenuItem<String>>((String value) {
+                            return DropdownMenuItem<String>(
+                              value: value,
+                              child: Text(value),
+                            );
+                          }).toList()
+                        : [],
+              ),
+            ),
+        ],
       ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('conteudos')
-            .doc(widget.alunoData?['turma'])
-            .collection('conteudos')
-            .snapshots(),
+      body: FutureBuilder<QuerySnapshot>(
+        future: (widget.userType == 'Aluno')
+            ? FirebaseFirestore.instance
+                .collection('conteudos')
+                .doc(widget.alunoData?['turma'])
+                .collection('conteudos')
+                .get()
+            : FirebaseFirestore.instance
+                .collection('conteudos')
+                .doc(selectedAno)
+                .collection('conteudos')
+                .get(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(
               child: CircularProgressIndicator(),
+            );
+          }
+
+          if (snapshot.hasError) {
+            return Center(
+              child: Text('Erro ao carregar os dados'),
             );
           }
 

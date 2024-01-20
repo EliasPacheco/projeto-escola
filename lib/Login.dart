@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:escola/home.dart';
@@ -7,7 +9,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'auth_provider.dart' as localAuthProvider;
 import 'package:brasil_fields/brasil_fields.dart'; // Adicionado pacote brasil_fields
-
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,9 +44,17 @@ class _LoginPageState extends State<LoginPage> {
   String userTypeText = '';
 
   bool _isCoordenacao = false;
+  bool _isLoading = false;
+  Completer<void>? _loadingCompleter;
 
   Future<void> _signInWithMatriculaCpfAndPassword() async {
     try {
+      if (mounted) {
+        setState(() {
+          _isLoading = true; // Inicia o indicador de progresso
+        });
+      }
+
       String matriculaCpf = _matriculaCpfController.text.trim();
       String senha = _senhaController.text.trim();
 
@@ -62,12 +71,6 @@ class _LoginPageState extends State<LoginPage> {
               .where('senha', isEqualTo: senha)
               .get();
 
-      if (coordenacaoQuery.docs.isNotEmpty) {
-        _handleSuccessfulLogin(matriculaCpf, alunoData);
-        print('Login bem-sucedido como coordenacao');
-        return;
-      }
-
       // Se não encontrar na 'coordenacao', verifica na coleção 'professores'
       QuerySnapshot<Map<String, dynamic>> professoresQuery =
           await FirebaseFirestore.instance
@@ -76,16 +79,23 @@ class _LoginPageState extends State<LoginPage> {
               .where('senha', isEqualTo: senha)
               .get();
 
-      if (professoresQuery.docs.isNotEmpty) {
-        _handleSuccessfulLogin(matriculaCpf, null);
-        print('Login bem-sucedido como professor(a)');
-        return;
-      }
-
       // Se não encontrar em 'professores' ou 'coordenacao', verifica na coleção 'alunos'
       alunoData = await _checkAlunos(matriculaCpf, senha);
       if (alunoData != null) {
         _handleSuccessfulLogin(matriculaCpf, alunoData);
+        print('Login bem-sucedido como Aluno(a)');
+        return;
+      }
+
+      if (coordenacaoQuery.docs.isNotEmpty) {
+        _handleSuccessfulLogin(matriculaCpf, alunoData);
+        print('Login bem-sucedido como coordenacao');
+        return;
+      }
+
+      if (professoresQuery.docs.isNotEmpty) {
+        _handleSuccessfulLogin(matriculaCpf, null);
+        print('Login bem-sucedido como professor(a)');
         return;
       }
 
@@ -100,6 +110,27 @@ class _LoginPageState extends State<LoginPage> {
     } catch (e) {
       print('Erro inesperado: $e');
       // Tratar erro inesperado
+    } finally {
+      if (mounted) {
+        _loadingCompleter = Completer<void>();
+        Future.delayed(Duration(seconds: 15), () {
+          if (!_loadingCompleter!.isCompleted) {
+            _loadingCompleter!.complete();
+          }
+        });
+
+        try {
+          await _loadingCompleter!.future;
+        } catch (e) {
+          // Tratar erro, se necessário
+        }
+
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      }
     }
   }
 
@@ -141,6 +172,16 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     return null;
+  }
+
+  @override
+  void dispose() {
+    // Cancela qualquer operação assíncrona pendente ao descartar o widget
+    _matriculaCpfController.dispose();
+    _senhaController.dispose();
+    _loadingCompleter
+        ?.complete(); // Completa o Future se ainda não estiver concluído
+    super.dispose();
   }
 
   void _handleSuccessfulLogin(
@@ -286,17 +327,47 @@ class _LoginPageState extends State<LoginPage> {
             ),
             SizedBox(height: 32.0),
             ElevatedButton(
-              onPressed: _signInWithMatriculaCpfAndPassword,
+              onPressed: _isLoading
+                  ? null
+                  : () {
+                      setState(() {
+                        _isLoading = true;
+                      });
+                      _signInWithMatriculaCpfAndPassword();
+                    },
               style: ElevatedButton.styleFrom(
                 primary: Theme.of(context).colorScheme.secondary,
               ),
-              child: const Text(
-                'Entrar',
-                style: TextStyle(
-                    fontSize: 16.0,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white),
-              ),
+              child: _isLoading
+                  ? Container(
+                      width: 160, // Defina o tamanho desejado
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Fazendo login',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 16.0,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 15),
+                          CircularProgressIndicator(),
+                        ],
+                      ),
+                    )
+                  : Text(
+                      'Entrar',
+                      style: TextStyle(
+                        fontSize: 16.0,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
             ),
           ],
         ),
