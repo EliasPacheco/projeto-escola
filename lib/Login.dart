@@ -51,7 +51,7 @@ class _LoginPageState extends State<LoginPage> {
     try {
       if (mounted) {
         setState(() {
-          _isLoading = true; // Inicia o indicador de progresso
+          _isLoading = true;
         });
       }
 
@@ -63,40 +63,38 @@ class _LoginPageState extends State<LoginPage> {
 
       Map<String, dynamic>? alunoData;
 
-      // Verifica na coleção 'coordenacao'
-      QuerySnapshot<Map<String, dynamic>> coordenacaoQuery =
-          await FirebaseFirestore.instance
-              .collection('coordenacao')
-              .where('cpf', isEqualTo: matriculaCpf)
-              .where('senha', isEqualTo: senha)
-              .get();
+      // Crie uma lista de consultas que serão executadas em paralelo
+      List<Query<Map<String, dynamic>>> queries = [
+        FirebaseFirestore.instance
+            .collection('coordenacao')
+            .where('cpf', isEqualTo: matriculaCpf)
+            .where('senha', isEqualTo: senha),
+        FirebaseFirestore.instance
+            .collection('professores')
+            .where('cpf', isEqualTo: matriculaCpf)
+            .where('senha', isEqualTo: senha),
+      ];
 
-      // Se não encontrar na 'coordenacao', verifica na coleção 'professores'
-      QuerySnapshot<Map<String, dynamic>> professoresQuery =
-          await FirebaseFirestore.instance
-              .collection('professores')
-              .where('cpf', isEqualTo: matriculaCpf)
-              .where('senha', isEqualTo: senha)
-              .get();
+      // Execute as consultas em paralelo
+      Query<Map<String, dynamic>> queryAlunos = FirebaseFirestore.instance
+          .collectionGroup('alunos')
+          .where('cpfResponsavel1', isEqualTo: matriculaCpf)
+          .where('matricula', isEqualTo: senha);
 
-      // Se não encontrar em 'professores' ou 'coordenacao', verifica na coleção 'alunos'
-      alunoData = await _checkAlunos(matriculaCpf, senha);
-      if (alunoData != null) {
-        _handleSuccessfulLogin(matriculaCpf, alunoData);
-        print('Login bem-sucedido como Aluno(a)');
-        return;
-      }
+      queries.add(queryAlunos);
 
-      if (coordenacaoQuery.docs.isNotEmpty) {
-        _handleSuccessfulLogin(matriculaCpf, alunoData);
-        print('Login bem-sucedido como coordenacao');
-        return;
-      }
+      // Use o método `get` para buscar dados de diferentes coleções ao mesmo tempo
+      List<QuerySnapshot<Map<String, dynamic>>> results =
+          await Future.wait(queries.map((query) => query.get()));
 
-      if (professoresQuery.docs.isNotEmpty) {
-        _handleSuccessfulLogin(matriculaCpf, null);
-        print('Login bem-sucedido como professor(a)');
-        return;
+      // Verifique os resultados
+      for (QuerySnapshot<Map<String, dynamic>> result in results) {
+        if (result.docs.isNotEmpty) {
+          // Se encontrar dados em alguma consulta, trate como login bem-sucedido
+          alunoData = result.docs.first.data();
+          _handleSuccessfulLogin(matriculaCpf, alunoData);
+          return;
+        }
       }
 
       throw FirebaseAuthException(
