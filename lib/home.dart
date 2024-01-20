@@ -17,7 +17,6 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:escola/alunos/AlunoHome.dart' as AlunoHomePackage;
 
-
 class MySchoolApp extends StatelessWidget {
   final String matriculaCpf;
   final Map<String, dynamic>? alunoData;
@@ -62,7 +61,11 @@ class MySchoolApp extends StatelessWidget {
               alunoData: alunoData,
               userType: userType,
             ),
-        'alunos/ConteudosScreen': (context) => ConteudosScreen(),
+        'alunos/ConteudosScreen': (context) => ConteudosScreen(
+              matriculaCpf: matriculaCpf,
+              alunoData: alunoData,
+              userType: userType,
+            ),
         'suporte/SuporteScreen': (context) => SuporteScreen(),
         'alunos/ChatScreen': (context) => ChatScreen(),
         'alunos/HorariosScreen': (context) => HorariosScreen(),
@@ -183,6 +186,7 @@ class MyHomePage extends StatelessWidget {
               }
             },
           ),
+          if (userType != 'Professor')
           MyCard(
             title: 'Financeiro',
             icon: FontAwesomeIcons.handHoldingDollar,
@@ -224,6 +228,7 @@ class MyHomePage extends StatelessWidget {
               Navigator.pushNamed(context, 'alunos/AgendaScreen');
             },
           ),
+          if (userType != 'Professor')
           MyCard(
             title: 'Ocorrências',
             icon: FontAwesomeIcons.circleExclamation,
@@ -249,9 +254,10 @@ class MyHomePage extends StatelessWidget {
             cardColor: Colors.white,
             borderColor: Color.fromARGB(255, 59, 16, 212),
             onTap: () {
-              //Navigator.pushNamed(context, 'alunos/ConteudosScreen');
+              Navigator.pushNamed(context, 'alunos/ConteudosScreen');
             },
           ),
+          if (userType != 'Professor')
           MyCard(
             title: 'Chat',
             icon: FontAwesomeIcons.solidCommentDots,
@@ -270,6 +276,7 @@ class MyHomePage extends StatelessWidget {
               Navigator.pushNamed(context, 'alunos/HorariosScreen');
             },
           ),
+          if (userType != 'Professor')
           MyCard(
             title: 'Suporte',
             icon: FontAwesomeIcons.solidCircleUser,

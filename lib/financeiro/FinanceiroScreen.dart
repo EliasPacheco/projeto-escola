@@ -81,7 +81,6 @@ class _FinanceiroScreenState extends State<FinanceiroScreen> {
     'Cartão de Crédito': Icons.credit_card,
     'Cartão de Débito': Icons.credit_card,
     'Transferência Bancária': Icons.account_balance,
-    'Boleto': Icons.receipt,
   };
 
   String _formatMonthYear(String text) {

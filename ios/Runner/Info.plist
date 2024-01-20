@@ -29,6 +29,10 @@
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
 	<key>UISupportedInterfaceOrientations</key>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Permitir acesso aos arquivos para leitura.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Permitir acesso aos arquivos para gravação.</string>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>

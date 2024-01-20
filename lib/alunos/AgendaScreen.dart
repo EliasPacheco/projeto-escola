@@ -149,20 +149,21 @@ class _AgendaScreenState extends State<AgendaScreen> {
           );
         },
       ),
-      floatingActionButton: widget.userType == 'Coordenacao'
-          ? FloatingActionButton(
-              onPressed: () {
-                // Adicione a lógica para adicionar novos avisos aqui
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => AgendaCards(),
-                  ),
-                );
-              },
-              child: Icon(Icons.add),
-            )
-          : null,
+      floatingActionButton:
+          widget.userType == 'Coordenacao' || widget.userType == 'Professor'
+              ? FloatingActionButton(
+                  onPressed: () {
+                    // Adicione a lógica para adicionar novos avisos aqui
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AgendaCards(),
+                      ),
+                    );
+                  },
+                  child: Icon(Icons.add),
+                )
+              : null,
     );
   }
 
@@ -178,7 +179,8 @@ class _AgendaScreenState extends State<AgendaScreen> {
               children: [
                 TextButton(
                   onPressed: () {
-                    _updateCardColor(aviso.id, Color.fromARGB(255, 224, 51, 39));
+                    _updateCardColor(
+                        aviso.id, Color.fromARGB(255, 224, 51, 39));
                     Navigator.pop(context);
                   },
                   child: Text(
