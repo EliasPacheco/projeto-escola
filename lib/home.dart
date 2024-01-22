@@ -3,6 +3,7 @@ import 'package:escola/alunos/AgendaScreen.dart';
 import 'package:escola/alunos/AlunoHome.dart';
 import 'package:escola/alunos/ChatScreen.dart';
 import 'package:escola/alunos/ConteudosScreen.dart';
+import 'package:escola/alunos/Horarioprofessor.dart';
 import 'package:escola/alunos/HorariosScreen.dart';
 import 'package:escola/alunos/MatriculaScreen.dart';
 import 'package:escola/alunos/AvisosScreen.dart';
@@ -88,6 +89,12 @@ class _MySchoolAppState extends State<MySchoolApp> {
               userType: widget.userType,
             ),
         'alunos/AgendaScreen': (context) => AgendaScreen(
+              matriculaCpf: widget.matriculaCpf,
+              alunoData: widget.alunoData,
+              userType: widget.userType,
+              professorData: widget.professorData,
+            ),
+        'alunos/HorarioProfessor': (context) => HorarioProfessor(
               matriculaCpf: widget.matriculaCpf,
               alunoData: widget.alunoData,
               userType: widget.userType,
@@ -286,7 +293,47 @@ class MyHomePage extends StatelessWidget {
             cardColor: Colors.white,
             borderColor: Color.fromARGB(255, 59, 16, 212),
             onTap: () {
-              Navigator.pushNamed(context, 'alunos/HorariosScreen');
+              if (isCoordenacao) {
+                String selectedRoute =
+                    ''; // Variável para armazenar a rota escolhida
+
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      title: Text('Qual horário deseja acessar?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () {
+                            selectedRoute = 'alunos/HorariosScreen';
+                            Navigator.pop(context); // Fecha o AlertDialog
+                          },
+                          child: Text('Aluno'),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            selectedRoute = 'alunos/HorarioProfessor';
+                            Navigator.pop(context); // Fecha o AlertDialog
+                          },
+                          child: Text('Professor'),
+                        ),
+                      ],
+                    );
+                  },
+                ).then((value) {
+                  // Faça a navegação fora do AlertDialog
+                  if (selectedRoute.isNotEmpty) {
+                    Navigator.pushNamed(context, selectedRoute);
+                  }
+                });
+              } else if (isProfessor) {
+                Navigator.pushNamed(
+                  context,
+                  'alunos/HorarioProfessor',
+                );
+              } else {
+                Navigator.pushNamed(context, 'alunos/HorariosScreen');
+              }
             },
           ),
           if (userType != 'Professor')

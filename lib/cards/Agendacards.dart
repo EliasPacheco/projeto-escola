@@ -24,7 +24,8 @@ class _AgendaCardsState extends State<AgendaCards> {
     if (picked != null && picked != _selectedDate) {
       setState(() {
         _selectedDate = picked;
-        _dataController.text = "${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}";
+        _dataController.text =
+            "${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}";
       });
     }
   }
@@ -83,7 +84,7 @@ class _AgendaCardsState extends State<AgendaCards> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Adicionar Comunicados'),
+        title: Text('Adicionar agendas'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

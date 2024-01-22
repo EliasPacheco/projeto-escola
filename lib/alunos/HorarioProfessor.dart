@@ -7,13 +7,13 @@ import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
-class HorariosScreen extends StatefulWidget {
+class HorarioProfessor extends StatefulWidget {
   final String matriculaCpf;
   final Map<String, dynamic>? alunoData;
   final String userType;
   final Map<String, dynamic>? professorData;
 
-  HorariosScreen({
+  HorarioProfessor({
     Key? key,
     required this.matriculaCpf,
     this.alunoData,
@@ -22,10 +22,10 @@ class HorariosScreen extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _HorariosScreenState createState() => _HorariosScreenState();
+  _HorarioProfessorState createState() => _HorarioProfessorState();
 }
 
-class _HorariosScreenState extends State<HorariosScreen> {
+class _HorarioProfessorState extends State<HorarioProfessor> {
   late List<Aluno> alunos;
   List<String> turma = [
     'Maternal',
@@ -44,6 +44,12 @@ class _HorariosScreenState extends State<HorariosScreen> {
 
   bool _temConexaoInternet = true;
   Connectivity _connectivity = Connectivity();
+
+  String? selectedTurma;
+  String? selectedProfessor;
+  String? turmaEscolhidaNome;
+  List<String> professoresList =
+      []; // Adicione esta lista para armazenar os nomes dos professores
 
   @override
   void initState() {
@@ -72,75 +78,33 @@ class _HorariosScreenState extends State<HorariosScreen> {
     });
   }
 
-  Stream<List<Map<String, dynamic>>> buscarImagensStream(String selectedAno) {
-    if (widget.userType == 'Coordenacao') {
-      // Se o tipo de usuário for 'Coordenacao', consulta todos os documentos
-      return FirebaseFirestore.instance
-          .collection('horario')
-          .where(FieldPath.documentId, isEqualTo: selectedAno)
-          .snapshots()
-          .map((QuerySnapshot querySnapshot) {
-        List<Map<String, dynamic>> dataList = [];
-        for (QueryDocumentSnapshot document in querySnapshot.docs) {
-          Map<String, dynamic> data = document.data() as Map<String, dynamic>;
-          data['docId'] = document.id; // Adiciona o ID do documento aos dados
-          dataList.add(data);
-        }
+  Stream<List<Map<String, dynamic>>> buscarImagensStream(String turma) {
+    return FirebaseFirestore.instance
+        .collection('professores')
+        .where('series', arrayContains: turma) // Filtra professores pela turma
+        .snapshots()
+        .asyncMap((QuerySnapshot querySnapshot) async {
+      List<Map<String, dynamic>> professorDataList = [];
 
-        if (dataList.isNotEmpty) {
-          print('Dados da coleção "horario" para $selectedAno: $dataList');
-          return dataList;
-        } else {
-          print('Nenhuma imagemUrl encontrada na turma $selectedAno.');
-          return [];
-        }
-      });
-    } else if (widget.userType == 'Aluno') {
-      // Se o tipo de usuário for 'Aluno', consulta apenas o documento da turma do aluno
-      String turmaAluno = getTurmaAluno(widget.alunoData ?? {});
-      return FirebaseFirestore.instance
-          .collection('horario')
-          .where(FieldPath.documentId, isEqualTo: turmaAluno)
-          .snapshots()
-          .map((QuerySnapshot querySnapshot) {
-        List<Map<String, dynamic>> dataList = [];
-        for (QueryDocumentSnapshot document in querySnapshot.docs) {
-          Map<String, dynamic> data = document.data() as Map<String, dynamic>;
-          data['docId'] = document.id; // Adiciona o ID do documento aos dados
-          dataList.add(data);
-        }
+      for (DocumentSnapshot documentSnapshot in querySnapshot.docs) {
+        Map<String, dynamic> data =
+            documentSnapshot.data() as Map<String, dynamic>;
+        data['docId'] =
+            documentSnapshot.id; // Adiciona o ID do documento aos dados
 
-        if (dataList.isNotEmpty) {
-          print('Dados da coleção "horario" para $turmaAluno: $dataList');
-          return dataList;
-        } else {
-          print('Nenhuma imagemUrl encontrada na turma $turmaAluno.');
-          return [];
-        }
-      });
-    } else {
-      // Outros tipos de usuários
-      return FirebaseFirestore.instance
-          .collection('horario')
-          .where(FieldPath.documentId, isEqualTo: selectedAno)
-          .snapshots()
-          .map((QuerySnapshot querySnapshot) {
-        List<Map<String, dynamic>> dataList = [];
-        for (QueryDocumentSnapshot document in querySnapshot.docs) {
-          Map<String, dynamic> data = document.data() as Map<String, dynamic>;
-          data['docId'] = document.id; // Adiciona o ID do documento aos dados
-          dataList.add(data);
-        }
+        if (data.containsKey('imagemUrl')) {
+          print(
+              'ImagemUrl encontrada para o professor ${data['docId']}: ${data['imagemUrl']}');
 
-        if (dataList.isNotEmpty) {
-          print('Dados da coleção "horario" para $selectedAno: $dataList');
-          return dataList;
-        } else {
-          print('Nenhuma imagemUrl encontrada na turma $selectedAno.');
-          return [];
+          // Verifica se o professor atual é o mesmo do documento
+          if (data['docId'] == widget.matriculaCpf) {
+            professorDataList.add(data);
+          }
         }
-      });
-    }
+      }
+
+      return professorDataList;
+    });
   }
 
   bool isLoading = false;
@@ -159,31 +123,57 @@ class _HorariosScreenState extends State<HorariosScreen> {
     });
   }
 
+  // ...
+
   Future<void> _uploadImageToStorage(File imageFile) async {
     if (imageFile == null) {
       print('Nenhuma imagem selecionada.');
       return;
     }
 
-    String storagePath = 'horario/$selectedAno/1.jpg';
-
-    Reference storageReference =
-        FirebaseStorage.instance.ref().child(storagePath);
+    // Verifique se selectedProfessor não é nulo ou vazio antes de prosseguir
+    if (selectedProfessor == null || selectedProfessor!.isEmpty ?? true) {
+      print('Selecione um professor antes de enviar a imagem.');
+      return;
+    }
 
     try {
+      // 1. Obtenha o UID do professor selecionado
+      String professorName = selectedProfessor!;
+
+      // Consulte a coleção "professores" para obter o UID
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('professores')
+          .where('nome', isEqualTo: professorName)
+          .get();
+
+      if (querySnapshot.docs.isEmpty) {
+        print('Professor não encontrado na coleção "professores".');
+        return;
+      }
+
+      String professorUid = querySnapshot.docs.first.id;
+
+      // 2. Crie a string com o nome imagemUrl dentro do UID do professor
+      String imageUrlFieldName = 'imagemUrl'; // Nome do campo de imagemUrl
+
+      // 3. Armazene a imagem no Storage
+      String storagePath = 'professorhorario/$professorUid/1.jpg';
+      Reference storageReference =
+          FirebaseStorage.instance.ref().child(storagePath);
+
       TaskSnapshot taskSnapshot = await storageReference.putFile(imageFile);
       String imageUrl = await taskSnapshot.ref.getDownloadURL();
 
-      CollectionReference horarioCollection =
-          FirebaseFirestore.instance.collection('horario');
-
-      await horarioCollection.doc(selectedAno).set({
-        'imagemUrl': imageUrl,
+      // 4. Atualize o campo imagemUrl dentro do UID do professor
+      await FirebaseFirestore.instance
+          .collection('professores')
+          .doc(professorUid)
+          .update({
+        imageUrlFieldName: imageUrl,
       });
 
-      print('Imagem enviada com sucesso para o $selectedAno');
-
-      // Agora, atualize o stream após o envio da imagem
+      // 5. Atualize o stream após o envio da imagem
       setState(() {
         imagensStream = buscarImagensStream(selectedAno);
         isLoading = false; // Finaliza o indicador de carregamento
@@ -274,48 +264,181 @@ class _HorariosScreenState extends State<HorariosScreen> {
         ''; // Altere isso conforme a estrutura real dos dados.
   }
 
+  Future<void> _showTurmaDialog() async {
+    String? chosenTurma;
+    String? initialSelectedProfessor = selectedProfessor;
+    bool showChooseImageButton =
+        false; // Flag para controlar a visibilidade do botão "Escolher Imagem"
+
+    await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(builder: (context, setState) {
+          return AlertDialog(
+            title: Text('Escolha a turma'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Escolha a turma'),
+                DropdownButton<String>(
+                  value: selectedTurma,
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      selectedTurma = newValue!;
+                      // Redefinir o professor selecionado ao mudar de turma
+                      selectedProfessor = null;
+                      showChooseImageButton =
+                          false; // Oculta o botão ao mudar de turma
+                    });
+                  },
+                  items: turma.map<DropdownMenuItem<String>>((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                ),
+                SizedBox(height: 16),
+                // Remova o TextFormField e adicione diretamente o código para mostrar os professores
+                if (selectedTurma != null) ...{
+                  Text('Professor:'),
+                  FutureBuilder<List<String>>(
+                    future: buscarProfessores(selectedTurma!),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return CircularProgressIndicator();
+                      } else if (snapshot.hasError) {
+                        return Text('Erro ao carregar os professores');
+                      } else {
+                        List<String> professoresList = snapshot.data ?? [];
+                        return Column(
+                          children: [
+                            DropdownButton<String>(
+                              value: selectedProfessor,
+                              onChanged: (String? newValue) {
+                                setState(() {
+                                  selectedProfessor = newValue!;
+                                  showChooseImageButton =
+                                      true; // Mostra o botão ao escolher o professor
+                                });
+                              },
+                              items:
+                                  professoresList.map<DropdownMenuItem<String>>(
+                                (String value) {
+                                  return DropdownMenuItem<String>(
+                                    value: value,
+                                    child: Text(value),
+                                  );
+                                },
+                              ).toList(),
+                            ),
+                            if (showChooseImageButton) SizedBox(height: 16),
+                            if (showChooseImageButton)
+                              ElevatedButton(
+                                onPressed: () async {
+                                  // Fechar o diálogo de turma
+                                  await _pickImage(); // Chamar o método para escolher a imagem
+                                },
+                                child: Text('Escolher Imagem'),
+                              ),
+                          ],
+                        );
+                      }
+                    },
+                  ),
+                },
+              ],
+            ),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text('Cancelar'),
+              ),
+              TextButton(
+                onPressed: () {
+                  if (selectedTurma != null && selectedProfessor != null) {
+                    setState(() {
+                      turmaEscolhidaNome = selectedTurma;
+                    });
+                    _showSelectedOptionsDialog(
+                        selectedTurma!, turmaEscolhidaNome!);
+
+                    // Atualize o stream após a escolha da turma
+                    setState(() {
+                      imagensStream = buscarImagensStream(selectedAno);
+                    });
+                  }
+                  Navigator.of(context).pop();
+                },
+                child: Text('OK'),
+              ),
+            ],
+          );
+        });
+      },
+    );
+
+    // Restaurar o valor original do professor selecionado
+    selectedProfessor = initialSelectedProfessor;
+  }
+
+  Future<List<String>> buscarProfessores(String turma) async {
+    CollectionReference professoresCollection =
+        FirebaseFirestore.instance.collection('professores');
+
+    // Realiza a consulta na coleção de professores
+    QuerySnapshot professoresSnapshot =
+        await professoresCollection.where('series', arrayContains: turma).get();
+
+    // Obtém a lista de nomes dos professores, garantindo a exclusividade
+    Set<String> professoresSet = Set<String>.from(professoresSnapshot.docs
+        .map((professorDoc) => professorDoc['nome'] as String));
+
+    return professoresSet.toList();
+  }
+
+  // Adicione o seguinte método para mostrar a opção selecionada
+  Future<void> _showSelectedOptionsDialog(
+      String turma, String turmaNome) async {
+    await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Opção Selecionada'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Turma selecionada: $turmaNome'), // Exibe o nome da turma
+              Text('Professor selecionado: $turma'),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     print(
         'Tipo de usuário: ${widget.professorData ?? "Nenhum tipo de usuário"}');
 
+    print("Horario Professor");
+
     String turmaAluno = getTurmaAluno(widget.alunoData ?? {});
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Horários'),
-        actions: [
-          if (widget.userType == 'Coordenacao')
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: DropdownButton<String>(
-                value: selectedAno,
-                onChanged: (String? newValue) {
-                  setState(() {
-                    selectedAno = newValue!;
-                  });
-
-                  filtrarPorAno(selectedAno);
-                },
-                items: (widget.userType == 'Professor')
-                    ? widget.professorData!['series']
-                        .map<DropdownMenuItem<String>>((serie) {
-                        return DropdownMenuItem<String>(
-                          value: serie as String,
-                          child: Text(serie),
-                        );
-                      }).toList()
-                    : (widget.userType == 'Coordenacao')
-                        ? turma.map<DropdownMenuItem<String>>((String value) {
-                            return DropdownMenuItem<String>(
-                              value: value,
-                              child: Text(value),
-                            );
-                          }).toList()
-                        : [],
-              ),
-            ),
-        ],
+        title: Text('Horários Professor'),
       ),
       body: Center(
           child: StreamBuilder<List<Map<String, dynamic>>>(
@@ -345,12 +468,15 @@ class _HorariosScreenState extends State<HorariosScreen> {
             List<Map<String, dynamic>> imageUrls = snapshot.data ?? [];
             if (imageUrls.isNotEmpty) {
               String imageUrl = imageUrls.first['imagemUrl'];
+
+              // Adicione esta linha para imprimir a imagemUrl no console
+              print('Imagem URL: $imageUrl');
+
               return Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Visibility(
-                    visible:
-                        _temConexaoInternet, // Torna o widget visível apenas se houver conexão com a Internet
+                    visible: _temConexaoInternet,
                     child: Text(
                       'Clique na imagem para ampliar',
                       style: TextStyle(
@@ -455,7 +581,7 @@ class _HorariosScreenState extends State<HorariosScreen> {
       floatingActionButton: widget.userType == 'Coordenacao'
           ? FloatingActionButton(
               onPressed: () async {
-                await _pickImage();
+                await _showTurmaDialog();
               },
               child: Icon(Icons.add),
             )
