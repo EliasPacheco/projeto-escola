@@ -97,11 +97,8 @@ class _LoginPageState extends State<LoginPage> {
         }
       }
 
-      throw FirebaseAuthException(
-        code: 'user-not-found',
-        message:
-            'Credenciais inválidas. Usuário não encontrado nas coleções especificadas.',
-      );
+      // Se não encontrou dados em nenhuma consulta, exibe o Snackbar
+      showInvalidCredentialsSnackbar();
     } on FirebaseAuthException catch (e) {
       print('Erro de login: $e');
       // Tratar erro, mostrar mensagem, etc.
@@ -111,7 +108,7 @@ class _LoginPageState extends State<LoginPage> {
     } finally {
       if (mounted) {
         _loadingCompleter = Completer<void>();
-        Future.delayed(Duration(seconds: 15), () {
+        Future.delayed(Duration(seconds: 1), () {
           if (!_loadingCompleter!.isCompleted) {
             _loadingCompleter!.complete();
           }
@@ -275,6 +272,17 @@ class _LoginPageState extends State<LoginPage> {
         ),
       );
     }
+  }
+
+  void showInvalidCredentialsSnackbar() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+            'CPF ou Matrícula inválidos. Usuário não encontrado.'),
+        duration: Duration(seconds: 2),
+        backgroundColor: Colors.red,
+      ),
+    );
   }
 
   String _getUserTypeText(bool isAluno, bool isProfessor, bool isCoordenacao) {
