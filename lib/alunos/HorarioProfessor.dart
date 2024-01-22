@@ -38,12 +38,13 @@ class _HorarioProfessorState extends State<HorarioProfessor> {
     '5º Ano',
     '6º Ano'
   ];
-  String selectedAno = 'Maternal';
 
   late Stream<List<Map<String, dynamic>>> imagensStream;
 
   bool _temConexaoInternet = true;
   Connectivity _connectivity = Connectivity();
+
+  bool isLoading = false;
 
   String? selectedTurma;
   String? selectedProfessor;
@@ -55,17 +56,16 @@ class _HorarioProfessorState extends State<HorarioProfessor> {
   void initState() {
     super.initState();
     _verificarConexaoInternet();
-    _monitorarConexao(); // Adicione esta linha para monitorar a conexão
-    imagensStream = buscarImagensStream(selectedAno);
+    _monitorarConexao();
+    imagensStream = buscarImagensStream();
   }
 
-  // Adicione este método para monitorar a conexão
   void _monitorarConexao() {
     _connectivity.onConnectivityChanged.listen((ConnectivityResult result) {
       setState(() {
         _temConexaoInternet = result != ConnectivityResult.none;
         if (_temConexaoInternet) {
-          imagensStream = buscarImagensStream(selectedAno);
+          imagensStream = buscarImagensStream();
         }
       });
     });
@@ -78,10 +78,10 @@ class _HorarioProfessorState extends State<HorarioProfessor> {
     });
   }
 
-  Stream<List<Map<String, dynamic>>> buscarImagensStream(String turma) {
+  Stream<List<Map<String, dynamic>>> buscarImagensStream() {
     return FirebaseFirestore.instance
         .collection('professores')
-        .where('series', arrayContains: turma) // Filtra professores pela turma
+        .where('cpf', isEqualTo: widget.professorData?['cpf'])
         .snapshots()
         .asyncMap((QuerySnapshot querySnapshot) async {
       List<Map<String, dynamic>> professorDataList = [];
@@ -89,25 +89,16 @@ class _HorarioProfessorState extends State<HorarioProfessor> {
       for (DocumentSnapshot documentSnapshot in querySnapshot.docs) {
         Map<String, dynamic> data =
             documentSnapshot.data() as Map<String, dynamic>;
-        data['docId'] =
-            documentSnapshot.id; // Adiciona o ID do documento aos dados
+        data['docId'] = documentSnapshot.id;
 
         if (data.containsKey('imagemUrl')) {
-          print(
-              'ImagemUrl encontrada para o professor ${data['docId']}: ${data['imagemUrl']}');
-
-          // Verifica se o professor atual é o mesmo do documento
-          if (data['docId'] == widget.matriculaCpf) {
-            professorDataList.add(data);
-          }
+          professorDataList.add(data);
         }
       }
 
       return professorDataList;
     });
   }
-
-  bool isLoading = false;
 
   Future<void> _pickImage() async {
     final pickedFile =
@@ -122,8 +113,6 @@ class _HorarioProfessorState extends State<HorarioProfessor> {
       }
     });
   }
-
-  // ...
 
   Future<void> _uploadImageToStorage(File imageFile) async {
     if (imageFile == null) {
@@ -175,7 +164,7 @@ class _HorarioProfessorState extends State<HorarioProfessor> {
 
       // 5. Atualize o stream após o envio da imagem
       setState(() {
-        imagensStream = buscarImagensStream(selectedAno);
+        imagensStream = buscarImagensStream();
         isLoading = false; // Finaliza o indicador de carregamento
 
         Future.delayed(Duration(seconds: 5), () {
@@ -193,8 +182,7 @@ class _HorarioProfessorState extends State<HorarioProfessor> {
     }
   }
 
-  void _openImage(
-      List<Map<String, dynamic>> imageUrls, String turmaSelecionada) {
+  void _openImage(List<Map<String, dynamic>> imageUrls) {
     print('Abrindo imagem');
 
     if (imageUrls.isNotEmpty) {
@@ -202,7 +190,6 @@ class _HorarioProfessorState extends State<HorarioProfessor> {
       String imageUrl = imageData['imagemUrl'];
 
       // Adicione o print para mostrar a turma
-      print('Turma da imagem: $turmaSelecionada');
 
       Navigator.push(
         context,
@@ -229,33 +216,6 @@ class _HorarioProfessorState extends State<HorarioProfessor> {
     } else {
       // Tratar caso em que não há imagens
       print('Nenhuma imagem encontrada.');
-    }
-  }
-
-  void filtrarPorAno(String selectedAno) {
-    setState(() {
-      this.selectedAno = selectedAno;
-      imagensStream = buscarImagensStream(selectedAno);
-    });
-
-    if (widget.userType == 'Aluno') {
-      // Se o usuário for do tipo 'Aluno', verifique se a turma da imagem é a mesma do aluno
-      imagensStream.first.then((imageUrls) {
-        bool alunoTemFoto = imageUrls.any((imageData) {
-          String turmaDaImagem = imageData['docId'];
-          String turmaAluno = getTurmaAluno(widget.alunoData ?? {});
-
-          // Ajuste na lógica para comparar corretamente as turmas
-          return turmaAluno.toLowerCase() == turmaDaImagem.toLowerCase();
-        });
-
-        if (!alunoTemFoto) {
-          setState(() {
-            // Caso não tenha imagem para a turma do aluno, limpe o stream
-            imagensStream = Stream.value([]);
-          });
-        }
-      });
     }
   }
 
@@ -367,7 +327,7 @@ class _HorarioProfessorState extends State<HorarioProfessor> {
 
                     // Atualize o stream após a escolha da turma
                     setState(() {
-                      imagensStream = buscarImagensStream(selectedAno);
+                      imagensStream = buscarImagensStream();
                     });
                   }
                   Navigator.of(context).pop();
@@ -489,7 +449,9 @@ class _HorarioProfessorState extends State<HorarioProfessor> {
                   GestureDetector(
                     onTap: () {
                       if (_temConexaoInternet) {
-                        _openImage(imageUrls, selectedAno);
+                        _openImage(
+                          imageUrls,
+                        );
                       } else {
                         // Adicione aqui qualquer ação que desejar quando não houver internet
                         // Por exemplo, exibir um snackbar ou realizar outra ação.
