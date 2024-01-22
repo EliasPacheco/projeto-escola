@@ -56,6 +56,10 @@ class _AlunoHomeState extends State<AlunoHome> {
     alunosStream = buscarAlunosStream(selectedAno);
   }
 
+  void ordenarAlunosPorNome(List<Aluno> listaAlunos) {
+    listaAlunos.sort((a, b) => a.nome.compareTo(b.nome));
+  }
+
   // Função para buscar os dados da coleção "alunos" no Firestore em forma de Stream
   Stream<List<Aluno>> buscarAlunosStream(String selectedAno) {
     return FirebaseFirestore.instance
@@ -64,13 +68,18 @@ class _AlunoHomeState extends State<AlunoHome> {
         .collection('alunos')
         .snapshots()
         .map((QuerySnapshot querySnapshot) {
-      return querySnapshot.docs.map((DocumentSnapshot document) {
+      List<Aluno> alunos = querySnapshot.docs.map((DocumentSnapshot document) {
         return Aluno(
           documentId: document.id,
           nome: (document['nome'] ?? '').toString(),
           serie: (document['serie'] ?? '').toString(),
         );
       }).toList();
+
+      // Ordenar a lista de alunos por nome
+      ordenarAlunosPorNome(alunos);
+
+      return alunos;
     });
   }
 
@@ -224,6 +233,7 @@ class _AlunoHomeState extends State<AlunoHome> {
                   }
 
                   alunos = snapshot.data ?? [];
+                  ordenarAlunosPorNome(alunos);
                   alunosFiltrados = alunos
                       .where((aluno) => aluno.serie == selectedAno)
                       .toList();

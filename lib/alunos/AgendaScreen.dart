@@ -1,9 +1,9 @@
-import 'package:escola/alunos/AlunoHome.dart';
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:escola/alunos/AlunoHome.dart';
 import 'package:escola/cards/Agendacards.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
+import 'package:escola/cards/Formacard.dart';
+import 'package:flutter/material.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 class AgendaScreen extends StatefulWidget {
   final String matriculaCpf;
@@ -26,6 +26,8 @@ class AgendaScreen extends StatefulWidget {
 class _AgendaScreenState extends State<AgendaScreen> {
   String? serieAluno;
   String selectedAno = 'Maternal';
+  bool _temConexaoInternet = true;
+  Connectivity _connectivity = Connectivity();
 
   late Stream<List<Aluno>> alunosStream;
 
@@ -41,17 +43,35 @@ class _AgendaScreenState extends State<AgendaScreen> {
     '6º Ano'
   ];
 
-  Map<String, Color> cardColors = {};
-
   @override
   void initState() {
     serieAluno = widget.alunoData?['serie'];
-    _loadCardColors();
     super.initState();
+    _verificarConexaoInternet();
+    _monitorarConexao();
     // Verificar o tipo de usuário e, se for aluno, obter a série
     if (widget.userType == 'Aluno') {
       serieAluno = widget.alunoData?['serie'];
     }
+  }
+
+  void _monitorarConexao() {
+    _connectivity.onConnectivityChanged.listen((ConnectivityResult result) {
+      setState(() {
+        _temConexaoInternet = result != ConnectivityResult.none;
+        if (_temConexaoInternet) {
+          // Atualiza o stream com base no novo ano selecionado
+          alunosStream = buscarAlunosStream(selectedAno);
+        }
+      });
+    });
+  }
+
+  Future<void> _verificarConexaoInternet() async {
+    var connectivityResult = await _connectivity.checkConnectivity();
+    setState(() {
+      _temConexaoInternet = connectivityResult != ConnectivityResult.none;
+    });
   }
 
   Stream<List<Aluno>> buscarAlunosStream(String selectedAno) {
@@ -81,11 +101,9 @@ class _AgendaScreenState extends State<AgendaScreen> {
 
   @override
   Widget build(BuildContext context) {
-    print('Aluno Data: ${widget.alunoData ?? "Nenhum dado de professor"}');
-    print('Tipo de usuário: ${widget.userType ?? "Nenhum tipo de usuário"}');
     return Scaffold(
       appBar: AppBar(
-        title: Text('Agenda Escolar'),
+        title: Text('Agenda escolar'),
         actions: [
           if (widget.userType == 'Coordenacao' ||
               widget.userType == 'Professor')
@@ -98,7 +116,6 @@ class _AgendaScreenState extends State<AgendaScreen> {
                     selectedAno = newValue!;
                   });
 
-                  // Chama a função para filtrar os alunos com base no novo ano selecionado
                   filtrarPorAno(selectedAno);
                 },
                 items: (widget.userType == 'Professor')
@@ -121,212 +138,125 @@ class _AgendaScreenState extends State<AgendaScreen> {
             ),
         ],
       ),
-      body: FutureBuilder<QuerySnapshot>(
-        future: (widget.userType == 'Aluno')
-            ? FirebaseFirestore.instance
-                .collection('agenda')
-                .doc(widget.alunoData?['turma'])
-                .collection('agenda')
-                .get()
-            : FirebaseFirestore.instance
-                .collection('agenda')
-                .doc(selectedAno)
-                .collection('agenda')
-                .get(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(
-              child: CircularProgressIndicator(),
-            );
-          }
+      body: _temConexaoInternet
+          ? StreamBuilder<QuerySnapshot>(
+              stream: (widget.userType == 'Aluno')
+                  ? FirebaseFirestore.instance
+                      .collection('agenda')
+                      .doc(widget.alunoData?['turma'])
+                      .collection('agenda')
+                      .snapshots()
+                  : FirebaseFirestore.instance
+                      .collection('agenda')
+                      .doc(selectedAno)
+                      .collection('agenda')
+                      .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator());
+                }
 
-          if (snapshot.hasError) {
-            return Center(
-              child: Text('Erro ao carregar os dados'),
-            );
-          }
+                List<DocumentSnapshot> documentos =
+                    (snapshot.data as QuerySnapshot?)?.docs ?? [];
+                if (documentos.isEmpty) {
+                  return Center(
+                    child: Text('Sem agenda'),
+                  );
+                }
 
-          List<DocumentSnapshot> documentos = snapshot.data!.docs;
+                // Ordena os documentos por data
+                documentos.sort((a, b) {
+                  var dataA = a['data'] as String?;
+                  var dataB = b['data'] as String?;
+                  if (dataA != null && dataB != null) {
+                    return dataA.compareTo(dataB);
+                  } else {
+                    return 0;
+                  }
+                });
 
-          print(
-              'Número de documentos na coleção "Agendas": ${documentos.length}');
+                return ListView.builder(
+                  itemCount: documentos.length,
+                  itemBuilder: (context, index) {
+                    if (index >= documentos.length) {
+                      return Container();
+                    }
 
-          if (documentos.isEmpty) {
-            return Center(
-              child: Text('Sem Agendas'),
-            );
-          }
+                    var aviso = documentos[index];
 
-          return ListView.builder(
-            key: UniqueKey(),
-            itemCount: documentos.length,
-            itemBuilder: (context, index) {
-              if (index >= documentos.length) {
-                return Container();
-              }
-
-              var aviso = documentos[index];
-
-              // Restante do código para exibir os comunicados
-              return GestureDetector(
-                onTap: () {
-                  _showDialog(aviso);
-                },
-                child: Card(
-                  key: Key(aviso.id),
-                  elevation: 2.0,
-                  margin: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                  color: cardColors[aviso.id],
-                  child: ListTile(
-                    contentPadding: EdgeInsets.all(8.0),
-                    title: Text(
-                      aviso['titulo'] ?? 'Sem Título',
-                      style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          aviso['descricao'] ?? 'Sem Descrição',
+                    return Card(
+                      key: Key(aviso.id),
+                      elevation: 2.0,
+                      margin:
+                          EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                      child: ListTile(
+                        contentPadding: EdgeInsets.all(8.0),
+                        title: Text(
+                          aviso['titulo'] ?? 'Sem Título',
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 17),
                         ),
-                        SizedBox(height: 8.0),
-                        Row(
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(Icons.calendar_today, size: 16.0),
-                            SizedBox(width: 4.0),
                             Text(
-                              aviso['data'] ?? 'Sem Data',
-                              style: TextStyle(
-                                color: Color.fromARGB(255, 116, 115, 115),
-                              ),
+                              aviso['descricao'] ?? 'Sem Descrição',
+                            ),
+                            SizedBox(height: 8.0),
+                            Row(
+                              children: [
+                                Icon(Icons.calendar_today, size: 16.0),
+                                SizedBox(width: 4.0),
+                                Text(
+                                  aviso['data'] ?? 'Sem Data',
+                                  style: TextStyle(
+                                    color: Color.fromARGB(255, 116, 115, 115),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            },
-          );
-        },
-      ),
-      floatingActionButton:
-          widget.userType == 'Coordenacao' || widget.userType == 'Professor'
-              ? FloatingActionButton(
-                  onPressed: () {
-                    // Adicione a lógica para adicionar novos avisos aqui
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => AgendaCards(),
                       ),
                     );
                   },
-                  child: Icon(Icons.add),
-                )
-              : null,
-    );
-  }
-
-  void _showDialog(DocumentSnapshot aviso) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Sobre a Atividade'),
-          content: Text(aviso['descricao'] ?? 'Sem Descrição'),
-          actions: [
-            Row(
-              children: [
-                TextButton(
-                  onPressed: () {
-                    _updateCardColor(
-                        aviso.id, Color.fromARGB(255, 224, 51, 39));
-                    Navigator.pop(context);
-                  },
-                  child: Text(
-                    'Não Fiz',
+                );
+              },
+            )
+          : Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.signal_wifi_off,
+                    size: 50,
+                    color: Colors.red,
+                  ),
+                  SizedBox(height: 10),
+                  Text(
+                    'Sem conexão com a Internet',
                     style: TextStyle(
-                      color: const Color.fromARGB(255, 206, 64, 54),
+                      fontSize: 16,
+                      color: Colors.red,
                     ),
                   ),
-                ),
-                TextButton(
-                  onPressed: () {
-                    _updateCardColor(
-                        aviso.id, const Color.fromARGB(255, 92, 214, 96));
-                    Navigator.pop(context);
-                  },
-                  child: Text(
-                    'Fiz',
-                    style: TextStyle(
-                      color: Colors.green,
-                    ),
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {
-                    _resetCardColor(aviso.id);
-                    Navigator.pop(context);
-                  },
-                  child: Text(
-                    'Em andamento',
-                    style: TextStyle(
-                      color: Colors.blue,
-                    ),
-                  ),
-                ),
-              ],
+                  SizedBox(height: 10),
+                ],
+              ),
             ),
-          ],
-        );
-      },
+      floatingActionButton: widget.userType == 'Coordenacao'
+          ? FloatingActionButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AgendaCards(),
+                  ),
+                );
+              },
+              child: Icon(Icons.add),
+            )
+          : null,
     );
-  }
-
-  void _resetCardColor(String avisoId) {
-    setState(() {
-      cardColors.remove(avisoId);
-      _saveCardColors();
-    });
-  }
-
-  Future<void> _loadCardColors() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String colorsString = prefs.getString('cardColors') ?? '{}';
-
-    try {
-      Map<String, dynamic> decodedColors = json.decode(colorsString);
-      setState(() {
-        cardColors = Map<String, Color>.from(
-          decodedColors.map(
-            (key, value) => MapEntry<String, Color>(
-                key, Color(int.parse(value, radix: 16))),
-          ),
-        );
-      });
-    } catch (e) {
-      print('Erro ao decodificar as cores dos cartões: $e');
-    }
-  }
-
-  // Método para salvar as cores dos cartões no armazenamento local
-  Future<void> _saveCardColors() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String colorsString = json.encode(
-      cardColors
-          .map((key, value) => MapEntry(key, value.value.toRadixString(16))),
-    );
-    await prefs.setString('cardColors', colorsString);
-  }
-
-  // Método para atualizar a cor do card
-  void _updateCardColor(String avisoId, Color color) {
-    setState(() {
-      cardColors[avisoId] = color;
-      _saveCardColors(); // Salvar as cores no armazenamento local
-    });
   }
 }

@@ -167,6 +167,7 @@ class _FinanceiroHomeState extends State<FinanceiroHome> {
 
   @override
   Widget build(BuildContext context) {
+    alunosFiltrados.sort((a, b) => a.nome.compareTo(b.nome));
     return Scaffold(
       appBar: AppBar(
         title: Text('Financeiro'),

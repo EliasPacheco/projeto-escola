@@ -9,6 +9,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'auth_provider.dart' as localAuthProvider;
 import 'package:brasil_fields/brasil_fields.dart'; // Adicionado pacote brasil_fields
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -46,6 +47,31 @@ class _LoginPageState extends State<LoginPage> {
   bool _isCoordenacao = false;
   bool _isLoading = false;
   Completer<void>? _loadingCompleter;
+
+  Connectivity _connectivity = Connectivity();
+  bool _temConexaoInternet = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _verificarConexaoInternet();
+    _monitorarConexao();
+  }
+
+  void _monitorarConexao() {
+    _connectivity.onConnectivityChanged.listen((ConnectivityResult result) {
+      setState(() {
+        _temConexaoInternet = result != ConnectivityResult.none;
+      });
+    });
+  }
+
+  Future<void> _verificarConexaoInternet() async {
+    var connectivityResult = await _connectivity.checkConnectivity();
+    setState(() {
+      _temConexaoInternet = connectivityResult != ConnectivityResult.none;
+    });
+  }
 
   Future<void> _signInWithMatriculaCpfAndPassword() async {
     try {
@@ -275,14 +301,25 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void showInvalidCredentialsSnackbar() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-            'CPF ou Matrícula inválidos. Usuário não encontrado.'),
-        duration: Duration(seconds: 2),
-        backgroundColor: Colors.red,
-      ),
-    );
+    if (!_temConexaoInternet) {
+      // Snackbar para quando não há conexão com a internet
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Sem conexão com a internet'),
+          duration: Duration(seconds: 2),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } else {
+      // Snackbar para CPF ou Matrícula inválidos quando há conexão com a internet
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('CPF ou Matrícula inválidos. Usuário não encontrado.'),
+          duration: Duration(seconds: 2),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   String _getUserTypeText(bool isAluno, bool isProfessor, bool isCoordenacao) {
