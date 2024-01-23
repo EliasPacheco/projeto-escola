@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:escola/cards/Financeirocard.dart';
 import 'package:escola/financeiro/FinanceiroScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:escola/alunos/AlunoHome.dart';
 import 'package:escola/alunos/AlunoHome.dart' as AlunoHomePackage;
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 class Aluno {
   final String documentId;
@@ -48,12 +51,46 @@ class _FinanceiroHomeState extends State<FinanceiroHome> {
   ];
   String selectedAno = 'Maternal';
   List<Aluno> alunosFiltrados = [];
+  bool _temConexaoInternet = true;
+  Connectivity _connectivity = Connectivity();
+  late StreamSubscription<ConnectivityResult> _connectivitySubscription;
 
   @override
   void initState() {
     super.initState();
     mesAno = _getDataAtual();
     buscarAlunos();
+    _verificarConexaoInternet();
+    _monitorarConexao();
+  }
+
+  void _monitorarConexao() {
+    _connectivitySubscription =
+        _connectivity.onConnectivityChanged.listen((ConnectivityResult result) {
+      if (mounted) {
+        setState(() {
+          _temConexaoInternet = result != ConnectivityResult.none;
+          if (_temConexaoInternet) {
+            // Adicione lógica adicional, se necessário
+          }
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _connectivitySubscription.cancel(); // Cancel the subscription
+    super.dispose();
+  }
+
+  Future<void> _verificarConexaoInternet() async {
+    var connectivityResult = await _connectivity.checkConnectivity();
+    if (mounted) {
+      setState(() {
+        _temConexaoInternet = connectivityResult != ConnectivityResult.none;
+      });
+    }
   }
 
   late String mesAno;
@@ -61,44 +98,55 @@ class _FinanceiroHomeState extends State<FinanceiroHome> {
   Future<void> buscarAlunos() async {
     mesAno = _getDataAtual();
 
-    FirebaseFirestore.instance
-        .collection('alunos')
-        .doc(selectedAno)
-        .collection('alunos')
-        .snapshots()
-        .listen((QuerySnapshot querySnapshot) {
-      setState(() {
-        alunos = querySnapshot.docs.map((DocumentSnapshot document) {
-          Map<String, dynamic> data = document.data() as Map<String, dynamic>;
+    try {
+      // Execute apenas se o widget estiver montado
+      if (mounted) {
+        final querySnapshot = await FirebaseFirestore.instance
+            .collection('alunos')
+            .doc(selectedAno)
+            .collection('alunos')
+            .get();
 
-          if (data.containsKey('financeiro')) {
-            List<Map<String, dynamic>> financeiroData =
-                List<Map<String, dynamic>>.from(data['financeiro']);
+        // Execute apenas se o widget estiver montado
+        if (mounted) {
+          setState(() {
+            alunos = querySnapshot.docs.map((DocumentSnapshot document) {
+              Map<String, dynamic> data =
+                  document.data() as Map<String, dynamic>;
 
-            bool pagouAluno = financeiroData.any((element) {
-              String mesAnoAluno = element['mesAno'] ?? '';
-              return mesAnoAluno == mesAno && (element['pagou'] ?? false);
-            });
+              if (data.containsKey('financeiro')) {
+                List<Map<String, dynamic>> financeiroData =
+                    List<Map<String, dynamic>>.from(data['financeiro']);
 
-            return Aluno(
-              documentId: document.id,
-              nome: (data['nome'] ?? '').toString(),
-              serie: (data['serie'] ?? '').toString(),
-              pagou: pagouAluno,
-            );
-          } else {
-            return Aluno(
-              documentId: document.id,
-              nome: (data['nome'] ?? '').toString(),
-              serie: (data['serie'] ?? '').toString(),
-              pagou: false,
-            );
-          }
-        }).toList();
+                bool pagouAluno = financeiroData.any((element) {
+                  String mesAnoAluno = element['mesAno'] ?? '';
+                  return mesAnoAluno == mesAno && (element['pagou'] ?? false);
+                });
 
-        alunosFiltrados = List.from(alunos);
-      });
-    });
+                return Aluno(
+                  documentId: document.id,
+                  nome: (data['nome'] ?? '').toString(),
+                  serie: (data['serie'] ?? '').toString(),
+                  pagou: pagouAluno,
+                );
+              } else {
+                return Aluno(
+                  documentId: document.id,
+                  nome: (data['nome'] ?? '').toString(),
+                  serie: (data['serie'] ?? '').toString(),
+                  pagou: false,
+                );
+              }
+            }).toList();
+
+            alunosFiltrados = List.from(alunos);
+          });
+        }
+      }
+    } catch (e) {
+      // Lida com erros, se necessário
+      print('Erro ao buscar alunos: $e');
+    }
   }
 
   String _getDataAtual() {
@@ -243,69 +291,97 @@ class _FinanceiroHomeState extends State<FinanceiroHome> {
               ),
               elevation: 4.0,
               margin: EdgeInsets.zero,
-              child: ListView.builder(
-                itemCount: alunosFiltrados.length,
-                itemBuilder: (context, index) {
-                  return ListTile(
-                    title: Row(
-                      children: [
-                        CircleAvatar(
-                          backgroundColor: (alunosFiltrados[index].pagou)
-                              ? Colors.green
-                              : Colors.red,
-                          child: Icon(
-                            (alunosFiltrados[index].pagou)
-                                ? Icons.check_circle
-                                : Icons.error,
-                            color: Colors.white,
+              child: _temConexaoInternet
+                  ? alunosFiltrados.isEmpty
+                      ? Center(
+                          child: Text('Sem financeiro para esses alunos'),
+                        )
+                      : ListView.builder(
+                      itemCount: alunosFiltrados.length,
+                      itemBuilder: (context, index) {
+                        return ListTile(
+                          title: Row(
+                            children: [
+                              CircleAvatar(
+                                backgroundColor: (alunosFiltrados[index].pagou)
+                                    ? Colors.green
+                                    : Colors.red,
+                                child: Icon(
+                                  (alunosFiltrados[index].pagou)
+                                      ? Icons.check_circle
+                                      : Icons.error,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              SizedBox(
+                                width: 10.0,
+                              ),
+                              Text('${alunosFiltrados[index].nome}'),
+                            ],
                           ),
-                        ),
-                        SizedBox(
-                          width: 10.0,
-                        ),
-                        Text('${alunosFiltrados[index].nome}'),
-                      ],
-                    ),
-                    trailing: widget.userType == 'Coordenacao'
-                        ? PopupMenuButton<String>(
-                            itemBuilder: (context) {
-                              return [
-                                PopupMenuItem<String>(
-                                  value: 'opcao1',
-                                  child: Text('Enviar mensagem'),
-                                ),
-                                PopupMenuItem<String>(
-                                  value: 'opcao2',
-                                  child: Text('Financeiro'),
-                                ),
-                              ];
-                            },
-                            onSelected: (String value) {
-                              if (value == 'opcao1') {
-                                exibirModalPresencaFalta(
-                                    alunosFiltrados[index].nome);
-                              } else if (value == 'opcao2') {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => FinanceiroScreen(
-                                      userType: widget.userType,
-                                      aluno: AlunoHomePackage.Aluno(
-                                        nome: alunosFiltrados[index].nome,
-                                        serie: alunosFiltrados[index].serie,
-                                        documentId:
-                                            alunosFiltrados[index].documentId,
+                          trailing: widget.userType == 'Coordenacao'
+                              ? PopupMenuButton<String>(
+                                  itemBuilder: (context) {
+                                    return [
+                                      PopupMenuItem<String>(
+                                        value: 'opcao1',
+                                        child: Text('Enviar mensagem'),
                                       ),
-                                    ),
-                                  ),
-                                );
-                              }
-                            },
-                          )
-                        : null,
-                  );
-                },
-              ),
+                                      PopupMenuItem<String>(
+                                        value: 'opcao2',
+                                        child: Text('Financeiro'),
+                                      ),
+                                    ];
+                                  },
+                                  onSelected: (String value) {
+                                    if (value == 'opcao1') {
+                                      exibirModalPresencaFalta(
+                                          alunosFiltrados[index].nome);
+                                    } else if (value == 'opcao2') {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              FinanceiroScreen(
+                                            userType: widget.userType,
+                                            aluno: AlunoHomePackage.Aluno(
+                                              nome: alunosFiltrados[index].nome,
+                                              serie:
+                                                  alunosFiltrados[index].serie,
+                                              documentId: alunosFiltrados[index]
+                                                  .documentId,
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                )
+                              : null,
+                        );
+                      },
+                    )
+                  : Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.signal_wifi_off,
+                            size: 50,
+                            color: Colors.red,
+                          ),
+                          SizedBox(height: 10),
+                          Text(
+                            'Sem conexão com a Internet',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.red,
+                            ),
+                          ),
+                          SizedBox(height: 10),
+                        ],
+                      ),
+                    ),
             ),
           ),
         ],

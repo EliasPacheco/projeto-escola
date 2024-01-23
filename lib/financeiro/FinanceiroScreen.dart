@@ -8,6 +8,8 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:brasil_fields/brasil_fields.dart';
 import 'package:flutter/services.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+
 
 class FinanceiroScreen extends StatefulWidget {
   final String userType;
@@ -28,11 +30,41 @@ class _FinanceiroScreenState extends State<FinanceiroScreen> {
   List<String> availableYears = [];
 
   late StreamController<List<String>> _yearsController;
+  bool _temConexaoInternet = true;
+  Connectivity _connectivity = Connectivity();
+
+  late StreamController<List<Map<String, dynamic>>> _alunosStreamController;
+  Stream<List<Map<String, dynamic>>> get alunosStream =>
+      _alunosStreamController.stream;
 
   @override
   void initState() {
     super.initState();
     _yearsController = StreamController<List<String>>.broadcast();
+    _alunosStreamController = StreamController<List<Map<String, dynamic>>>.broadcast();
+    _verificarConexaoInternet();
+    _monitorarConexao();
+  }
+
+  void _monitorarConexao() {
+    _connectivity.onConnectivityChanged.listen((ConnectivityResult result) {
+      setState(() {
+        _temConexaoInternet = result != ConnectivityResult.none;
+        if (_temConexaoInternet) {
+          // Atualiza o stream com base no novo ano selecionado
+          buscarInformacoesFinanceirasAluno().listen((alunos) {
+            _alunosStreamController.add(alunos);
+          });
+        }
+      });
+    });
+  }
+
+  Future<void> _verificarConexaoInternet() async {
+    var connectivityResult = await _connectivity.checkConnectivity();
+    setState(() {
+      _temConexaoInternet = connectivityResult != ConnectivityResult.none;
+    });
   }
 
   Stream<List<String>> get yearsStream => _yearsController.stream;
@@ -136,7 +168,9 @@ class _FinanceiroScreenState extends State<FinanceiroScreen> {
           ),
         ],
       ),
-      body: StreamBuilder(
+      body: 
+      _temConexaoInternet
+          ? StreamBuilder(
         stream: buscarInformacoesFinanceirasAluno(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -157,6 +191,11 @@ class _FinanceiroScreenState extends State<FinanceiroScreen> {
                     infoFinanceira['mesAno'].endsWith(selectedYear))
                 .toList();
 
+            if (dadosFinanceiros.isEmpty) {
+              return Center(
+                child: Text('Sem pagamentos a realizar'),
+              );
+            }
             // Ordena os dadosFinanceiros filtrados pela chave 'mesAno'
             dadosFiltrados.sort((a, b) {
               DateTime dataA = DateFormat('MM/yyyy').parse(a['mesAno']);
@@ -245,7 +284,27 @@ class _FinanceiroScreenState extends State<FinanceiroScreen> {
             );
           }
         },
-      ),
+      ) : Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.signal_wifi_off,
+                    size: 50,
+                    color: Colors.red,
+                  ),
+                  SizedBox(height: 10),
+                  Text(
+                    'Sem conexão com a Internet',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.red,
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                ],
+              ),
+            ),
       floatingActionButton: widget.userType == 'Coordenacao'
           ? FloatingActionButton(
               onPressed: () {

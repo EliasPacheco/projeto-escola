@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:escola/cards/Ocorrenciacard.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 class OcorrenciasScreen extends StatefulWidget {
   final String matriculaCpf;
@@ -20,6 +21,8 @@ class OcorrenciasScreen extends StatefulWidget {
 class _OcorrenciasScreenState extends State<OcorrenciasScreen> {
   final List<Aviso> avisos = [];
   String nomeAluno = '';
+  bool _temConexaoInternet = true;
+  Connectivity _connectivity = Connectivity();
 
   @override
   void initState() {
@@ -30,11 +33,38 @@ class _OcorrenciasScreenState extends State<OcorrenciasScreen> {
     } else {
       print('Aluno não encontrado com CPF/Matrícula: ${widget.matriculaCpf}');
     }
+    _verificarConexaoInternet();
+    _monitorarConexao();
+  }
+
+  void _monitorarConexao() {
+    _connectivity.onConnectivityChanged.listen((ConnectivityResult result) {
+      setState(() {
+        _temConexaoInternet = result != ConnectivityResult.none;
+        if (_temConexaoInternet) {
+          // Atualiza o stream com base no novo ano selecionado
+          _getOcorrenciasFromAlunoData();
+        }
+      });
+    });
+  }
+
+  Future<void> _verificarConexaoInternet() async {
+    var connectivityResult = await _connectivity.checkConnectivity();
+    setState(() {
+      _temConexaoInternet = connectivityResult != ConnectivityResult.none;
+    });
   }
 
   void _getOcorrenciasFromAlunoData() {
-    List<dynamic> ocorrencias =
-        widget.alunoData!['ocorrencias'] ?? []; // Acessa o array de ocorrências
+    List<dynamic> ocorrencias = widget.alunoData!['ocorrencias'] ?? [];
+
+    // Ordena as ocorrências com base na data (assumindo que a data seja uma string no formato 'dd/mm/aaaa')
+    ocorrencias.sort((oc1, oc2) {
+      String data1 = oc1['data'] ?? '';
+      String data2 = oc2['data'] ?? '';
+      return _compareDatas(data1, data2);
+    });
 
     setState(() {
       avisos.clear();
@@ -48,6 +78,20 @@ class _OcorrenciasScreenState extends State<OcorrenciasScreen> {
     });
   }
 
+// Função para comparar datas no formato 'dd/mm/aaaa'
+  int _compareDatas(String data1, String data2) {
+    List<int> partesData1 = data1.split('/').map(int.parse).toList();
+    List<int> partesData2 = data2.split('/').map(int.parse).toList();
+
+    if (partesData1[2] != partesData2[2]) {
+      return partesData1[2].compareTo(partesData2[2]); // Compara anos
+    } else if (partesData1[1] != partesData2[1]) {
+      return partesData1[1].compareTo(partesData2[1]); // Compara meses
+    } else {
+      return partesData1[0].compareTo(partesData2[0]); // Compara dias
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     String primeiroNome = nomeAluno.split(' ')[0];
@@ -58,50 +102,73 @@ class _OcorrenciasScreenState extends State<OcorrenciasScreen> {
             ? 'Ocorrências de $primeiroNome'
             : 'Ocorrências Escolares'),
       ),
-      body: widget.alunoData == null
-          ? Center(
-              child: Text('Sem ocorrências'),
-            )
-          : avisos.isEmpty
+      body: _temConexaoInternet
+          ? (widget.alunoData == null
               ? Center(
                   child: Text('Sem ocorrências'),
                 )
-              : ListView.builder(
-                  itemCount: avisos.length,
-                  itemBuilder: (context, index) {
-                    return Card(
-                      elevation: 2.0,
-                      margin:
-                          EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                      child: ListTile(
-                        contentPadding: EdgeInsets.all(8.0),
-                        title: Text(
-                          avisos[index].titulo,
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('$nomeAluno ' + avisos[index].descricao),
-                            SizedBox(height: 8.0),
-                            Row(
+              : avisos.isEmpty
+                  ? Center(
+                      child: Text('Sem ocorrências'),
+                    )
+                  : ListView.builder(
+                      itemCount: avisos.length,
+                      itemBuilder: (context, index) {
+                        return Card(
+                          elevation: 2.0,
+                          margin: EdgeInsets.symmetric(
+                              horizontal: 8.0, vertical: 4.0),
+                          child: ListTile(
+                            contentPadding: EdgeInsets.all(8.0),
+                            title: Text(
+                              avisos[index].titulo,
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Icon(Icons.calendar_today, size: 16.0),
-                                SizedBox(width: 4.0),
-                                Text(
-                                  avisos[index].data,
-                                  style: TextStyle(
-                                    color: Color.fromARGB(255, 116, 115, 115),
-                                  ),
+                                Text(avisos[index].descricao),
+                                SizedBox(height: 8.0),
+                                Row(
+                                  children: [
+                                    Icon(Icons.calendar_today, size: 16.0),
+                                    SizedBox(width: 4.0),
+                                    Text(
+                                      avisos[index].data,
+                                      style: TextStyle(
+                                        color:
+                                            Color.fromARGB(255, 116, 115, 115),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
+                          ),
+                        );
+                      },
+                    ))
+          : Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.signal_wifi_off,
+                    size: 50,
+                    color: Colors.red,
+                  ),
+                  SizedBox(height: 10),
+                  Text(
+                    'Sem conexão com a Internet',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.red,
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                ],
+              ),
+            ),
       floatingActionButton: widget.userType == 'Coordenacao'
           ? FloatingActionButton(
               onPressed: () {

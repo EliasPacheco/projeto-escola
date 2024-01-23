@@ -134,11 +134,7 @@ class _LoginPageState extends State<LoginPage> {
     } finally {
       if (mounted) {
         _loadingCompleter = Completer<void>();
-        Future.delayed(Duration(seconds: 1), () {
-          if (!_loadingCompleter!.isCompleted) {
-            _loadingCompleter!.complete();
-          }
-        });
+        Future.delayed(Duration(seconds: 1), () {});
 
         try {
           await _loadingCompleter!.future;

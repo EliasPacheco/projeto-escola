@@ -8,6 +8,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 class ConteudosScreen extends StatefulWidget {
   final String matriculaCpf;
@@ -29,6 +30,8 @@ class ConteudosScreen extends StatefulWidget {
 
 class _ConteudosScreenState extends State<ConteudosScreen> {
   String? serieAluno;
+  bool _temConexaoInternet = true;
+  Connectivity _connectivity = Connectivity();
 
   @override
   void initState() {
@@ -38,6 +41,24 @@ class _ConteudosScreenState extends State<ConteudosScreen> {
     if (widget.userType == 'Aluno') {
       serieAluno = widget.alunoData?['serie'];
     }
+    _verificarConexaoInternet();
+    _monitorarConexao();
+  }
+
+  void _monitorarConexao() {
+    _connectivity.onConnectivityChanged.listen((ConnectivityResult result) {
+      setState(() {
+        _temConexaoInternet = result != ConnectivityResult.none;
+        if (_temConexaoInternet) {}
+      });
+    });
+  }
+
+  Future<void> _verificarConexaoInternet() async {
+    var connectivityResult = await _connectivity.checkConnectivity();
+    setState(() {
+      _temConexaoInternet = connectivityResult != ConnectivityResult.none;
+    });
   }
 
   DateTime parseDate(String dateString) {
@@ -289,118 +310,144 @@ class _ConteudosScreenState extends State<ConteudosScreen> {
             ),
         ],
       ),
-      body: FutureBuilder<QuerySnapshot>(
-        future: (widget.userType == 'Aluno')
-            ? FirebaseFirestore.instance
-                .collection('conteudos')
-                .doc(widget.alunoData?['turma'])
-                .collection('conteudos')
-                .get()
-            : FirebaseFirestore.instance
-                .collection('conteudos')
-                .doc(selectedAno)
-                .collection('conteudos')
-                .get(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(
-              child: CircularProgressIndicator(),
-            );
-          }
+      body: _temConexaoInternet
+          ? FutureBuilder<QuerySnapshot>(
+              future: (widget.userType == 'Aluno')
+                  ? FirebaseFirestore.instance
+                      .collection('conteudos')
+                      .doc(widget.alunoData?['turma'])
+                      .collection('conteudos')
+                      .get()
+                  : FirebaseFirestore.instance
+                      .collection('conteudos')
+                      .doc(selectedAno)
+                      .collection('conteudos')
+                      .get(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(
+                    child: CircularProgressIndicator(),
+                  );
+                }
 
-          if (snapshot.hasError) {
-            return Center(
-              child: Text('Erro ao carregar os dados'),
-            );
-          }
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Text('Erro ao carregar os dados'),
+                  );
+                }
 
-          List<DocumentSnapshot> documentos = snapshot.data!.docs;
+                List<DocumentSnapshot> documentos = snapshot.data!.docs;
 
-          // Ordena os documentos com base na data
-          documentos.sort((a, b) {
-            DateTime dataA = parseDate(a['data']);
-            DateTime dataB = parseDate(b['data']);
-            return dataA.compareTo(dataB);
-          });
+                // Ordena os documentos com base na data
+                documentos.sort((a, b) {
+                  DateTime dataA = parseDate(a['data']);
+                  DateTime dataB = parseDate(b['data']);
+                  return dataA.compareTo(dataB);
+                });
 
-          print(
-              'Número de documentos na coleção "conteudos": ${documentos.length}');
+                print(
+                    'Número de documentos na coleção "conteudos": ${documentos.length}');
 
-          if (documentos.isEmpty) {
-            return Center(
-              child: Text('Sem Conteudos'),
-            );
-          }
+                if (documentos.isEmpty) {
+                  return Center(
+                    child: Text('Sem Conteudos'),
+                  );
+                }
 
-          return ListView.builder(
-            itemCount: documentos.length,
-            itemBuilder: (context, index) {
-              var conteudo = documentos[index].data() as Map<String, dynamic>?;
+                return ListView.builder(
+                  itemCount: documentos.length,
+                  itemBuilder: (context, index) {
+                    var conteudo =
+                        documentos[index].data() as Map<String, dynamic>?;
 
-              return Card(
-                elevation: 2.0,
-                margin: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                child: ListTile(
-                  contentPadding: EdgeInsets.all(8.0),
-                  title: Center(
-                    child: Text(
-                      conteudo?['data'] ?? 'Sem Data',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16.0,
-                      ),
-                    ),
-                  ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      if (conteudo?['arquivos'] != null &&
-                          conteudo?['arquivos'] is List)
-                        Column(
+                    return Card(
+                      elevation: 2.0,
+                      margin:
+                          EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                      child: ListTile(
+                        contentPadding: EdgeInsets.all(8.0),
+                        title: Center(
+                          child: Text(
+                            conteudo?['data'] ?? 'Sem Data',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16.0,
+                            ),
+                          ),
+                        ),
+                        subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            SizedBox(height: 12.0),
-                            for (var arquivo
-                                in (conteudo?['arquivos'] as List?) ?? [])
+                            if (conteudo?['arquivos'] != null &&
+                                conteudo?['arquivos'] is List)
                               Column(
+                                crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
-                                  GestureDetector(
-                                    onTap: () {
-                                      _showDownloadConfirmation(
-                                          arquivo.toString());
-                                    },
-                                    child: Column(
+                                  SizedBox(height: 12.0),
+                                  for (var arquivo
+                                      in (conteudo?['arquivos'] as List?) ?? [])
+                                    Column(
                                       children: [
-                                        _buildFileIcon(arquivo.toString()),
-                                        SizedBox(height: 4.0),
-                                        InkWell(
+                                        GestureDetector(
                                           onTap: () {
                                             _showDownloadConfirmation(
                                                 arquivo.toString());
                                           },
-                                          child: Text(
-                                            _truncateText(
-                                                arquivo.toString(), 19),
-                                            textAlign: TextAlign.center,
-                                            style: TextStyle(fontSize: 16.0),
+                                          child: Column(
+                                            children: [
+                                              _buildFileIcon(
+                                                  arquivo.toString()),
+                                              SizedBox(height: 4.0),
+                                              InkWell(
+                                                onTap: () {
+                                                  _showDownloadConfirmation(
+                                                      arquivo.toString());
+                                                },
+                                                child: Text(
+                                                  _truncateText(
+                                                      arquivo.toString(), 19),
+                                                  textAlign: TextAlign.center,
+                                                  style:
+                                                      TextStyle(fontSize: 16.0),
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ),
+                                        SizedBox(height: 8.0),
                                       ],
                                     ),
-                                  ),
-                                  SizedBox(height: 8.0),
                                 ],
                               ),
                           ],
                         ),
-                    ],
+                      ),
+                    );
+                  },
+                );
+              },
+            )
+          : Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.signal_wifi_off,
+                    size: 50,
+                    color: Colors.red,
                   ),
-                ),
-              );
-            },
-          );
-        },
-      ),
+                  SizedBox(height: 10),
+                  Text(
+                    'Sem conexão com a Internet',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.red,
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                ],
+              ),
+            ),
       floatingActionButton:
           widget.userType == 'Coordenacao' || widget.userType == 'Professor'
               ? FloatingActionButton(

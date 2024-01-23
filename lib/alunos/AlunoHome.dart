@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:escola/alunos/MatriculaScreen.dart';
 import 'package:escola/financeiro/FinanceiroScreen.dart';
 import 'package:flutter/material.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 class Aluno {
   final String documentId;
@@ -49,11 +50,34 @@ class _AlunoHomeState extends State<AlunoHome> {
 
   late Stream<List<Aluno>> alunosStream;
 
+  bool _temConexaoInternet = true;
+  Connectivity _connectivity = Connectivity();
+
   @override
   void initState() {
     super.initState();
+    _verificarConexaoInternet();
+    _monitorarConexao();
     // Inicializa o stream ao selecionar o ano
     alunosStream = buscarAlunosStream(selectedAno);
+  }
+
+  void _monitorarConexao() {
+    _connectivity.onConnectivityChanged.listen((ConnectivityResult result) {
+      setState(() {
+        _temConexaoInternet = result != ConnectivityResult.none;
+        if (_temConexaoInternet) {
+          alunosStream = buscarAlunosStream(selectedAno);
+        }
+      });
+    });
+  }
+
+  Future<void> _verificarConexaoInternet() async {
+    var connectivityResult = await _connectivity.checkConnectivity();
+    setState(() {
+      _temConexaoInternet = connectivityResult != ConnectivityResult.none;
+    });
   }
 
   void ordenarAlunosPorNome(List<Aluno> listaAlunos) {
@@ -228,6 +252,30 @@ class _AlunoHomeState extends State<AlunoHome> {
               child: StreamBuilder<List<Aluno>>(
                 stream: alunosStream,
                 builder: (context, snapshot) {
+                  if (!_temConexaoInternet) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.signal_wifi_off,
+                            size: 50,
+                            color: Colors.red,
+                          ),
+                          SizedBox(height: 10),
+                          Text(
+                            'Sem conexão com a Internet',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.red,
+                            ),
+                          ),
+                          SizedBox(height: 10),
+                        ],
+                      ),
+                    );
+                  }
+
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return Center(child: CircularProgressIndicator());
                   }
