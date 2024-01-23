@@ -244,7 +244,7 @@ class _AgendaScreenState extends State<AgendaScreen> {
                 ],
               ),
             ),
-      floatingActionButton: widget.userType == 'Coordenacao'
+      floatingActionButton: widget.userType == 'Coordenacao' || widget.userType == 'Professor'
           ? FloatingActionButton(
               onPressed: () {
                 Navigator.push(

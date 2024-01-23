@@ -220,6 +220,17 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
     TextInputType keyboardType = TextInputType.text,
     MaskTextInputFormatter? maskFormatter,
   }) {
+    // Adiciona um listener para garantir que a primeira letra seja sempre maiúscula
+    controller.addListener(() {
+      final text = controller.text;
+      if (text.isNotEmpty) {
+        controller.value = controller.value.copyWith(
+          text: text.substring(0, 1).toUpperCase() + text.substring(1),
+          selection: TextSelection.collapsed(offset: text.length),
+        );
+      }
+    });
+
     return Column(
       children: [
         TextField(
@@ -311,7 +322,61 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
 
   String alunoUid = "";
 
-  void _realizarMatricula() {
+  Future<bool> _verificarExistenciaCPF(String cpf) async {
+    // Consulta ao Firestore para verificar se o CPF já existe em qualquer turma
+    for (String serie in [
+      'Maternal',
+      'Infantil I',
+      'Infantil II',
+      '1º Ano',
+      '2º Ano',
+      '3º Ano',
+      '4º Ano',
+      '5º Ano',
+      '6º Ano',
+    ]) {
+      QuerySnapshot query = await alunosCollection
+          .doc(serie)
+          .collection('alunos')
+          .where('cpfResponsavel1', isEqualTo: cpf)
+          .get();
+
+      // Retorna verdadeiro se o CPF já existe em alguma turma
+      if (query.docs.isNotEmpty) {
+        return true;
+      }
+    }
+
+    // Retorna falso se o CPF não existe em nenhuma turma
+    return false;
+  }
+
+  void _realizarMatricula() async {
+    bool cpfExistente =
+        await _verificarExistenciaCPF(cpfResponsavel1Controller.text);
+
+    if (cpfExistente) {
+      // CPF já existe, não realizar a matrícula
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('CPF já cadastrado'),
+            content: Text(
+                'O CPF do responsável 1 já está cadastrado. Não é possível realizar a matrícula.'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text('OK'),
+              ),
+            ],
+          );
+        },
+      );
+      return;
+    }
     Map<String, dynamic> alunoData = {
       'nome': nomeController.text,
       'nomePai': nomePaiController.text,

@@ -45,7 +45,6 @@ class _AlunoHomeState extends State<AlunoHome> {
     '5º Ano',
     '6º Ano'
   ];
-  String selectedAno = 'Maternal';
   List<Aluno> alunosFiltrados = [];
 
   late Stream<List<Aluno>> alunosStream;
@@ -53,11 +52,26 @@ class _AlunoHomeState extends State<AlunoHome> {
   bool _temConexaoInternet = true;
   Connectivity _connectivity = Connectivity();
 
+  late String selectedAno;
+
   @override
   void initState() {
     super.initState();
     _verificarConexaoInternet();
     _monitorarConexao();
+
+    // Adiciona a lógica para inicializar selectedAno com a primeira turma do professor
+    if (widget.userType == 'Professor' && widget.professorData != null) {
+      // Verifica se 'series' não é nulo e não está vazio
+      if (widget.professorData!['series'] != null &&
+          (widget.professorData!['series'] as List).isNotEmpty) {
+        selectedAno = widget.professorData!['series'][0];
+      } else {
+        // Defina um valor padrão caso não haja turmas disponíveis
+        selectedAno = anos[0];
+      }
+    }
+
     // Inicializa o stream ao selecionar o ano
     alunosStream = buscarAlunosStream(selectedAno);
   }
@@ -160,6 +174,52 @@ class _AlunoHomeState extends State<AlunoHome> {
     );
   }
 
+  void exibirModalExcluirAluno(String alunoId) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Excluir Aluno'),
+          content: Text('Deseja excluir o aluno?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await excluirAluno(alunoId);
+              },
+              child: Text('Excluir'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> excluirAluno(String alunoId) async {
+    try {
+      print('Excluindo aluno com ID: $alunoId');
+      await FirebaseFirestore.instance
+          .collection('alunos')
+          .doc(selectedAno)
+          .collection('alunos')
+          .doc(alunoId)
+          .delete();
+
+      print('Aluno excluído com sucesso');
+
+      // Atualiza a lista de alunos após a exclusão
+      alunosStream = buscarAlunosStream(selectedAno);
+    } catch (error) {
+      print('Erro ao excluir aluno: $error');
+    }
+  }
+
   String _getDataAtual() {
     DateTime dataAtual = DateTime.now();
     String formattedDate =
@@ -173,6 +233,9 @@ class _AlunoHomeState extends State<AlunoHome> {
         'Professor Data: ${widget.professorData ?? "Nenhum dado de professor"}');
     print('Tipo de usuário: ${widget.userType ?? "Nenhum tipo de usuário"}');
 
+    print('Series: ${widget.professorData!['series']}');
+    print('Anos: $anos');
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Lista de Alunos'),
@@ -184,21 +247,25 @@ class _AlunoHomeState extends State<AlunoHome> {
               child: DropdownButton<String>(
                 value: selectedAno,
                 onChanged: (String? newValue) {
-                  setState(() {
-                    selectedAno = newValue!;
-                  });
+                  if (newValue != null) {
+                    setState(() {
+                      selectedAno = newValue;
+                    });
 
-                  // Chama a função para filtrar os alunos com base no novo ano selecionado
-                  filtrarPorAno(selectedAno);
+                    // Chama a função para filtrar os alunos com base no novo ano selecionado
+                    filtrarPorAno(selectedAno);
+                  }
                 },
                 items: (widget.userType == 'Professor')
-                    ? widget.professorData!['series']
-                        .map<DropdownMenuItem<String>>((serie) {
-                        return DropdownMenuItem<String>(
-                          value: serie as String,
-                          child: Text(serie),
-                        );
-                      }).toList()
+                    ? [
+                        ...widget.professorData!['series']
+                            .map<DropdownMenuItem<String>>((serie) {
+                          return DropdownMenuItem<String>(
+                            value: serie as String,
+                            child: Text(serie),
+                          );
+                        }),
+                      ]
                     : (widget.userType == 'Coordenacao')
                         ? anos.map<DropdownMenuItem<String>>((String value) {
                             return DropdownMenuItem<String>(
@@ -314,6 +381,11 @@ class _AlunoHomeState extends State<AlunoHome> {
                                   value: 'opcao3',
                                   child: Text('Financeiro'),
                                 ),
+                              if (widget.userType == 'Coordenacao')
+                                PopupMenuItem<String>(
+                                  value: 'opcao4',
+                                  child: Text('Excluir aluno'),
+                                ),
                             ];
                           },
                           onSelected: (String value) {
@@ -332,7 +404,11 @@ class _AlunoHomeState extends State<AlunoHome> {
                                   ),
                                 ),
                               );
+                            } else if (value == 'opcao4') {
+                              exibirModalExcluirAluno(
+                                  alunosFiltrados[index].documentId);
                             }
+                            ;
                           },
                         ),
                       );

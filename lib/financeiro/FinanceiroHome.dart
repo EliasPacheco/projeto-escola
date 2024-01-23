@@ -1,11 +1,8 @@
 import 'dart:async';
-
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:escola/cards/Financeirocard.dart';
+import 'package:escola/alunos/AlunoHome.dart' as AlunoHomePackage;
 import 'package:escola/financeiro/FinanceiroScreen.dart';
 import 'package:flutter/material.dart';
-import 'package:escola/alunos/AlunoHome.dart';
-import 'package:escola/alunos/AlunoHome.dart' as AlunoHomePackage;
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
 class Aluno {
@@ -71,7 +68,7 @@ class _FinanceiroHomeState extends State<FinanceiroHome> {
         setState(() {
           _temConexaoInternet = result != ConnectivityResult.none;
           if (_temConexaoInternet) {
-            // Adicione lógica adicional, se necessário
+            // Add additional logic if needed
           }
         });
       }
@@ -93,24 +90,50 @@ class _FinanceiroHomeState extends State<FinanceiroHome> {
     }
   }
 
+  void exibirModalPresencaFalta(String aluno) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Enviar mensagem'),
+          content: Text(
+              'Deseja enviar uma mensagem para o $aluno para notificar atraso na mensalidade?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                // Add logic for sending the message
+              },
+              child: Text('Enviar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   late String mesAno;
 
   Future<void> buscarAlunos() async {
     mesAno = _getDataAtual();
 
     try {
-      // Execute apenas se o widget estiver montado
-      if (mounted) {
-        final querySnapshot = await FirebaseFirestore.instance
-            .collection('alunos')
-            .doc(selectedAno)
-            .collection('alunos')
-            .get();
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('alunos')
+          .doc(selectedAno)
+          .collection('alunos')
+          .snapshots();
 
-        // Execute apenas se o widget estiver montado
+      querySnapshot.listen((snapshot) {
         if (mounted) {
           setState(() {
-            alunos = querySnapshot.docs.map((DocumentSnapshot document) {
+            alunos = snapshot.docs.map((DocumentSnapshot document) {
               Map<String, dynamic> data =
                   document.data() as Map<String, dynamic>;
 
@@ -142,9 +165,8 @@ class _FinanceiroHomeState extends State<FinanceiroHome> {
             alunosFiltrados = List.from(alunos);
           });
         }
-      }
+      });
     } catch (e) {
-      // Lida com erros, se necessário
       print('Erro ao buscar alunos: $e');
     }
   }
@@ -184,33 +206,6 @@ class _FinanceiroHomeState extends State<FinanceiroHome> {
       alunosFiltrados =
           alunos.where((aluno) => aluno.serie == selectedAno).toList();
     });
-  }
-
-  void exibirModalPresencaFalta(String aluno) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Enviar mensagem'),
-          content: Text(
-              'Deseja enviar uma mensagem para o $aluno para notificar de atraso na mensalidade?'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text('Cancelar'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text('Enviar'),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   @override
@@ -297,70 +292,73 @@ class _FinanceiroHomeState extends State<FinanceiroHome> {
                           child: Text('Sem financeiro para esses alunos'),
                         )
                       : ListView.builder(
-                      itemCount: alunosFiltrados.length,
-                      itemBuilder: (context, index) {
-                        return ListTile(
-                          title: Row(
-                            children: [
-                              CircleAvatar(
-                                backgroundColor: (alunosFiltrados[index].pagou)
-                                    ? Colors.green
-                                    : Colors.red,
-                                child: Icon(
-                                  (alunosFiltrados[index].pagou)
-                                      ? Icons.check_circle
-                                      : Icons.error,
-                                  color: Colors.white,
-                                ),
+                          itemCount: alunosFiltrados.length,
+                          itemBuilder: (context, index) {
+                            return ListTile(
+                              title: Row(
+                                children: [
+                                  CircleAvatar(
+                                    backgroundColor:
+                                        (alunosFiltrados[index].pagou)
+                                            ? Colors.green
+                                            : Colors.red,
+                                    child: Icon(
+                                      (alunosFiltrados[index].pagou)
+                                          ? Icons.check_circle
+                                          : Icons.error,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    width: 10.0,
+                                  ),
+                                  Text('${alunosFiltrados[index].nome}'),
+                                ],
                               ),
-                              SizedBox(
-                                width: 10.0,
-                              ),
-                              Text('${alunosFiltrados[index].nome}'),
-                            ],
-                          ),
-                          trailing: widget.userType == 'Coordenacao'
-                              ? PopupMenuButton<String>(
-                                  itemBuilder: (context) {
-                                    return [
-                                      PopupMenuItem<String>(
-                                        value: 'opcao1',
-                                        child: Text('Enviar mensagem'),
-                                      ),
-                                      PopupMenuItem<String>(
-                                        value: 'opcao2',
-                                        child: Text('Financeiro'),
-                                      ),
-                                    ];
-                                  },
-                                  onSelected: (String value) {
-                                    if (value == 'opcao1') {
-                                      exibirModalPresencaFalta(
-                                          alunosFiltrados[index].nome);
-                                    } else if (value == 'opcao2') {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              FinanceiroScreen(
-                                            userType: widget.userType,
-                                            aluno: AlunoHomePackage.Aluno(
-                                              nome: alunosFiltrados[index].nome,
-                                              serie:
-                                                  alunosFiltrados[index].serie,
-                                              documentId: alunosFiltrados[index]
-                                                  .documentId,
-                                            ),
+                              trailing: widget.userType == 'Coordenacao'
+                                  ? PopupMenuButton<String>(
+                                      itemBuilder: (context) {
+                                        return [
+                                          PopupMenuItem<String>(
+                                            value: 'opcao1',
+                                            child: Text('Enviar mensagem'),
                                           ),
-                                        ),
-                                      );
-                                    }
-                                  },
-                                )
-                              : null,
-                        );
-                      },
-                    )
+                                          PopupMenuItem<String>(
+                                            value: 'opcao2',
+                                            child: Text('Financeiro'),
+                                          ),
+                                        ];
+                                      },
+                                      onSelected: (String value) {
+                                        if (value == 'opcao1') {
+                                          exibirModalPresencaFalta(
+                                              alunosFiltrados[index].nome);
+                                        } else if (value == 'opcao2') {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  FinanceiroScreen(
+                                                userType: widget.userType,
+                                                aluno: AlunoHomePackage.Aluno(
+                                                  nome: alunosFiltrados[index]
+                                                      .nome,
+                                                  serie: alunosFiltrados[index]
+                                                      .serie,
+                                                  documentId:
+                                                      alunosFiltrados[index]
+                                                          .documentId,
+                                                ),
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      },
+                                    )
+                                  : null,
+                            );
+                          },
+                        )
                   : Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
