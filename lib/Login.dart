@@ -11,29 +11,6 @@ import 'auth_provider.dart' as localAuthProvider;
 import 'package:brasil_fields/brasil_fields.dart'; // Adicionado pacote brasil_fields
 import 'package:connectivity_plus/connectivity_plus.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
-  runApp(MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      theme: ThemeData(
-        primaryColor: Colors.blue,
-        colorScheme: ColorScheme.light(
-          primary: Colors.blue,
-          secondary: Colors.orange,
-        ),
-        fontFamily: 'Roboto',
-      ),
-      home: LoginPage(),
-    );
-  }
-}
-
 class LoginPage extends StatefulWidget {
   @override
   _LoginPageState createState() => _LoginPageState();
