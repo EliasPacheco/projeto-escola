@@ -294,7 +294,7 @@ class _FinanceiroScreenState extends State<FinanceiroScreen> {
                                     infoFinanceira['pagou']
                                         ? 'Mensalidade Paga'
                                         : (_isVencimentoHoje(dataVencimento)
-                                            ? 'Aguardando pagamento (Vence Hoje)'
+                                            ? 'Pagamento (Vence Hoje)'
                                             : (vencimentoAtrasado
                                                 ? 'Mensalidade em atraso'
                                                 : 'Aguardando pagamento')),
