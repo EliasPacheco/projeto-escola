@@ -52,7 +52,7 @@ class _AlunoHomeState extends State<AlunoHome> {
   bool _temConexaoInternet = true;
   Connectivity _connectivity = Connectivity();
 
-  late String selectedAno;
+  String selectedAno = 'Maternal';
 
   @override
   void initState() {
@@ -60,19 +60,6 @@ class _AlunoHomeState extends State<AlunoHome> {
     _verificarConexaoInternet();
     _monitorarConexao();
 
-    // Adiciona a lógica para inicializar selectedAno com a primeira turma do professor
-    if (widget.userType == 'Professor' && widget.professorData != null) {
-      // Verifica se 'series' não é nulo e não está vazio
-      if (widget.professorData!['series'] != null &&
-          (widget.professorData!['series'] as List).isNotEmpty) {
-        selectedAno = widget.professorData!['series'][0];
-      } else {
-        // Defina um valor padrão caso não haja turmas disponíveis
-        selectedAno = anos[0];
-      }
-    }
-
-    // Inicializa o stream ao selecionar o ano
     alunosStream = buscarAlunosStream(selectedAno);
   }
 
@@ -233,7 +220,6 @@ class _AlunoHomeState extends State<AlunoHome> {
         'Professor Data: ${widget.professorData ?? "Nenhum dado de professor"}');
     print('Tipo de usuário: ${widget.userType ?? "Nenhum tipo de usuário"}');
 
-    print('Series: ${widget.professorData!['series']}');
     print('Anos: $anos');
 
     return Scaffold(
@@ -247,25 +233,21 @@ class _AlunoHomeState extends State<AlunoHome> {
               child: DropdownButton<String>(
                 value: selectedAno,
                 onChanged: (String? newValue) {
-                  if (newValue != null) {
-                    setState(() {
-                      selectedAno = newValue;
-                    });
+                  setState(() {
+                    selectedAno = newValue!;
+                  });
 
-                    // Chama a função para filtrar os alunos com base no novo ano selecionado
-                    filtrarPorAno(selectedAno);
-                  }
+                  // Chama a função para filtrar os alunos com base no novo ano selecionado
+                  filtrarPorAno(selectedAno);
                 },
                 items: (widget.userType == 'Professor')
-                    ? [
-                        ...widget.professorData!['series']
-                            .map<DropdownMenuItem<String>>((serie) {
-                          return DropdownMenuItem<String>(
-                            value: serie as String,
-                            child: Text(serie),
-                          );
-                        }),
-                      ]
+                    ? widget.professorData!['series']
+                        .map<DropdownMenuItem<String>>((serie) {
+                        return DropdownMenuItem<String>(
+                          value: serie as String,
+                          child: Text(serie),
+                        );
+                      }).toList()
                     : (widget.userType == 'Coordenacao')
                         ? anos.map<DropdownMenuItem<String>>((String value) {
                             return DropdownMenuItem<String>(
@@ -391,7 +373,8 @@ class _AlunoHomeState extends State<AlunoHome> {
                           onSelected: (String value) {
                             if (value == 'opcao1') {
                               exibirModalPresencaFalta(
-                                  alunosFiltrados[index].nome);
+                                alunosFiltrados[index].nome,
+                              );
                             } else if (value == 'opcao2') {
                               // Adicione lógica para a opção Boletim
                             } else if (value == 'opcao3') {
@@ -406,9 +389,9 @@ class _AlunoHomeState extends State<AlunoHome> {
                               );
                             } else if (value == 'opcao4') {
                               exibirModalExcluirAluno(
-                                  alunosFiltrados[index].documentId);
+                                alunosFiltrados[index].documentId,
+                              );
                             }
-                            ;
                           },
                         ),
                       );
