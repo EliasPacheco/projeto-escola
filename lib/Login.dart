@@ -271,15 +271,18 @@ class _LoginPageState extends State<LoginPage> {
     String userTypeText = _getUserTypeText(isAluno, isProfessor, isCoordenacao);
     Provider.of<localAuthProvider.LocalAuthProvider>(context, listen: false)
         .setUserType(userTypeText);
-    String snackBarMessage = 'Login bem-sucedido como $userTypeText';
+    String snackBarMessage = 'Login bem-sucedido';
 
     // Mostrar SnackBar
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(snackBarMessage),
-        duration: Duration(seconds: 3),
+        duration: Duration(seconds: 2),
+        backgroundColor: Colors.green,
       ),
     );
+
+    await Future.delayed(Duration(seconds: 2));
 
     // Navegar para a próxima tela, se não for um professor
     if (!isProfessor) {
@@ -315,6 +318,11 @@ class _LoginPageState extends State<LoginPage> {
           backgroundColor: Colors.red,
         ),
       );
+    }
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 

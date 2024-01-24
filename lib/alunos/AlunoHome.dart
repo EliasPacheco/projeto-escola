@@ -52,13 +52,27 @@ class _AlunoHomeState extends State<AlunoHome> {
   bool _temConexaoInternet = true;
   Connectivity _connectivity = Connectivity();
 
-  String selectedAno = 'Maternal';
+  late String selectedAno;
 
   @override
   void initState() {
     super.initState();
     _verificarConexaoInternet();
     _monitorarConexao();
+
+    if (widget.userType == 'Professor' && widget.professorData != null) {
+      // Verifica se 'series' não é nulo e não está vazio
+      if (widget.professorData!['series'] != null &&
+          (widget.professorData!['series'] as List).isNotEmpty) {
+        selectedAno = widget.professorData!['series'][0];
+      } else {
+        // Defina um valor padrão caso não haja turmas disponíveis
+        selectedAno = anos[0];
+      }
+    } else if (widget.userType == 'Coordenacao') {
+      // Se for um usuário de Coordenação, inicialize selectedAno com o primeiro ano
+      selectedAno = anos[0];
+    }
 
     alunosStream = buscarAlunosStream(selectedAno);
   }
@@ -233,21 +247,25 @@ class _AlunoHomeState extends State<AlunoHome> {
               child: DropdownButton<String>(
                 value: selectedAno,
                 onChanged: (String? newValue) {
-                  setState(() {
-                    selectedAno = newValue!;
-                  });
+                  if (newValue != null) {
+                    setState(() {
+                      selectedAno = newValue;
+                    });
 
-                  // Chama a função para filtrar os alunos com base no novo ano selecionado
-                  filtrarPorAno(selectedAno);
+                    // Chama a função para filtrar os alunos com base no novo ano selecionado
+                    filtrarPorAno(selectedAno);
+                  }
                 },
                 items: (widget.userType == 'Professor')
-                    ? widget.professorData!['series']
-                        .map<DropdownMenuItem<String>>((serie) {
-                        return DropdownMenuItem<String>(
-                          value: serie as String,
-                          child: Text(serie),
-                        );
-                      }).toList()
+                    ? [
+                        ...widget.professorData!['series']
+                            .map<DropdownMenuItem<String>>((serie) {
+                          return DropdownMenuItem<String>(
+                            value: serie as String,
+                            child: Text(serie),
+                          );
+                        }),
+                      ]
                     : (widget.userType == 'Coordenacao')
                         ? anos.map<DropdownMenuItem<String>>((String value) {
                             return DropdownMenuItem<String>(
