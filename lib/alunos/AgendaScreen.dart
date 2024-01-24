@@ -112,6 +112,48 @@ class _AgendaScreenState extends State<AgendaScreen> {
     });
   }
 
+  Future<void> _excluirAviso(String avisoId) async {
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Excluir Agenda'),
+          content: Text('Tem certeza que deseja excluir esta agenda?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Fechar o diálogo
+              },
+              child: Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () async {
+                try {
+                  // Adicione aqui a lógica para excluir o comunicado do Firestore
+                  await FirebaseFirestore.instance
+                      .collection('agenda')
+                      .doc(selectedAno)
+                      .collection('agenda')
+                      .doc(avisoId)
+                      .delete();
+
+                  // Feche o diálogo após a exclusão bem-sucedida
+                  Navigator.of(context).pop();
+                } catch (error) {
+                  // Lide com erros de exclusão, se necessário
+                  print('Erro ao excluir a agenda: $error');
+                  // Feche o diálogo em caso de erro (opcional)
+                  Navigator.of(context).pop();
+                }
+              },
+              child: Text('Confirmar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -235,6 +277,15 @@ class _AgendaScreenState extends State<AgendaScreen> {
                             ),
                           ],
                         ),
+                        trailing: widget.userType == 'Coordenacao' || widget.userType == 'Professor'
+                            ? IconButton(
+                                icon: Icon(Icons.delete),
+                                color: Colors.red,
+                                onPressed: () {
+                                  _excluirAviso(aviso.id);
+                                },
+                              )
+                            : null,
                       ),
                     );
                   },

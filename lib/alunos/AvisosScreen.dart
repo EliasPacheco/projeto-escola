@@ -111,6 +111,48 @@ class _AvisosHomeState extends State<AvisosHome> {
     });
   }
 
+  Future<void> _excluirAviso(String avisoId) async {
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Excluir Comunicado'),
+          content: Text('Tem certeza que deseja excluir este comunicado?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Fechar o diálogo
+              },
+              child: Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () async {
+                try {
+                  // Adicione aqui a lógica para excluir o comunicado do Firestore
+                  await FirebaseFirestore.instance
+                      .collection('comunicados')
+                      .doc(selectedAno)
+                      .collection('comunicados')
+                      .doc(avisoId)
+                      .delete();
+
+                  // Feche o diálogo após a exclusão bem-sucedida
+                  Navigator.of(context).pop();
+                } catch (error) {
+                  // Lide com erros de exclusão, se necessário
+                  print('Erro ao excluir o comunicado: $error');
+                  // Feche o diálogo em caso de erro (opcional)
+                  Navigator.of(context).pop();
+                }
+              },
+              child: Text('Confirmar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -234,6 +276,15 @@ class _AvisosHomeState extends State<AvisosHome> {
                             ),
                           ],
                         ),
+                        trailing: widget.userType == 'Coordenacao'
+                            ? IconButton(
+                                icon: Icon(Icons.delete),
+                                color: Colors.red,
+                                onPressed: () {
+                                  _excluirAviso(aviso.id);
+                                },
+                              )
+                            : null,
                       ),
                     );
                   },

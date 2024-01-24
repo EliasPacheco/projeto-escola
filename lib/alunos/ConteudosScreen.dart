@@ -327,18 +327,19 @@ class _ConteudosScreenState extends State<ConteudosScreen> {
         ],
       ),
       body: _temConexaoInternet
-          ? FutureBuilder<QuerySnapshot>(
-              future: (widget.userType == 'Aluno')
+          ? StreamBuilder<QuerySnapshot>(
+              // Substitua o future pelo stream
+              stream: (widget.userType == 'Aluno')
                   ? FirebaseFirestore.instance
                       .collection('conteudos')
                       .doc(widget.alunoData?['turma'])
                       .collection('conteudos')
-                      .get()
+                      .snapshots()
                   : FirebaseFirestore.instance
                       .collection('conteudos')
                       .doc(selectedAno)
                       .collection('conteudos')
-                      .get(),
+                      .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Center(

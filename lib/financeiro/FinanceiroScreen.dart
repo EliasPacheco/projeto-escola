@@ -10,7 +10,6 @@ import 'package:brasil_fields/brasil_fields.dart';
 import 'package:flutter/services.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
-
 class FinanceiroScreen extends StatefulWidget {
   final String userType;
   final Aluno aluno;
@@ -41,7 +40,8 @@ class _FinanceiroScreenState extends State<FinanceiroScreen> {
   void initState() {
     super.initState();
     _yearsController = StreamController<List<String>>.broadcast();
-    _alunosStreamController = StreamController<List<Map<String, dynamic>>>.broadcast();
+    _alunosStreamController =
+        StreamController<List<Map<String, dynamic>>>.broadcast();
     _verificarConexaoInternet();
     _monitorarConexao();
   }
@@ -139,6 +139,43 @@ class _FinanceiroScreenState extends State<FinanceiroScreen> {
         dataVencimento.day == hoje.day;
   }
 
+  void _mostrarDialogoExclusao(
+      BuildContext context, Map<String, dynamic> infoFinanceira) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Confirmar Exclusão'),
+          content: Text('Deseja realmente excluir este item?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Não'),
+            ),
+            TextButton(
+              onPressed: () {
+                // Lógica para excluir o item
+                FirebaseFirestore.instance
+                    .collection('alunos')
+                    .doc(widget.aluno.serie)
+                    .collection('alunos')
+                    .doc(widget.aluno.documentId)
+                    .update({
+                  'financeiro': FieldValue.arrayRemove([infoFinanceira]),
+                });
+
+                Navigator.of(context).pop();
+              },
+              child: Text('Sim'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -168,123 +205,137 @@ class _FinanceiroScreenState extends State<FinanceiroScreen> {
           ),
         ],
       ),
-      body: 
-      _temConexaoInternet
+      body: _temConexaoInternet
           ? StreamBuilder(
-        stream: buscarInformacoesFinanceirasAluno(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(
-              child: CircularProgressIndicator(),
-            );
-          } else if (snapshot.hasError) {
-            return Center(
-              child: Text('Sem pagamentos a realizar'),
-            );
-          } else {
-            List<Map<String, dynamic>> dadosFinanceiros =
-                snapshot.data as List<Map<String, dynamic>>;
+              stream: buscarInformacoesFinanceirasAluno(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(
+                    child: CircularProgressIndicator(),
+                  );
+                } else if (snapshot.hasError) {
+                  return Center(
+                    child: Text('Sem pagamentos a realizar'),
+                  );
+                } else {
+                  List<Map<String, dynamic>> dadosFinanceiros =
+                      snapshot.data as List<Map<String, dynamic>>;
 
-            // Filtra os dadosFinanceiros para incluir apenas o ano selecionado
-            List<Map<String, dynamic>> dadosFiltrados = dadosFinanceiros
-                .where((infoFinanceira) =>
-                    infoFinanceira['mesAno'].endsWith(selectedYear))
-                .toList();
+                  // Filtra os dadosFinanceiros para incluir apenas o ano selecionado
+                  List<Map<String, dynamic>> dadosFiltrados = dadosFinanceiros
+                      .where((infoFinanceira) =>
+                          infoFinanceira['mesAno'].endsWith(selectedYear))
+                      .toList();
 
-            if (dadosFinanceiros.isEmpty) {
-              return Center(
-                child: Text('Sem pagamentos a realizar'),
-              );
-            }
-            // Ordena os dadosFinanceiros filtrados pela chave 'mesAno'
-            dadosFiltrados.sort((a, b) {
-              DateTime dataA = DateFormat('MM/yyyy').parse(a['mesAno']);
-              DateTime dataB = DateFormat('MM/yyyy').parse(b['mesAno']);
-              return dataA.compareTo(dataB);
-            });
+                  if (dadosFinanceiros.isEmpty) {
+                    return Center(
+                      child: Text('Sem pagamentos a realizar'),
+                    );
+                  }
+                  // Ordena os dadosFinanceiros filtrados pela chave 'mesAno'
+                  dadosFiltrados.sort((a, b) {
+                    DateTime dataA = DateFormat('MM/yyyy').parse(a['mesAno']);
+                    DateTime dataB = DateFormat('MM/yyyy').parse(b['mesAno']);
+                    return dataA.compareTo(dataB);
+                  });
 
-            return ListView.builder(
-              itemCount: dadosFiltrados.length,
-              itemBuilder: (context, index) {
-                Map<String, dynamic> infoFinanceira = dadosFiltrados[index];
+                  return ListView.builder(
+                    itemCount: dadosFiltrados.length,
+                    itemBuilder: (context, index) {
+                      Map<String, dynamic> infoFinanceira =
+                          dadosFiltrados[index];
 
-                DateTime dataVencimento = DateFormat('dd/MM/yyyy')
-                    .parse(infoFinanceira['vencimento']);
+                      DateTime dataVencimento = DateFormat('dd/MM/yyyy')
+                          .parse(infoFinanceira['vencimento']);
 
-                bool mesmoDiaDoVencimento = _isVencimentoHoje(dataVencimento);
+                      bool mesmoDiaDoVencimento =
+                          _isVencimentoHoje(dataVencimento);
 
-                bool vencimentoAtrasado =
-                    dataVencimento.isBefore(DateTime.now());
+                      bool vencimentoAtrasado =
+                          dataVencimento.isBefore(DateTime.now());
 
-                return Card(
-                  elevation: 2.0,
-                  margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-                  child: ListTile(
-                    contentPadding: EdgeInsets.all(16.0),
-                    title: Text(infoFinanceira['mesAno']),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(height: 8.0),
-                        Text('Vencimento: ${infoFinanceira['vencimento']}'),
-                        Text('Valor: R\$ ${infoFinanceira['valor']}'),
-                        if (infoFinanceira['pagou'])
-                          Text(
-                              'Data de pagamento: ${obterDataAtualFormatada()}'),
-                        if (infoFinanceira['pagou'])
-                          Text(
-                              'Forma de pagamento: ${infoFinanceira['formaPagamento']}'),
-                        SizedBox(height: 8.0),
-                        Row(
-                          children: [
-                            Icon(
-                              infoFinanceira['pagou']
-                                  ? Icons.check_circle
-                                  : Icons.error,
-                              color: infoFinanceira['pagou']
-                                  ? Colors.green
-                                  : (mesmoDiaDoVencimento
-                                      ? Colors.orange
-                                      : (vencimentoAtrasado
-                                          ? Colors.red
-                                          : Colors.orange)),
-                            ),
-                            SizedBox(width: 8.0),
-                            Text(
-                              infoFinanceira['pagou']
-                                  ? 'Mensalidade Paga'
-                                  : (_isVencimentoHoje(dataVencimento)
-                                      ? 'Aguardando pagamento (Vence Hoje)'
-                                      : (vencimentoAtrasado
-                                          ? 'Mensalidade em atraso'
-                                          : 'Aguardando pagamento')),
-                              style: TextStyle(
-                                color: infoFinanceira['pagou']
-                                    ? Colors.green
-                                    : (_isVencimentoHoje(dataVencimento)
-                                        ? Colors.orange
-                                        : (vencimentoAtrasado
-                                            ? Colors.red
-                                            : Colors.orange)),
-                                fontWeight: FontWeight.bold,
+                      return Card(
+                        elevation: 2.0,
+                        margin: EdgeInsets.symmetric(
+                            vertical: 8.0, horizontal: 16.0),
+                        child: ListTile(
+                          contentPadding: EdgeInsets.all(16.0),
+                          title: Text(infoFinanceira['mesAno']),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              SizedBox(height: 8.0),
+                              Text(
+                                  'Vencimento: ${infoFinanceira['vencimento']}'),
+                              Text('Valor: R\$ ${infoFinanceira['valor']}'),
+                              if (infoFinanceira['pagou'])
+                                Text(
+                                    'Data de pagamento: ${obterDataAtualFormatada()}'),
+                              if (infoFinanceira['pagou'])
+                                Text(
+                                    'Forma de pagamento: ${infoFinanceira['formaPagamento']}'),
+                              SizedBox(height: 8.0),
+                              Row(
+                                children: [
+                                  Icon(
+                                    infoFinanceira['pagou']
+                                        ? Icons.check_circle
+                                        : Icons.error,
+                                    color: infoFinanceira['pagou']
+                                        ? Colors.green
+                                        : (mesmoDiaDoVencimento
+                                            ? Colors.orange
+                                            : (vencimentoAtrasado
+                                                ? Colors.red
+                                                : Colors.orange)),
+                                  ),
+                                  SizedBox(width: 8.0),
+                                  Text(
+                                    infoFinanceira['pagou']
+                                        ? 'Mensalidade Paga'
+                                        : (_isVencimentoHoje(dataVencimento)
+                                            ? 'Aguardando pagamento (Vence Hoje)'
+                                            : (vencimentoAtrasado
+                                                ? 'Mensalidade em atraso'
+                                                : 'Aguardando pagamento')),
+                                    style: TextStyle(
+                                      color: infoFinanceira['pagou']
+                                          ? Colors.green
+                                          : (_isVencimentoHoje(dataVencimento)
+                                              ? Colors.orange
+                                              : (vencimentoAtrasado
+                                                  ? Colors.red
+                                                  : Colors.orange)),
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
+                          onTap: () {
+                            if (widget.userType == 'Coordenacao') {
+                              _mostrarDialogo(context, infoFinanceira);
+                            }
+                          },
+                          trailing: widget.userType == 'Coordenacao'
+                              ? IconButton(
+                                  icon: Icon(Icons.delete),
+                                  color: Colors.red,
+                                  onPressed: () {
+                                    _mostrarDialogoExclusao(
+                                        context, infoFinanceira);
+                                  },
+                                )
+                              : null,
                         ),
-                      ],
-                    ),
-                    onTap: () {
-                      if (widget.userType == 'Coordenacao') {
-                        _mostrarDialogo(context, infoFinanceira);
-                      }
+                      );
                     },
-                  ),
-                );
+                  );
+                }
               },
-            );
-          }
-        },
-      ) : Center(
+            )
+          : Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
