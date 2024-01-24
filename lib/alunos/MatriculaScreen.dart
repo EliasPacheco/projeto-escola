@@ -352,6 +352,19 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
   }
 
   void _realizarMatricula() async {
+
+    if (!_camposObrigatoriosPreenchidos()) {
+      // Mostrar mensagem de erro
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Preencha todos os campos obrigatórios!'),
+          duration: Duration(seconds: 3),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     bool cpfExistente =
         await _verificarExistenciaCPF(cpfResponsavel1Controller.text);
 
@@ -406,11 +419,28 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
         .doc(alunoUid)
         .set(alunoData)
         .then((value) {
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Matrícula realizada com sucesso!'),
+          duration: Duration(seconds: 2),
+          backgroundColor: Colors.green,
+        ),
+      );
       print('Matrícula realizada com sucesso! Document ID: $alunoUid');
       _limparCampos();
     }).catchError((error) {
       print('Erro ao realizar a matrícula: $error');
     });
+  }
+
+  bool _camposObrigatoriosPreenchidos() {
+    return nomeController.text.isNotEmpty &&
+        serieSelecionada != null &&
+        dataNascimentoController.text.isNotEmpty &&
+        dataMatriculaController.text.isNotEmpty &&
+        matriculaController.text.isNotEmpty &&
+        cpfResponsavel1Controller.text.isNotEmpty;
   }
 
   void _limparCampos() {
