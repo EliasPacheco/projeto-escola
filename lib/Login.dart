@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 import 'auth_provider.dart' as localAuthProvider;
 import 'package:brasil_fields/brasil_fields.dart'; // Adicionado pacote brasil_fields
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -345,7 +346,7 @@ class _LoginPageState extends State<LoginPage> {
               controller: _senhaController,
               decoration: InputDecoration(
                 labelText: 'Matrícula',
-                icon: Icon(Icons.lock),
+                icon: Icon(FontAwesomeIcons.userGraduate),
               ),
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
