@@ -1,6 +1,7 @@
 import 'package:escola/Login.dart';
 import 'package:escola/alunos/AgendaScreen.dart';
 import 'package:escola/alunos/AlunoHome.dart';
+import 'package:escola/alunos/ChatHome.dart';
 import 'package:escola/alunos/ChatScreen.dart';
 import 'package:escola/alunos/ConteudosScreen.dart';
 import 'package:escola/alunos/Horarioprofessor.dart';
@@ -75,7 +76,14 @@ class _MySchoolAppState extends State<MySchoolApp> {
               professorData: widget.professorData,
             ),
         'suporte/SuporteScreen': (context) => SuporteScreen(),
-        'alunos/ChatScreen': (context) => ChatScreen(),
+        'alunos/ChatScreen': (context) => ChatScreen(
+              matriculaCpf: widget.matriculaCpf,
+              alunoData: widget.alunoData,
+              userType: widget.userType,
+            ),
+        'alunos/ChatHome': (context) => ChatHome(
+          
+        ),
         'alunos/HorariosScreen': (context) => HorariosScreen(
               matriculaCpf: widget.matriculaCpf,
               alunoData: widget.alunoData,
@@ -283,7 +291,11 @@ class MyHomePage extends StatelessWidget {
               cardColor: Colors.white,
               borderColor: Color.fromARGB(255, 59, 16, 212),
               onTap: () {
-                Navigator.pushNamed(context, 'alunos/ChatScreen');
+                if (userType == 'Aluno') {
+                  Navigator.pushNamed(context, 'alunos/ChatScreen');
+                } else {
+                  Navigator.pushNamed(context, 'alunos/ChatHome');
+                }
               },
             ),
           MyCard(
