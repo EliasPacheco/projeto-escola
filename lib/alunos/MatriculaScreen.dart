@@ -352,7 +352,6 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
   }
 
   void _realizarMatricula() async {
-
     if (!_camposObrigatoriosPreenchidos()) {
       // Mostrar mensagem de erro
       ScaffoldMessenger.of(context).showSnackBar(
@@ -419,7 +418,6 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
         .doc(alunoUid)
         .set(alunoData)
         .then((value) {
-      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Matrícula realizada com sucesso!'),
@@ -439,8 +437,7 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
         serieSelecionada != null &&
         dataNascimentoController.text.isNotEmpty &&
         dataMatriculaController.text.isNotEmpty &&
-        matriculaController.text.isNotEmpty &&
-        cpfResponsavel1Controller.text.isNotEmpty;
+        matriculaController.text.isNotEmpty;
   }
 
   void _limparCampos() {

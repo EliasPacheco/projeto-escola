@@ -176,6 +176,8 @@ class _FinanceiroScreenState extends State<FinanceiroScreen> {
     );
   }
 
+  String chavePix = 'institutoroma2023@outlook.com';
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -356,8 +358,12 @@ class _FinanceiroScreenState extends State<FinanceiroScreen> {
                 ],
               ),
             ),
-      floatingActionButton: widget.userType == 'Coordenacao'
-          ? FloatingActionButton(
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (widget.userType == 'Coordenacao')
+            FloatingActionButton(
               onPressed: () {
                 Navigator.push(
                   context,
@@ -367,8 +373,67 @@ class _FinanceiroScreenState extends State<FinanceiroScreen> {
                 );
               },
               child: Icon(Icons.add),
-            )
-          : null,
+            ),
+          SizedBox(height: 16.0),
+          FloatingActionButton(
+            onPressed: () {
+              // Abre a imagem dos ativos quando este botão é pressionado
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Image.asset(
+                            'assets/pix.jpeg'), // Substitua pelo caminho real do seu ativo
+                        SizedBox(height: 16.0),
+                        GestureDetector(
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                    'E-mail copiado para a área de transferência'),
+                              ),
+                            );
+                          },
+                          child: Text(
+                            'institutoroma2023@outlook.com',
+                            style: TextStyle(
+                              color: Colors.blue,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 8.0),
+                        ElevatedButton(
+                          onPressed: () {
+                            _copiarChavePix();
+                          },
+                          child: Text('Copiar chave Pix'),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
+            child: Icon(Icons.pix),
+            backgroundColor: Colors.greenAccent,
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _copiarChavePix() {
+    Clipboard.setData(ClipboardData(text: chavePix));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Pix copiado com sucesso'),
+        backgroundColor: Colors.green,
+        duration: Duration(seconds: 1),
+      ),
     );
   }
 

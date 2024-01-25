@@ -318,14 +318,16 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Login'),
-      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            Image.asset(
+              'assets/escola.png', // Substitua pelo caminho correto da sua logo
+              height: 250.0,
+            ),
+            SizedBox(height: 16.0),
             TextField(
               controller: _matriculaCpfController,
               decoration: InputDecoration(

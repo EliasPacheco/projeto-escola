@@ -153,7 +153,6 @@ class MyHomePage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Escola App'),
         actions: [
           IconButton(
             icon: Icon(Icons.exit_to_app),
