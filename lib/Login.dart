@@ -319,84 +319,125 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Image.asset(
-              'assets/escola.png', // Substitua pelo caminho correto da sua logo
-              height: 250.0,
-            ),
-            SizedBox(height: 16.0),
-            TextField(
-              controller: _matriculaCpfController,
-              decoration: InputDecoration(
-                labelText: 'CPF',
-                icon: Icon(Icons.person),
+      body: SingleChildScrollView(
+        child: SafeArea(
+          child: Stack(
+            children: [
+              Container(
+                width: MediaQuery.of(context).size.width,
+                height: MediaQuery.of(context).size.height,
+                child: Image.asset('assets/loginBack.jpg'),
               ),
-              keyboardType: TextInputType.number,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-                CpfInputFormatter(),
-              ],
-            ),
-            SizedBox(height: 16.0),
-            TextField(
-              controller: _senhaController,
-              decoration: InputDecoration(
-                labelText: 'Matrícula',
-                icon: Icon(FontAwesomeIcons.userGraduate),
-              ),
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              obscureText: true,
-            ),
-            SizedBox(height: 32.0),
-            ElevatedButton(
-              onPressed: _isLoading
-                  ? null
-                  : () {
-                      setState(() {
-                        _isLoading = true;
-                      });
-                      _signInWithMatriculaCpfAndPassword();
-                    },
-              style: ElevatedButton.styleFrom(
-                primary: Theme.of(context).colorScheme.secondary,
-              ),
-              child: _isLoading
-                  ? Container(
-                      width: 160, // Defina o tamanho desejado
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              'Fazendo login',
-                              textAlign: TextAlign.center,
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.asset(
+                      'assets/escola.png', // Substitua pelo caminho correto da sua logo
+                      height: 250.0,
+                    ),
+                    SizedBox(height: 16.0),
+                    TextFormField(
+                      controller: _matriculaCpfController,
+                      decoration: InputDecoration(
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.grey.shade400),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        fillColor: Color(0xffF7F8F9),
+                        filled: true,
+                        labelText: 'CPF',
+                        labelStyle: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey.shade500,
+                        ),
+                        prefixIcon: Icon(Icons.person),
+                      ),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        CpfInputFormatter(),
+                      ],
+                    ),
+                    SizedBox(height: 16.0),
+                    TextFormField(
+                      controller: _senhaController,
+                      decoration: InputDecoration(
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.grey.shade400),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        fillColor: Color(0xffF7F8F9),
+                        filled: true,
+                        labelText: 'Matrícula',
+                        labelStyle: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey.shade500,
+                        ),
+                        prefixIcon: Icon(Icons.lock),
+                      ),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      obscureText: true,
+                    ),
+                    SizedBox(height: 32.0),
+                    ElevatedButton(
+                      onPressed: _isLoading
+                          ? null
+                          : () {
+                              setState(() {
+                                _isLoading = true;
+                              });
+                              _signInWithMatriculaCpfAndPassword();
+                            },
+                      style: ElevatedButton.styleFrom(
+                        primary: Theme.of(context).colorScheme.secondary,
+                      ),
+                      child: _isLoading
+                          ? Container(
+                              width: 160, // Defina o tamanho desejado
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      'Fazendo login',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 16.0,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(width: 15),
+                                  CircularProgressIndicator(),
+                                ],
+                              ),
+                            )
+                          : Text(
+                              'Entrar',
                               style: TextStyle(
                                 fontSize: 16.0,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white,
                               ),
                             ),
-                          ),
-                          SizedBox(width: 15),
-                          CircularProgressIndicator(),
-                        ],
-                      ),
-                    )
-                  : Text(
-                      'Entrar',
-                      style: TextStyle(
-                        fontSize: 16.0,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
                     ),
-            ),
-          ],
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
