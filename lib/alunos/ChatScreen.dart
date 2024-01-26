@@ -41,40 +41,25 @@ class ChatScreenState extends State<ChatScreen> {
       widget.matriculaCpf,
     ]..sort();
 
-    conversationId = users.join('_');
+    conversationId = widget.alunoData?['nome'] ?? '';
   }
 
   void _handleSubmitted(String text) async {
     _textController.clear();
     DateTime now = DateTime.now();
 
-    // Adicione esta linha para obter o ID do documento
-    DocumentReference newMessageRef = await _messagesCollection
-        .doc(
-            widget.alunoData?['nome']) // Use o nome do aluno como identificador
-        .collection('messages')
-        .add({
-      'nome': widget.alunoData?['nome'],
-      'serie': widget.alunoData?['serie'],
-      'text': text,
-      'image': _image != null ? _image!.path : null,
-      'timestamp': Timestamp.fromDate(now),
-      'isCurrentUser': true,
-    });
-
-    ChatMessage message = ChatMessage(
-      text: text,
-      image: _image,
-      isCurrentUser: true,
-      timestamp: Timestamp.fromDate(now),
-      isSelected: false,
-      onDelete: () => _deleteMessage(0, newMessageRef.id),
-      documentId:
-          newMessageRef.id, // Passe o ID do documento ao criar a mensagem
-    );
+    await _messagesCollection.doc(widget.alunoData?['nome']).set({
+      'messages': FieldValue.arrayUnion([
+        {
+          'sender': widget.alunoData?['nome'],
+          'text': text,
+          'image': _image != null ? _image!.path : null,
+          'timestamp': Timestamp.fromDate(now),
+        },
+      ]),
+    }, SetOptions(merge: true));
 
     setState(() {
-      _messages.insert(0, message);
       _image = null;
     });
   }
@@ -169,6 +154,7 @@ class ChatScreenState extends State<ChatScreen> {
     );
   }
 
+  bool _isLoading = true;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -179,59 +165,67 @@ class ChatScreenState extends State<ChatScreen> {
         children: <Widget>[
           Flexible(
             child: StreamBuilder(
-              stream: _messagesCollection
-                  .doc(widget.alunoData?['nome'])
-                  .collection('messages')
-                  .orderBy('timestamp', descending: true)
-                  .snapshots(),
-              builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+              stream: _messagesCollection.doc(conversationId).snapshots(),
+              builder: (context, AsyncSnapshot<DocumentSnapshot> snapshot) {
                 if (!snapshot.hasData) {
                   return Center(
                     child: CircularProgressIndicator(),
                   );
                 }
 
-                List<QueryDocumentSnapshot> documents = snapshot.data!.docs;
-
-                List<ChatMessage> messages = [];
-                for (int index = 0; index < documents.length; index++) {
-                  var document = documents[index];
-                  var text = document['text'] ?? '';
-                  var image = document['image'] != null
-                      ? File(document['image'])
-                      : null;
-                  var isCurrentUser = document['isCurrentUser'] ?? false;
-                  String documentId = document.id;
-
-                  messages.add(ChatMessage(
-                    text: text,
-                    image: image,
-                    isCurrentUser: isCurrentUser,
-                    timestamp: document['timestamp'],
-                    isSelected:
-                        selectedMessages.contains(documentId), // Alteração aqui
-                    onDelete: () => _deleteMessage(index, documentId),
-                    documentId: documentId,
-                  ));
+                if (!snapshot.hasData || !snapshot.data!.exists) {
+                  _isLoading =
+                      false; // Marque como carregado após o primeiro carregamento
+                  return Center(
+                    child: Text("Sem mensagens enviadas"),
+                  );
                 }
+
+                var document = snapshot.data!;
+                var messages = document['messages'] ?? [];
+
+                if (_isLoading) {
+                  _isLoading =
+                      false; // Marque como carregado após o primeiro carregamento
+                }
+
+                if (messages.isEmpty) {
+                  return Center(
+                    child: Text("Sem mensagens enviadas"),
+                  );
+                }
+
+                List<ChatMessage> messageWidgets = [];
+                for (var message in messages) {
+                  messageWidgets.add(
+                    ChatMessage(
+                      text: message['text'],
+                      image: message['image'] != null
+                          ? File(message['image'])
+                          : null,
+                      isCurrentUser: message['sender'] == widget.matriculaCpf,
+                      timestamp: message['timestamp'],
+                      isSelected: selectedMessages
+                          .contains(message['timestamp'].toString()),
+                      onDelete: () => _deleteMessage(messages.indexOf(message),
+                          message['timestamp'].toString()),
+                      documentId: message['timestamp'].toString(),
+                      userName: message['sender'] == widget.matriculaCpf
+                          ? 'Você'
+                          : widget.alunoData?['nome'] ?? 'Other',
+                      imageUrl: widget.alunoData?['imageUrl'] ??
+                          '', // Passe a URL da imagem diretamente
+                    ),
+                  );
+                }
+
+                messageWidgets
+                    .sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
                 return ListView(
                   padding: const EdgeInsets.all(8.0),
                   reverse: true,
-                  children: messages.map((message) {
-                    return GestureDetector(
-                      onLongPress: () {
-                        setState(() {
-                          if (selectedMessages.contains(message.documentId)) {
-                            selectedMessages.remove(message.documentId);
-                          } else {
-                            selectedMessages.add(message.documentId);
-                          }
-                        });
-                      },
-                      child: message,
-                    );
-                  }).toList(),
+                  children: messageWidgets,
                 );
               },
             ),
@@ -253,6 +247,8 @@ class ChatMessage extends StatelessWidget {
     this.isSelected = false,
     required this.onDelete,
     required this.documentId,
+    required this.userName,
+    required this.imageUrl,
   });
 
   final String text;
@@ -262,6 +258,8 @@ class ChatMessage extends StatelessWidget {
   final bool isSelected;
   final VoidCallback onDelete;
   final String documentId;
+  final String userName;
+  final String imageUrl;
 
   @override
   Widget build(BuildContext context) {
@@ -296,22 +294,52 @@ class ChatMessage extends StatelessWidget {
         children: <Widget>[
           Container(
             margin: const EdgeInsets.only(right: 16.0),
-            child: CircleAvatar(
-              backgroundColor: isCurrentUser
-                  ? Colors.blue
-                  : Color.fromARGB(255, 255, 255, 255),
-              child: Text(
-                isCurrentUser ? 'Você' : 'Other',
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
+            child: imageUrl.isNotEmpty
+                ? ClipOval(
+                    child: Image.network(
+                      imageUrl,
+                      width: 40.0,
+                      height: 40.0,
+                      fit: BoxFit.cover,
+                      loadingBuilder: (BuildContext context, Widget child,
+                          ImageChunkEvent? loadingProgress) {
+                        if (loadingProgress == null) {
+                          return child;
+                        } else {
+                          return Center(
+                            child: CircularProgressIndicator(
+                              value: loadingProgress.expectedTotalBytes != null
+                                  ? loadingProgress.cumulativeBytesLoaded /
+                                      (loadingProgress.expectedTotalBytes ?? 1)
+                                  : null,
+                            ),
+                          );
+                        }
+                      },
+                    ),
+                  )
+                : CircleAvatar(
+                    radius: 20.0,
+                    backgroundColor: Colors.blue,
+                    child: Text(
+                      userName.isNotEmpty ? userName[0].toUpperCase() : '',
+                      style: TextStyle(
+                        fontSize: 16.0,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
           ),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
-                  isCurrentUser ? 'Você' : 'Other',
+                  isCurrentUser
+                      ? 'Você'
+                      : (userName?.split(' ')[0] ??
+                          'Other'), // Use apenas o primeiro nome
                   style: TextStyle(
                     fontSize: 16.0,
                     fontWeight: FontWeight.bold,

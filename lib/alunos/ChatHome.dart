@@ -23,29 +23,28 @@ class ChatHome extends StatelessWidget {
             );
           }
 
-          // Cria um mapa para armazenar as mensagens agrupadas pelo nome do usuário
-          Map<String, String> userLastMessage = {};
-
-          snapshot.data!.docs.forEach((doc) {
-            Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-            String nome = data['nome'] ?? ''; // Trata o valor nulo
-            String mensagem = data['text'] ?? ''; // Trata o valor nulo
-
-            // Atualiza a última mensagem para o nome do usuário no mapa
-            userLastMessage[nome] = mensagem;
-          });
-
           return ListView.builder(
-            itemCount: userLastMessage.length,
+            itemCount: snapshot.data!.docs.length,
             itemBuilder: (context, index) {
-              String nomeUsuario = userLastMessage.keys.elementAt(index);
-              String ultimaMensagem = userLastMessage[nomeUsuario]!;
+              Map<String, dynamic> data = snapshot.data!.docs[index].data() as Map<String, dynamic>;
+
+              // Extrai o nome do aluno do caminho do documento
+              String nomeAluno = snapshot.data!.docs[index].reference.path.split('/').last;
+
+              // Acesse as mensagens do aluno específico
+              List<dynamic> messages = data['messages'] ?? [];
+              
+              // Obtenha a última mensagem
+              String ultimaMensagem = '';
+              if (messages.isNotEmpty) {
+                ultimaMensagem = messages.last['text'] ?? '';
+              }
 
               return ListTile(
                 leading: CircleAvatar(
-                  child: Text(nomeUsuario.isNotEmpty ? nomeUsuario[0] : ''), // Trata o valor nulo
+                  child: Text(nomeAluno.isNotEmpty ? nomeAluno[0] : ''),
                 ),
-                title: Text(nomeUsuario),
+                title: Text(nomeAluno),
                 subtitle: Text(
                   ultimaMensagem.length > 50 ? '${ultimaMensagem.substring(0, 50)}...' : ultimaMensagem,
                 ),
@@ -59,10 +58,4 @@ class ChatHome extends StatelessWidget {
       ),
     );
   }
-}
-
-void main() {
-  runApp(MaterialApp(
-    home: ChatHome(),
-  ));
 }
