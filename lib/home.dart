@@ -23,7 +23,7 @@ class MySchoolApp extends StatefulWidget {
   final String matriculaCpf;
   final Map<String, dynamic>? alunoData;
   final Map<String, dynamic>? professorData;
-  final String userType; // Adicione esta linha
+  final String userType; 
 
   const MySchoolApp({
     Key? key,
@@ -82,8 +82,10 @@ class _MySchoolAppState extends State<MySchoolApp> {
               userType: widget.userType,
             ),
         'alunos/ChatHome': (context) => ChatHome(
-          
-        ),
+              matriculaCpf: widget.matriculaCpf,
+              alunoData: widget.alunoData,
+              userType: widget.userType,
+            ),
         'alunos/HorariosScreen': (context) => HorariosScreen(
               matriculaCpf: widget.matriculaCpf,
               alunoData: widget.alunoData,
