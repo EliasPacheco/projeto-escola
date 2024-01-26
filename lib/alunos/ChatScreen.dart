@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:intl/intl.dart'; // Adicione esta importação para formatar datas
+import 'package:intl/intl.dart';
 
 class ChatScreen extends StatefulWidget {
   final String matriculaCpf;
@@ -23,7 +23,6 @@ class ChatScreen extends StatefulWidget {
 
 class ChatScreenState extends State<ChatScreen> {
   final TextEditingController _textController = TextEditingController();
-  final List<ChatMessage> _messages = <ChatMessage>[];
   Set<String> selectedMessages = Set<String>();
 
   File? _image;
@@ -33,15 +32,25 @@ class ChatScreenState extends State<ChatScreen> {
   CollectionReference _messagesCollection =
       FirebaseFirestore.instance.collection('messages');
 
+  late ScrollController _scrollController;
+
   @override
   void initState() {
     super.initState();
-    // Crie uma identificação única para a conversa com base nos usuários
+
     List<String> users = [
       widget.matriculaCpf,
     ]..sort();
 
     conversationId = widget.alunoData?['nome'] ?? '';
+    _scrollController = ScrollController();
+  }
+
+  @override
+  void dispose() {
+    _scrollController
+        .dispose(); // Dispose do ScrollController para evitar vazamento de memória
+    super.dispose();
   }
 
   void _handleSubmitted(String text) async {
@@ -75,7 +84,6 @@ class ChatScreenState extends State<ChatScreen> {
   }
 
   void _deleteMessage(int index, String documentId) async {
-    // Adicione este bloco de código para exibir um AlertDialog
     bool confirmDelete = await showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -86,15 +94,15 @@ class ChatScreenState extends State<ChatScreen> {
             TextButton(
               onPressed: () {
                 setState(() {
-                  selectedMessages.clear(); // Limpar seleção ao cancelar
+                  selectedMessages.clear();
                 });
-                Navigator.of(context).pop(false); // Cancelar
+                Navigator.of(context).pop(false);
               },
               child: Text("Cancelar"),
             ),
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(true); // Confirmar
+                Navigator.of(context).pop(true);
                 selectedMessages.clear();
               },
               child: Text("Confirmar"),
@@ -103,22 +111,6 @@ class ChatScreenState extends State<ChatScreen> {
         );
       },
     );
-
-    if (confirmDelete != null && confirmDelete) {
-      // Remova a mensagem do Firestore usando o ID do documento
-      await _messagesCollection
-          .doc(widget.alunoData?['nome'])
-          .collection('messages')
-          .doc(documentId)
-          .delete();
-
-      // Remova a mensagem da lista local se o índice for válido
-      if (index >= 0 && index < _messages.length) {
-        setState(() {
-          _messages.removeAt(index);
-        });
-      }
-    }
   }
 
   Widget _buildTextComposer() {
@@ -160,6 +152,15 @@ class ChatScreenState extends State<ChatScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Chat'),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.blueAccent, Colors.lightBlue],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+        ),
       ),
       body: Column(
         children: <Widget>[
@@ -174,8 +175,7 @@ class ChatScreenState extends State<ChatScreen> {
                 }
 
                 if (!snapshot.hasData || !snapshot.data!.exists) {
-                  _isLoading =
-                      false; // Marque como carregado após o primeiro carregamento
+                  _isLoading = false;
                   return Center(
                     child: Text("Sem mensagens enviadas"),
                   );
@@ -183,49 +183,58 @@ class ChatScreenState extends State<ChatScreen> {
 
                 var document = snapshot.data!;
                 var messages = document['messages'] ?? [];
+                var respostas = document['respostas'] ?? [];
 
                 if (_isLoading) {
-                  _isLoading =
-                      false; // Marque como carregado após o primeiro carregamento
+                  _isLoading = false;
+                  // Adicionando um delay para permitir a renderização inicial antes de rolar para baixo
+                  Future.delayed(Duration(milliseconds: 1), () {
+                    _scrollController
+                        .jumpTo(_scrollController.position.maxScrollExtent);
+                  });
                 }
 
-                if (messages.isEmpty) {
+                if (messages.isEmpty && respostas.isEmpty) {
                   return Center(
                     child: Text("Sem mensagens enviadas"),
                   );
                 }
 
-                List<ChatMessage> messageWidgets = [];
+                List<Map<String, dynamic>> combinedList = [];
+
                 for (var message in messages) {
-                  messageWidgets.add(
-                    ChatMessage(
-                      text: message['text'],
-                      image: message['image'] != null
-                          ? File(message['image'])
-                          : null,
-                      isCurrentUser: message['sender'] == widget.matriculaCpf,
-                      timestamp: message['timestamp'],
-                      isSelected: selectedMessages
-                          .contains(message['timestamp'].toString()),
-                      onDelete: () => _deleteMessage(messages.indexOf(message),
-                          message['timestamp'].toString()),
-                      documentId: message['timestamp'].toString(),
-                      userName: message['sender'] == widget.matriculaCpf
-                          ? 'Você'
-                          : widget.alunoData?['nome'] ?? 'Other',
-                      imageUrl: widget.alunoData?['imageUrl'] ??
-                          '', // Passe a URL da imagem diretamente
-                    ),
-                  );
+                  combinedList.add({
+                    'sender': message['sender'],
+                    'text': message['text'],
+                    'isAlunoMessage': true,
+                    'timestamp': message['timestamp'],
+                  });
                 }
 
-                messageWidgets
-                    .sort((a, b) => b.timestamp.compareTo(a.timestamp));
+                for (var resposta in respostas) {
+                  combinedList.add({
+                    'sender': resposta['sender'],
+                    'text': resposta['text'],
+                    'isAlunoMessage': false,
+                    'timestamp': resposta['timestamp'],
+                  });
+                }
 
-                return ListView(
-                  padding: const EdgeInsets.all(8.0),
-                  reverse: true,
-                  children: messageWidgets,
+                combinedList
+                    .sort((a, b) => a['timestamp'].compareTo(b['timestamp']));
+
+                return ListView.builder(
+                  controller: _scrollController,
+                  itemCount: combinedList.length,
+                  itemBuilder: (context, index) {
+                    var message = combinedList[index];
+                    return _buildMessageTile(
+                      message['sender'],
+                      message['text'],
+                      message['isAlunoMessage'],
+                      message['timestamp'],
+                    );
+                  },
                 );
               },
             ),
@@ -238,155 +247,71 @@ class ChatScreenState extends State<ChatScreen> {
   }
 }
 
-class ChatMessage extends StatelessWidget {
-  ChatMessage({
-    required this.text,
-    this.image,
-    required this.isCurrentUser,
-    required this.timestamp,
-    this.isSelected = false,
-    required this.onDelete,
-    required this.documentId,
-    required this.userName,
-    required this.imageUrl,
-  });
+String extractFirstAndThirdName(String fullName) {
+  List<String> parts = fullName.split(' ');
 
-  final String text;
-  final File? image;
-  final bool isCurrentUser;
-  final Timestamp timestamp;
-  final bool isSelected;
-  final VoidCallback onDelete;
-  final String documentId;
-  final String userName;
-  final String imageUrl;
+  if (parts.length >= 3) {
+    return "${parts[0]} ${parts[2]}";
+  } else if (parts.length == 2) {
+    return "${parts[0]} ${parts[1]}";
+  } else {
+    return fullName;
+  }
+}
 
-  @override
-  Widget build(BuildContext context) {
-    // Formate a data e hora usando a biblioteca intl
-    String formattedTime = DateFormat('HH:mm').format(timestamp.toDate());
+Widget _buildMessageTile(
+    String sender, String text, bool isAlunoMessage, Timestamp timestamp) {
+  String formattedSender =
+      isAlunoMessage ? extractFirstAndThirdName(sender) : sender;
 
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 10.0),
+  DateTime messageTime = timestamp.toDate();
+
+  return Align(
+    alignment: isAlunoMessage ? Alignment.centerRight : Alignment.centerLeft,
+    child: Container(
+      margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
-        border: isSelected ? Border.all(color: Colors.blue, width: 2.0) : null,
-        borderRadius: BorderRadius.circular(10.0),
-        color: isSelected ? Colors.blue.withOpacity(0.1) : null,
+        color: isAlunoMessage
+            ? Colors.white
+            : Color(0xFFDCF8C6), // Cores dos balões de mensagem
+        borderRadius: BorderRadius.circular(8),
         boxShadow: [
-          isSelected
-              ? BoxShadow(
-                  color: Colors.blue.withOpacity(0.5),
-                  spreadRadius: 2,
-                  blurRadius: 5,
-                  offset: Offset(0, 2),
-                )
-              : BoxShadow(
-                  color:
-                      const Color.fromARGB(255, 255, 255, 255).withOpacity(0.3),
-                  spreadRadius: 1,
-                  blurRadius: 3,
-                  offset: Offset(0, 1),
-                ),
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.3),
+            spreadRadius: 1,
+            blurRadius: 2,
+            offset: Offset(0, 1),
+          ),
         ],
       ),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Container(
-            margin: const EdgeInsets.only(right: 16.0),
-            child: imageUrl.isNotEmpty
-                ? ClipOval(
-                    child: Image.network(
-                      imageUrl,
-                      width: 40.0,
-                      height: 40.0,
-                      fit: BoxFit.cover,
-                      loadingBuilder: (BuildContext context, Widget child,
-                          ImageChunkEvent? loadingProgress) {
-                        if (loadingProgress == null) {
-                          return child;
-                        } else {
-                          return Center(
-                            child: CircularProgressIndicator(
-                              value: loadingProgress.expectedTotalBytes != null
-                                  ? loadingProgress.cumulativeBytesLoaded /
-                                      (loadingProgress.expectedTotalBytes ?? 1)
-                                  : null,
-                            ),
-                          );
-                        }
-                      },
-                    ),
-                  )
-                : CircleAvatar(
-                    radius: 20.0,
-                    backgroundColor: Colors.blue,
-                    child: Text(
-                      userName.isNotEmpty ? userName[0].toUpperCase() : '',
-                      style: TextStyle(
-                        fontSize: 16.0,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-          ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  isCurrentUser
-                      ? 'Você'
-                      : (userName?.split(' ')[0] ??
-                          'Other'), // Use apenas o primeiro nome
-                  style: TextStyle(
-                    fontSize: 16.0,
-                    fontWeight: FontWeight.bold,
-                    color: isCurrentUser ? Colors.blue : Colors.black,
-                  ),
-                ),
-                Container(
-                  margin: const EdgeInsets.only(top: 5.0),
-                  child: Text(
-                    text,
-                    style: TextStyle(
-                      fontSize: 14.0,
-                      color: Colors.black87,
-                    ),
-                  ),
-                ),
-                Text(
-                  formattedTime, // Adicione a exibição do horário
-                  style: TextStyle(fontSize: 12.0, color: Colors.grey),
-                ),
-                if (isSelected)
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      IconButton(
-                        icon: Icon(Icons.delete),
-                        onPressed: onDelete,
-                        color: Colors.red, // Cor do ícone de exclusão
-                      ),
-                      // Adicione outros ícones ou ações conforme necessário
-                    ],
-                  ),
-                if (image != null)
-                  Container(
-                    margin: const EdgeInsets.only(top: 8.0),
-                    child: Image.file(
-                      image!,
-                      width: 150.0,
-                      height: 150.0,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-              ],
+        children: [
+          Text(
+            formattedSender,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: isAlunoMessage ? Colors.black : Colors.green,
             ),
           ),
+          SizedBox(height: 4),
+          Text(
+            text,
+            style: TextStyle(color: Colors.black87),
+          ),
+          SizedBox(height: 4),
+          Text(
+            _formatTimestamp(messageTime),
+            style: TextStyle(color: Colors.grey, fontSize: 12),
+          ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
+
+String _formatTimestamp(DateTime timestamp) {
+  final formatter = DateFormat('HH:mm'); // Formato 'HH:mm' para hora e minuto
+  return formatter.format(timestamp.toLocal());
 }

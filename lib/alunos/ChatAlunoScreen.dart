@@ -57,7 +57,15 @@ class _ChatAlunoScreenState extends State<ChatAlunoScreen> {
             return Text('Chat com $sender');
           },
         ),
-        backgroundColor: Color.fromARGB(255, 18, 204, 182),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.blueAccent, Colors.lightBlue],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+        ),
       ),
       body: StreamBuilder(
         stream: FirebaseFirestore.instance
@@ -82,17 +90,33 @@ class _ChatAlunoScreenState extends State<ChatAlunoScreen> {
 
           var documentData = snapshot.data!.data() as Map<String, dynamic>;
 
-          // Verificar se o campo 'respostas' existe antes de acessá-lo
-          var respostas = documentData.containsKey('respostas')
-              ? documentData['respostas']
-              : [];
           var messages = documentData['messages'] ?? [];
+          var respostas = documentData['respostas'] ?? [];
 
-          // Restante do código permanece inalterado
+          List<Map<String, dynamic>> combinedList = [];
+
+          for (var message in messages) {
+            combinedList.add({
+              'sender': message['sender'],
+              'text': message['text'],
+              'isAlunoMessage': true,
+              'timestamp': message['timestamp'],
+            });
+          }
+
+          for (var resposta in respostas) {
+            combinedList.add({
+              'sender': resposta['sender'],
+              'text': resposta['text'],
+              'isAlunoMessage': false,
+              'timestamp': resposta['timestamp'],
+            });
+          }
+
+          combinedList.sort((a, b) => a['timestamp'].compareTo(b['timestamp']));
 
           WidgetsBinding.instance!.addPostFrameCallback((_) {
-            _scrollController
-                .jumpTo(_scrollController.position.maxScrollExtent);
+            _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
           });
 
           return Column(
@@ -100,25 +124,15 @@ class _ChatAlunoScreenState extends State<ChatAlunoScreen> {
               Expanded(
                 child: ListView.builder(
                   controller: _scrollController,
-                  itemCount: respostas.length + messages.length,
+                  itemCount: combinedList.length,
                   itemBuilder: (context, index) {
-                    if (index < messages.length) {
-                      var message = messages[index];
-                      return _buildMessageTile(
-                        message['sender'],
-                        message['text'],
-                        true,
-                        message['timestamp'],
-                      );
-                    } else {
-                      var resposta = respostas[index - messages.length];
-                      return _buildMessageTile(
-                        resposta['sender'],
-                        resposta['text'],
-                        false,
-                        resposta['timestamp'],
-                      );
-                    }
+                    var message = combinedList[index];
+                    return _buildMessageTile(
+                      message['sender'],
+                      message['text'],
+                      message['isAlunoMessage'],
+                      message['timestamp'],
+                    );
                   },
                 ),
               ),
