@@ -262,16 +262,16 @@ class MyHomePage extends StatelessWidget {
             children: [
               MyCard(
                 title: 'Comunicados',
-                image: 'assets/noti.png',
-                borderColor: Color.fromARGB(255, 59, 16, 212),
+                icon: FontAwesomeIcons.bell,
+                borderColor: Colors.white,
                 onTap: () {
                   Navigator.pushNamed(context, 'alunos/AvisosScreen');
                 },
               ),
               MyCard(
                 title: 'Alunos',
-                image: 'assets/noti.png',
-                borderColor: Color.fromARGB(255, 59, 16, 212),
+                icon: FontAwesomeIcons.userGraduate,
+                borderColor: Colors.white,
                 onTap: () {
                   if (userType == 'Aluno') {
                     Navigator.pushNamed(
@@ -298,8 +298,8 @@ class MyHomePage extends StatelessWidget {
               if (userType != 'Professor')
                 MyCard(
                   title: 'Financeiro',
-                  image: 'assets/noti.png',
-                  borderColor: Color.fromARGB(255, 59, 16, 212),
+                  icon: FontAwesomeIcons.handHoldingDollar,
+                  borderColor: Colors.white,
                   onTap: () {
                     if (userType == 'Aluno') {
                       Navigator.push(
@@ -329,8 +329,8 @@ class MyHomePage extends StatelessWidget {
                 ),
               MyCard(
                 title: 'Agenda',
-                image: 'assets/noti.png',
-                borderColor: Color.fromARGB(255, 59, 16, 212),
+                icon: FontAwesomeIcons.calendarCheck,
+                borderColor: Colors.white,
                 onTap: () {
                   Navigator.pushNamed(context, 'alunos/AgendaScreen');
                 },
@@ -338,8 +338,8 @@ class MyHomePage extends StatelessWidget {
               if (userType != 'Professor')
                 MyCard(
                   title: 'Ocorrências',
-                  image: 'assets/noti.png',
-                  borderColor: Color.fromARGB(255, 59, 16, 212),
+                  icon: FontAwesomeIcons.circleExclamation,
+                  borderColor: Colors.white,
                   onTap: () {
                     print('Detalhes do alunoData enviado: $alunoData');
                     Navigator.pushNamed(
@@ -356,8 +356,8 @@ class MyHomePage extends StatelessWidget {
                 ),
               MyCard(
                 title: 'Conteúdos',
-                image: 'assets/noti.png',
-                borderColor: Color.fromARGB(255, 59, 16, 212),
+                icon: FontAwesomeIcons.book,
+                borderColor: Colors.white,
                 onTap: () {
                   Navigator.pushNamed(context, 'alunos/ConteudosScreen');
                 },
@@ -365,8 +365,8 @@ class MyHomePage extends StatelessWidget {
               if (userType != 'Professor')
                 MyCard(
                   title: 'Chat',
-                  image: 'assets/noti.png',
-                  borderColor: Color.fromARGB(255, 59, 16, 212),
+                  icon: FontAwesomeIcons.solidCommentDots,
+                  borderColor: Colors.white,
                   onTap: () {
                     if (userType == 'Aluno') {
                       Navigator.pushNamed(context, 'alunos/ChatScreen');
@@ -377,8 +377,8 @@ class MyHomePage extends StatelessWidget {
                 ),
               MyCard(
                 title: 'Horários',
-                image: 'assets/noti.png',
-                borderColor: Color.fromARGB(255, 59, 16, 212),
+                icon: FontAwesomeIcons.calendarAlt,
+                borderColor: Colors.white,
                 onTap: () {
                   if (isCoordenacao) {
                     String selectedRoute =
@@ -426,8 +426,8 @@ class MyHomePage extends StatelessWidget {
               if (userType != 'Professor')
                 MyCard(
                   title: 'Suporte',
-                  image: 'assets/noti.png',
-                  borderColor: Color.fromARGB(255, 59, 16, 212),
+                  icon: FontAwesomeIcons.solidCircleUser,
+                  borderColor: Colors.white,
                   onTap: () {
                     Navigator.pushNamed(context, 'suporte/SuporteScreen');
                   },

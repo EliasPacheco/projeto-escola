@@ -3,13 +3,13 @@ import 'package:google_fonts/google_fonts.dart';
 
 class MyCard extends StatelessWidget {
   final String title;
-  final String image;
+  final IconData icon;
   final Color borderColor;
   final Function()? onTap;
 
   MyCard({
     required this.title,
-    required this.image,
+    required this.icon,
     required this.borderColor,
     required this.onTap,
   });
@@ -43,7 +43,11 @@ class MyCard extends StatelessWidget {
                   const SizedBox(
                     height: 20,
                   ),
-                  Image.asset(image),
+                  Icon(
+                    icon,
+                    size: 50.0,
+                    color: borderColor,
+                  ),
                   const SizedBox(
                     height: 20,
                   ),
