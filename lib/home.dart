@@ -13,17 +13,19 @@ import 'package:escola/alunos/StudentScreen.dart';
 import 'package:escola/financeiro/FinanceiroHome.dart';
 import 'package:escola/financeiro/FinanceiroScreen.dart';
 import 'package:escola/funcionarios/Cadastrarfuncionario.dart';
+import 'package:escola/my_card.dart';
 import 'package:escola/suporte/SuporteScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:escola/alunos/AlunoHome.dart' as AlunoHomePackage;
+import 'package:google_fonts/google_fonts.dart';
 
 class MySchoolApp extends StatefulWidget {
   final String matriculaCpf;
   final Map<String, dynamic>? alunoData;
   final Map<String, dynamic>? professorData;
-  final String userType; 
+  final String userType;
 
   const MySchoolApp({
     Key? key,
@@ -156,210 +158,283 @@ class MyHomePage extends StatelessWidget {
     bool isAluno = userType == 'Aluno';
     bool isProfessor = userType == 'Professor';
     bool isCoordenacao = userType == 'Coordenacao';
+    String nameUser = 'Olá,';
 
     print('isAluno: $isAluno');
     print('isProfessor: $isProfessor');
     print('isCoordenacao: $isCoordenacao');
 
     return Scaffold(
-      appBar: AppBar(
-        actions: [
-          IconButton(
-            icon: Icon(Icons.exit_to_app),
-            color: Colors.red,
-            onPressed: () {
-              // Adicione a lógica para fazer logout aqui
-              _signOut(context);
-            },
+      bottomNavigationBar: Container(
+        height: 70,
+        decoration: BoxDecoration(boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.5),
+            spreadRadius: 3,
+            blurRadius: 10,
+            offset: const Offset(1, 1), // changes position of shadow
           ),
-        ],
+        ]),
+        child: BottomNavigationBar(
+          selectedLabelStyle: GoogleFonts.nunito(
+            textStyle:
+                const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          unselectedLabelStyle: GoogleFonts.nunito(
+            textStyle:
+                const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          fixedColor: Colors.black,
+          unselectedItemColor: Colors.black,
+          showUnselectedLabels: true,
+          type: BottomNavigationBarType.fixed,
+          onTap: (index) {},
+          items: const [
+            BottomNavigationBarItem(
+              icon: FaIcon(
+                FontAwesomeIcons.house,
+                color: Colors.black,
+              ),
+              label: 'Inicio',
+            ),
+            BottomNavigationBarItem(
+                icon: Icon(
+                  Icons.calendar_today,
+                  color: Colors.black,
+                ),
+                label: 'Agenda'),
+            BottomNavigationBarItem(
+                icon: Icon(
+                  Icons.monetization_on,
+                  color: Colors.black,
+                ),
+                label: 'Financeiro'),
+            BottomNavigationBarItem(
+                icon: FaIcon(
+                  FontAwesomeIcons.userGraduate,
+                  color: Colors.black,
+                ),
+                label: 'Alunos'),
+          ],
+        ),
       ),
-      body: GridView.count(
-        crossAxisCount: 3,
-        padding: EdgeInsets.all(16.0),
-        children: [
-          MyCard(
-            title: 'Comunicados',
-            icon: FontAwesomeIcons.bell,
-            cardColor: Colors.white,
-            borderColor: Color.fromARGB(255, 59, 16, 212),
-            onTap: () {
-              Navigator.pushNamed(context, 'alunos/AvisosScreen');
-            },
+      appBar: AppBar(
+        title: Container(
+          padding: EdgeInsets.only(left: 20, right: 20),
+          child: Row(
+            mainAxisSize: MainAxisSize.max,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Olá,',
+                    style: GoogleFonts.nunito(
+                        textStyle: const TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.bold)),
+                  ),
+                  Text(
+                    'username',
+                    style: GoogleFonts.nunito(
+                        textStyle: const TextStyle(
+                            fontSize: 26, fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+              Container(
+                child: Icon(
+                  Icons.exit_to_app,
+                  size: 30,
+                ),
+              )
+            ],
           ),
-          MyCard(
-            title: 'Alunos',
-            icon: FontAwesomeIcons.userGraduate,
-            cardColor: Colors.white,
-            borderColor: Color.fromARGB(255, 59, 16, 212),
-            onTap: () {
-              if (userType == 'Aluno') {
-                Navigator.pushNamed(
-                  context,
-                  'alunos/StudentScreen',
-                  arguments: {
-                    'userType': userType,
-                    'professorData': professorData,
-                    //'alunoUid': alunoData?['uid'], // Passa o UID do aluno
-                  },
-                );
-              } else {
-                Navigator.pushNamed(
-                  context,
-                  'alunos/AlunoHome',
-                  arguments: {
-                    'userType': userType,
-                    'professorData': professorData,
-                  },
-                );
-              }
-            },
-          ),
-          if (userType != 'Professor')
-            MyCard(
-              title: 'Financeiro',
-              icon: FontAwesomeIcons.handHoldingDollar,
-              cardColor: Colors.white,
-              borderColor: Color.fromARGB(255, 59, 16, 212),
-              onTap: () {
-                if (userType == 'Aluno') {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => FinanceiroScreen(
-                        userType: userType,
-                        aluno: AlunoHomePackage.Aluno(
-                          nome: alunoData?['nome'],
-                          serie: alunoData?['serie'],
-                          documentId: alunoData?['uid'],
+        ),
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.only(top: 20),
+          child: GridView.count(
+            crossAxisCount: 2,
+            padding: EdgeInsets.symmetric(horizontal: 10),
+            children: [
+              MyCard(
+                title: 'Comunicados',
+                image: 'assets/noti.png',
+                borderColor: Color.fromARGB(255, 59, 16, 212),
+                onTap: () {
+                  Navigator.pushNamed(context, 'alunos/AvisosScreen');
+                },
+              ),
+              MyCard(
+                title: 'Alunos',
+                image: 'assets/noti.png',
+                borderColor: Color.fromARGB(255, 59, 16, 212),
+                onTap: () {
+                  if (userType == 'Aluno') {
+                    Navigator.pushNamed(
+                      context,
+                      'alunos/StudentScreen',
+                      arguments: {
+                        'userType': userType,
+                        'professorData': professorData,
+                        //'alunoUid': alunoData?['uid'], // Passa o UID do aluno
+                      },
+                    );
+                  } else {
+                    Navigator.pushNamed(
+                      context,
+                      'alunos/AlunoHome',
+                      arguments: {
+                        'userType': userType,
+                        'professorData': professorData,
+                      },
+                    );
+                  }
+                },
+              ),
+              if (userType != 'Professor')
+                MyCard(
+                  title: 'Financeiro',
+                  image: 'assets/noti.png',
+                  borderColor: Color.fromARGB(255, 59, 16, 212),
+                  onTap: () {
+                    if (userType == 'Aluno') {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => FinanceiroScreen(
+                            userType: userType,
+                            aluno: AlunoHomePackage.Aluno(
+                              nome: alunoData?['nome'],
+                              serie: alunoData?['serie'],
+                              documentId: alunoData?['uid'],
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                  );
-                } else {
-                  Navigator.pushNamed(
-                    context,
-                    'financeiro/FinanceiroHome',
-                    arguments: {
-                      'userType': userType,
-                      'professorData': professorData,
-                    },
-                  );
-                }
-              },
-            ),
-          MyCard(
-            title: 'Agenda',
-            icon: FontAwesomeIcons.calendarCheck,
-            cardColor: Colors.white,
-            borderColor: Color.fromARGB(255, 59, 16, 212),
-            onTap: () {
-              Navigator.pushNamed(context, 'alunos/AgendaScreen');
-            },
-          ),
-          if (userType != 'Professor')
-            MyCard(
-              title: 'Ocorrências',
-              icon: FontAwesomeIcons.circleExclamation,
-              cardColor: Colors.white,
-              borderColor: Color.fromARGB(255, 59, 16, 212),
-              onTap: () {
-                print('Detalhes do alunoData enviado: $alunoData');
-                Navigator.pushNamed(
-                  context,
-                  'alunos/OcorrenciasScreen',
-                  arguments: {
-                    'matriculaCpf': matriculaCpf,
-                    'alunoData': alunoData,
-                    'userType': userType,
-                    'professorData': professorData,
+                      );
+                    } else {
+                      Navigator.pushNamed(
+                        context,
+                        'financeiro/FinanceiroHome',
+                        arguments: {
+                          'userType': userType,
+                          'professorData': professorData,
+                        },
+                      );
+                    }
                   },
-                );
-              },
-            ),
-          MyCard(
-            title: 'Conteúdos',
-            icon: FontAwesomeIcons.book,
-            cardColor: Colors.white,
-            borderColor: Color.fromARGB(255, 59, 16, 212),
-            onTap: () {
-              Navigator.pushNamed(context, 'alunos/ConteudosScreen');
-            },
-          ),
-          if (userType != 'Professor')
-            MyCard(
-              title: 'Chat',
-              icon: FontAwesomeIcons.solidCommentDots,
-              cardColor: Colors.white,
-              borderColor: Color.fromARGB(255, 59, 16, 212),
-              onTap: () {
-                if (userType == 'Aluno') {
-                  Navigator.pushNamed(context, 'alunos/ChatScreen');
-                } else {
-                  Navigator.pushNamed(context, 'alunos/ChatHome');
-                }
-              },
-            ),
-          MyCard(
-            title: 'Horários',
-            icon: FontAwesomeIcons.calendarAlt,
-            cardColor: Colors.white,
-            borderColor: Color.fromARGB(255, 59, 16, 212),
-            onTap: () {
-              if (isCoordenacao) {
-                String selectedRoute =
-                    ''; // Variável para armazenar a rota escolhida
-
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return AlertDialog(
-                      title: Text('Qual horário deseja acessar?'),
-                      actions: [
-                        TextButton(
-                          onPressed: () {
-                            selectedRoute = 'alunos/HorariosScreen';
-                            Navigator.pop(context); // Fecha o AlertDialog
-                          },
-                          child: Text('Aluno'),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            selectedRoute = 'alunos/HorarioProfessor';
-                            Navigator.pop(context); // Fecha o AlertDialog
-                          },
-                          child: Text('Professor'),
-                        ),
-                      ],
+                ),
+              MyCard(
+                title: 'Agenda',
+                image: 'assets/noti.png',
+                borderColor: Color.fromARGB(255, 59, 16, 212),
+                onTap: () {
+                  Navigator.pushNamed(context, 'alunos/AgendaScreen');
+                },
+              ),
+              if (userType != 'Professor')
+                MyCard(
+                  title: 'Ocorrências',
+                  image: 'assets/noti.png',
+                  borderColor: Color.fromARGB(255, 59, 16, 212),
+                  onTap: () {
+                    print('Detalhes do alunoData enviado: $alunoData');
+                    Navigator.pushNamed(
+                      context,
+                      'alunos/OcorrenciasScreen',
+                      arguments: {
+                        'matriculaCpf': matriculaCpf,
+                        'alunoData': alunoData,
+                        'userType': userType,
+                        'professorData': professorData,
+                      },
                     );
                   },
-                ).then((value) {
-                  // Faça a navegação fora do AlertDialog
-                  if (selectedRoute.isNotEmpty) {
-                    Navigator.pushNamed(context, selectedRoute);
+                ),
+              MyCard(
+                title: 'Conteúdos',
+                image: 'assets/noti.png',
+                borderColor: Color.fromARGB(255, 59, 16, 212),
+                onTap: () {
+                  Navigator.pushNamed(context, 'alunos/ConteudosScreen');
+                },
+              ),
+              if (userType != 'Professor')
+                MyCard(
+                  title: 'Chat',
+                  image: 'assets/noti.png',
+                  borderColor: Color.fromARGB(255, 59, 16, 212),
+                  onTap: () {
+                    if (userType == 'Aluno') {
+                      Navigator.pushNamed(context, 'alunos/ChatScreen');
+                    } else {
+                      Navigator.pushNamed(context, 'alunos/ChatHome');
+                    }
+                  },
+                ),
+              MyCard(
+                title: 'Horários',
+                image: 'assets/noti.png',
+                borderColor: Color.fromARGB(255, 59, 16, 212),
+                onTap: () {
+                  if (isCoordenacao) {
+                    String selectedRoute =
+                        ''; // Variável para armazenar a rota escolhida
+
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: Text('Qual horário deseja acessar?'),
+                          actions: [
+                            TextButton(
+                              onPressed: () {
+                                selectedRoute = 'alunos/HorariosScreen';
+                                Navigator.pop(context); // Fecha o AlertDialog
+                              },
+                              child: Text('Aluno'),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                selectedRoute = 'alunos/HorarioProfessor';
+                                Navigator.pop(context); // Fecha o AlertDialog
+                              },
+                              child: Text('Professor'),
+                            ),
+                          ],
+                        );
+                      },
+                    ).then((value) {
+                      // Faça a navegação fora do AlertDialog
+                      if (selectedRoute.isNotEmpty) {
+                        Navigator.pushNamed(context, selectedRoute);
+                      }
+                    });
+                  } else if (isProfessor) {
+                    Navigator.pushNamed(
+                      context,
+                      'alunos/HorarioProfessor',
+                    );
+                  } else {
+                    Navigator.pushNamed(context, 'alunos/HorariosScreen');
                   }
-                });
-              } else if (isProfessor) {
-                Navigator.pushNamed(
-                  context,
-                  'alunos/HorarioProfessor',
-                );
-              } else {
-                Navigator.pushNamed(context, 'alunos/HorariosScreen');
-              }
-            },
+                },
+              ),
+              if (userType != 'Professor')
+                MyCard(
+                  title: 'Suporte',
+                  image: 'assets/noti.png',
+                  borderColor: Color.fromARGB(255, 59, 16, 212),
+                  onTap: () {
+                    Navigator.pushNamed(context, 'suporte/SuporteScreen');
+                  },
+                ),
+            ],
           ),
-          if (userType != 'Professor')
-            MyCard(
-              title: 'Suporte',
-              icon: FontAwesomeIcons.solidCircleUser,
-              cardColor: Colors.white,
-              borderColor: Color.fromARGB(255, 59, 16, 212),
-              onTap: () {
-                Navigator.pushNamed(context, 'suporte/SuporteScreen');
-              },
-            ),
-        ],
+        ),
       ),
       floatingActionButton: userType == 'Coordenacao'
           ? FloatingActionButton(
@@ -375,61 +450,6 @@ class MyHomePage extends StatelessWidget {
               child: Icon(Icons.add),
             )
           : null,
-    );
-  }
-}
-
-class MyCard extends StatelessWidget {
-  final String title;
-  final IconData icon;
-  final Color cardColor;
-  final Color borderColor;
-  final Function()? onTap;
-
-  MyCard({
-    required this.title,
-    required this.icon,
-    required this.cardColor,
-    required this.borderColor,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Card(
-            elevation: 4.0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10.0),
-              side: BorderSide(
-                color: borderColor,
-              ),
-            ),
-            color: cardColor,
-            child: Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Icon(
-                icon,
-                size: 50.0,
-                color: borderColor,
-              ),
-            ),
-          ),
-          SizedBox(height: 8.0),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 15.0,
-              fontWeight: FontWeight.bold,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
     );
   }
 }

@@ -1,5 +1,5 @@
 import 'dart:async';
-
+import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:escola/home.dart';
@@ -324,20 +324,39 @@ class _LoginPageState extends State<LoginPage> {
           child: Stack(
             children: [
               Container(
+                padding: const EdgeInsets.only(top: 10),
                 width: MediaQuery.of(context).size.width,
                 height: MediaQuery.of(context).size.height,
                 child: Image.asset('assets/loginBack.jpg'),
               ),
               Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.symmetric(horizontal: 25),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Image.asset(
-                      'assets/escola.png', // Substitua pelo caminho correto da sua logo
-                      height: 250.0,
+                    Padding(
+                      padding: EdgeInsets.only(top: 35),
+                      child: Image.asset(
+                        'assets/books.png', // Substitua pelo caminho correto da sua logo
+                        height: 220.0,
+                      ),
                     ),
-                    SizedBox(height: 16.0),
+                    Text('Vamos Começar?',
+                        style: GoogleFonts.nunito(
+                          textStyle: const TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xff1E232C),
+                          ),
+                        )),
+                    Text(
+                      'Preencha os campos de acordo com a sua\n matrícula da escola.',
+                      style: GoogleFonts.nunito(
+                        textStyle: const TextStyle(fontSize: 14),
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16.0),
                     TextFormField(
                       controller: _matriculaCpfController,
                       decoration: InputDecoration(
@@ -349,14 +368,14 @@ class _LoginPageState extends State<LoginPage> {
                           borderSide: BorderSide(color: Colors.grey.shade400),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        fillColor: Color(0xffF7F8F9),
+                        fillColor: const Color(0xffF7F8F9),
                         filled: true,
                         labelText: 'CPF',
                         labelStyle: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Colors.grey.shade500,
                         ),
-                        prefixIcon: Icon(Icons.person),
+                        prefixIcon: const Icon(Icons.person),
                       ),
                       keyboardType: TextInputType.number,
                       inputFormatters: [
@@ -364,7 +383,7 @@ class _LoginPageState extends State<LoginPage> {
                         CpfInputFormatter(),
                       ],
                     ),
-                    SizedBox(height: 16.0),
+                    const SizedBox(height: 16.0),
                     TextFormField(
                       controller: _senhaController,
                       decoration: InputDecoration(
@@ -376,22 +395,22 @@ class _LoginPageState extends State<LoginPage> {
                           borderSide: BorderSide(color: Colors.grey.shade400),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        fillColor: Color(0xffF7F8F9),
+                        fillColor: const Color(0xffF7F8F9),
                         filled: true,
                         labelText: 'Matrícula',
                         labelStyle: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Colors.grey.shade500,
                         ),
-                        prefixIcon: Icon(Icons.lock),
+                        prefixIcon: const Icon(Icons.lock),
                       ),
                       keyboardType: TextInputType.number,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       obscureText: true,
                     ),
-                    SizedBox(height: 32.0),
-                    ElevatedButton(
-                      onPressed: _isLoading
+                    const SizedBox(height: 32.0),
+                    InkWell(
+                      onTap: _isLoading
                           ? null
                           : () {
                               setState(() {
@@ -399,39 +418,43 @@ class _LoginPageState extends State<LoginPage> {
                               });
                               _signInWithMatriculaCpfAndPassword();
                             },
-                      style: ElevatedButton.styleFrom(
-                        primary: Theme.of(context).colorScheme.secondary,
-                      ),
-                      child: _isLoading
-                          ? Container(
-                              width: 160, // Defina o tamanho desejado
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      'Fazendo login',
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        fontSize: 16.0,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                  SizedBox(width: 15),
-                                  CircularProgressIndicator(),
-                                ],
-                              ),
-                            )
-                          : Text(
-                              'Entrar',
-                              style: TextStyle(
-                                fontSize: 16.0,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
+                      child: Container(
+                        padding: const EdgeInsets.all(25),
+                        decoration: BoxDecoration(
+                          color: Color(0xff2E71E8),
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Color(0xff2E71E8).withOpacity(0.5),
+                              spreadRadius: 1,
+                              blurRadius: 15,
+                              offset:
+                                  Offset(0, 7), // changes position of shadow
                             ),
+                          ],
+                        ),
+                        child: Center(
+                          child: _isLoading
+                              ? Container(
+                                  width: 25,
+                                  height: 25,
+                                  child:
+                                      const CircularProgressIndicator.adaptive(
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white),
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Text(
+                                  'Entrar',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
