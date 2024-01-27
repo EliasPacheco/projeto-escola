@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 class ChatAlunoScreen extends StatefulWidget {
   final String matriculaCpf;
@@ -19,14 +21,78 @@ class _ChatAlunoScreenState extends State<ChatAlunoScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
+  bool _temConexaoInternet = true;
+  Connectivity _connectivity = Connectivity();
+
+  File? _image;
+  bool _isImageUploading = false;
+
   @override
   void initState() {
     super.initState();
+    _verificarConexaoInternet();
+    _monitorarConexao();
+  }
+
+  void _monitorarConexao() {
+    _connectivity.onConnectivityChanged.listen((ConnectivityResult result) {
+      setState(() {
+        _temConexaoInternet = result != ConnectivityResult.none;
+        if (_temConexaoInternet) {
+          // Atualiza o stream com base no novo ano selecionado
+        }
+      });
+    });
+  }
+
+  Future<void> _verificarConexaoInternet() async {
+    var connectivityResult = await _connectivity.checkConnectivity();
+    setState(() {
+      _temConexaoInternet = connectivityResult != ConnectivityResult.none;
+    });
   }
 
   String extractFirstName(String fullName) {
     List<String> parts = fullName.split(' ');
     return parts.isNotEmpty ? parts[0] : fullName;
+  }
+
+  Widget _buildMessageInput() {
+    return IconTheme(
+      data: IconThemeData(color: Colors.blue),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 8.0),
+        child: Row(
+          children: <Widget>[
+            IconButton(
+              icon: Icon(Icons.add),
+              onPressed: () async {
+                _getImage();
+                if (_image != null) {
+                  await _showImagePreviewDialog();
+                }
+              },
+            ),
+            Flexible(
+              child: TextField(
+                controller: _messageController,
+                decoration: InputDecoration.collapsed(
+                  hintText: "Digite uma mensagem",
+                ),
+              ),
+            ),
+            Container(
+              margin: EdgeInsets.symmetric(horizontal: 4.0),
+              child: IconButton(
+                  icon: Icon(Icons.send),
+                  onPressed: () {
+                    _sendMessage();
+                  }),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -57,76 +123,124 @@ class _ChatAlunoScreenState extends State<ChatAlunoScreen> {
             return Text('Chat com $sender');
           },
         ),
-        backgroundColor: Color.fromARGB(255, 18, 204, 182),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.blueAccent, Colors.lightBlue],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+        ),
       ),
-      body: StreamBuilder(
-        stream: FirebaseFirestore.instance
-            .collection('messages')
-            .doc(widget.matriculaCpf)
-            .snapshots(),
-        builder: (context, AsyncSnapshot<DocumentSnapshot> snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(
-              child: CircularProgressIndicator(),
-            );
-          }
+      body: _temConexaoInternet
+          ? StreamBuilder(
+              stream: FirebaseFirestore.instance
+                  .collection('messages')
+                  .doc(widget.matriculaCpf)
+                  .snapshots(),
+              builder: (context, AsyncSnapshot<DocumentSnapshot> snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(
+                    child: CircularProgressIndicator(),
+                  );
+                }
 
-          if (!snapshot.hasData || !snapshot.data!.exists) {
-            return Center(
-              child: Text(
-                'Nenhuma mensagem encontrada para este aluno.',
-                style: TextStyle(fontSize: 16, color: Colors.grey),
+                if (!snapshot.hasData || !snapshot.data!.exists) {
+                  return Center(
+                    child: Text(
+                      'Nenhuma mensagem encontrada para este aluno.',
+                      style: TextStyle(fontSize: 16, color: Colors.grey),
+                    ),
+                  );
+                }
+
+                var documentData =
+                    snapshot.data!.data() as Map<String, dynamic>;
+
+                var messages = documentData['messages'] ?? [];
+                var respostas = documentData['respostas'] ?? [];
+
+                List<Map<String, dynamic>> combinedList = [];
+
+                for (var message in messages) {
+                  var imageUrl = message['image'];
+                  combinedList.add({
+                    'sender': message['sender'],
+                    'text': message['text'],
+                    'isAlunoMessage': true,
+                    'timestamp': message['timestamp'],
+                    'imageUrl': imageUrl,
+                  });
+                }
+
+                for (var resposta in respostas) {
+                  var imageUrl =
+                      resposta['image']; // Obtenha a URL da imagem, se existir
+
+                  combinedList.add({
+                    'sender': resposta['sender'],
+                    'text': resposta['text'],
+                    'isAlunoMessage': false,
+                    'timestamp': resposta['timestamp'],
+                    'imageUrl':
+                        imageUrl, // Adicione a URL da imagem à lista, mesmo que seja nula ou vazia
+                  });
+                }
+
+                combinedList
+                    .sort((a, b) => a['timestamp'].compareTo(b['timestamp']));
+
+                WidgetsBinding.instance!.addPostFrameCallback((_) {
+                  _scrollController
+                      .jumpTo(_scrollController.position.maxScrollExtent);
+                });
+
+                return Column(
+                  children: [
+                    Expanded(
+                      child: ListView.builder(
+                        controller: _scrollController,
+                        itemCount: combinedList.length,
+                        itemBuilder: (context, index) {
+                          var message = combinedList[index];
+                          return _buildMessageTile(
+                            message['sender'],
+                            message['text'],
+                            message['isAlunoMessage'],
+                            message['timestamp'],
+                            imageUrl: message[
+                                'imageUrl'], // Pass the imageUrl to _buildMessageTile
+                          );
+                        },
+                      ),
+                    ),
+                    _buildMessageInput(),
+                  ],
+                );
+              },
+            )
+          : Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.signal_wifi_off,
+                    size: 50,
+                    color: Colors.red,
+                  ),
+                  SizedBox(height: 10),
+                  Text(
+                    'Sem conexão com a Internet',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.red,
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                ],
               ),
-            );
-          }
-
-          var documentData = snapshot.data!.data() as Map<String, dynamic>;
-
-          // Verificar se o campo 'respostas' existe antes de acessá-lo
-          var respostas = documentData.containsKey('respostas')
-              ? documentData['respostas']
-              : [];
-          var messages = documentData['messages'] ?? [];
-
-          // Restante do código permanece inalterado
-
-          WidgetsBinding.instance!.addPostFrameCallback((_) {
-            _scrollController
-                .jumpTo(_scrollController.position.maxScrollExtent);
-          });
-
-          return Column(
-            children: [
-              Expanded(
-                child: ListView.builder(
-                  controller: _scrollController,
-                  itemCount: respostas.length + messages.length,
-                  itemBuilder: (context, index) {
-                    if (index < messages.length) {
-                      var message = messages[index];
-                      return _buildMessageTile(
-                        message['sender'],
-                        message['text'],
-                        true,
-                        message['timestamp'],
-                      );
-                    } else {
-                      var resposta = respostas[index - messages.length];
-                      return _buildMessageTile(
-                        resposta['sender'],
-                        resposta['text'],
-                        false,
-                        resposta['timestamp'],
-                      );
-                    }
-                  },
-                ),
-              ),
-              _buildMessageInput(),
-            ],
-          );
-        },
-      ),
+            ),
     );
   }
 
@@ -143,7 +257,8 @@ class _ChatAlunoScreenState extends State<ChatAlunoScreen> {
   }
 
   Widget _buildMessageTile(
-      String sender, String text, bool isAlunoMessage, Timestamp timestamp) {
+      String sender, String text, bool isAlunoMessage, Timestamp timestamp,
+      {String? imageUrl}) {
     String formattedSender =
         isAlunoMessage ? extractFirstAndThirdName(sender) : sender;
 
@@ -179,10 +294,14 @@ class _ChatAlunoScreenState extends State<ChatAlunoScreen> {
               ),
             ),
             SizedBox(height: 4),
-            Text(
-              text,
-              style: TextStyle(color: Colors.black87),
-            ),
+            if (text.isNotEmpty)
+              Text(
+                text,
+                style: TextStyle(color: Colors.black87),
+              ),
+            if (imageUrl != null &&
+                imageUrl.isNotEmpty) // Check if imageUrl is provided
+              _buildImageWidget(imageUrl),
             SizedBox(height: 4),
             Text(
               _formatTimestamp(messageTime),
@@ -194,67 +313,189 @@ class _ChatAlunoScreenState extends State<ChatAlunoScreen> {
     );
   }
 
+  Widget _buildImageWidget(String imageUrl) {
+    return FutureBuilder(
+      future: precacheImage(NetworkImage(imageUrl), context),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.done) {
+          return Image.network(
+            imageUrl,
+            width: 150, // adjust as needed
+            height: 150, // adjust as needed
+          );
+        } else {
+          return CircularProgressIndicator();
+        }
+      },
+    );
+  }
+
+  _showImagePreviewDialog() async {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _isImageUploading
+                      ? CircularProgressIndicator()
+                      : _image != null
+                          ? Image.file(_image!) // Display the selected image
+                          : Container(), // If _image is null, display an empty container
+                  SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            _image = null;
+                          });
+                          Navigator.pop(context);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          primary: Colors.red,
+                          onPrimary: Colors.white,
+                        ),
+                        child: Text("Cancelar"),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _sendMessage(); // Send the message with the image
+                        },
+                        style: ElevatedButton.styleFrom(
+                          primary: Colors.green,
+                          onPrimary: Colors.white,
+                        ),
+                        child: Text("Enviar"),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   String _formatTimestamp(DateTime timestamp) {
     final formatter = DateFormat('HH:mm'); // Formato 'HH:mm' para hora e minuto
     return formatter.format(timestamp.toLocal());
   }
 
-  Widget _buildMessageInput() {
-    return IconTheme(
-      data: IconThemeData(color: Colors.blue),
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 8.0),
-        child: Row(
-          children: <Widget>[
-            IconButton(
-              icon: Icon(Icons.add),
-              onPressed: _getImage,
-            ),
-            Flexible(
-              child: TextField(
-                controller: _messageController,
-                decoration: InputDecoration.collapsed(
-                  hintText: "Digite uma mensagem",
+  void _getImage() async {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _getImageFromSource(ImageSource.gallery);
+                },
+                style: ElevatedButton.styleFrom(
+                  primary: Colors.blue,
+                  onPrimary: Colors.white,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.photo_library),
+                    SizedBox(width: 8),
+                    Text("Galeria"),
+                  ],
                 ),
               ),
-            ),
-            Container(
-              margin: EdgeInsets.symmetric(horizontal: 4.0),
-              child: IconButton(
-                  icon: Icon(Icons.send),
-                  onPressed: () {
-                    _sendMessage();
-                  }),
-            ),
-          ],
-        ),
-      ),
+              SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _getImageFromSource(ImageSource.camera);
+                },
+                style: ElevatedButton.styleFrom(
+                  primary: Colors.green,
+                  onPrimary: Colors.white,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.camera_alt),
+                    SizedBox(width: 8),
+                    Text("Câmera"),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
-  File? _image;
-  Future<void> _getImage() async {
-    final pickedFile =
-        await ImagePicker().pickImage(source: ImageSource.gallery);
+  Future<void> _getImageFromSource(ImageSource source) async {
+    final pickedFile = await ImagePicker().pickImage(source: source);
     if (pickedFile != null) {
       setState(() {
         _image = File(pickedFile.path);
       });
+
+      // Show full-screen image dialog only if the image is not null
+      if (_image != null) {
+        await _showImagePreviewDialog();
+      }
     }
   }
 
   void _sendMessage() async {
     String messageText = _messageController.text.trim();
-    if (messageText.isNotEmpty) {
+    if (messageText.isNotEmpty || _image != null) {
       final matriculaCpf = widget.matriculaCpf;
 
-      final docSnapshot = await FirebaseFirestore.instance
-          .collection('messages')
-          .doc(matriculaCpf)
-          .get();
+      if (_image != null) {
+        setState(() {
+          _isImageUploading = true;
+        });
 
-      if (docSnapshot.exists) {
-        FirebaseFirestore.instance
+        // Upload da imagem para o Firestore Storage
+        final firebase_storage.Reference storageRef =
+            firebase_storage.FirebaseStorage.instance.ref().child(
+                'images/$matriculaCpf/${DateTime.now().millisecondsSinceEpoch}.jpg');
+
+        await storageRef.putFile(_image!);
+
+        // Obtém a URL da imagem no Firestore Storage
+        String imageUrl = await storageRef.getDownloadURL();
+
+        setState(() {
+          _isImageUploading = false;
+        });
+
+        // Adicione a URL da imagem ao Firestore
+        await FirebaseFirestore.instance
+            .collection('messages')
+            .doc(matriculaCpf)
+            .update({
+          'respostas': FieldValue.arrayUnion([
+            {
+              'sender': 'Coordenação',
+              'text': messageText,
+              'timestamp': DateTime.now(),
+              'image': imageUrl,
+            }
+          ]),
+        });
+      } else {
+        // Se não houver imagem, envie apenas a mensagem de texto
+        await FirebaseFirestore.instance
             .collection('messages')
             .doc(matriculaCpf)
             .update({
@@ -266,22 +507,9 @@ class _ChatAlunoScreenState extends State<ChatAlunoScreen> {
             }
           ]),
         });
-      } else {
-        FirebaseFirestore.instance
-            .collection('messages')
-            .doc(matriculaCpf)
-            .set({
-          'respostas': [
-            {
-              'sender': 'Coordenação',
-              'text': messageText,
-              'timestamp': DateTime.now(),
-            }
-          ],
-          'messages': [], // Adiciona a estrutura 'messages' ao documento
-        });
       }
 
+      // Limpe o controlador de mensagens
       _messageController.clear();
     }
   }
