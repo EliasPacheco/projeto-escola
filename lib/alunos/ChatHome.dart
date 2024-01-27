@@ -127,12 +127,29 @@ class _ChatHomeState extends State<ChatHome> {
                               fontSize: 14,
                             ),
                           )
-                        else
+                        else if (ultimaMensagem.isNotEmpty)
                           Text(
                             ultimaMensagem.length > 50
                                 ? '${ultimaMensagem.substring(0, 50)}...'
                                 : ultimaMensagem,
                             style: TextStyle(fontSize: 14),
+                          )
+                        else
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.camera_alt,
+                                size: 16,
+                                color: Colors.grey,
+                              ),
+                              SizedBox(
+                                width: 3,
+                              ),
+                              Text(
+                                'Foto',
+                                style: TextStyle(fontSize: 14),
+                              ),
+                            ],
                           ),
                         Align(
                           alignment: Alignment.centerRight,
