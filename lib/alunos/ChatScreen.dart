@@ -405,94 +405,97 @@ class ChatScreenState extends State<ChatScreen> {
           ? Column(
               children: <Widget>[
                 Flexible(
-                  child: StreamBuilder(
-                    stream: _messagesCollection.doc(conversationId).snapshots(),
-                    builder:
-                        (context, AsyncSnapshot<DocumentSnapshot> snapshot) {
-                      if (!snapshot.hasData) {
-                        return Center(
-                          child: CircularProgressIndicator(),
-                        );
-                      }
+                    child: StreamBuilder(
+                        stream:
+                            _messagesCollection.doc(conversationId).snapshots(),
+                        builder: (context,
+                            AsyncSnapshot<DocumentSnapshot> snapshot) {
+                          if (!snapshot.hasData) {
+                            return Center(
+                              child: CircularProgressIndicator(),
+                            );
+                          }
 
-                      if (!snapshot.hasData || !snapshot.data!.exists) {
-                        _isLoading = false;
-                        return Center(
-                          child: Text("Sem mensagens enviadas"),
-                        );
-                      }
+                          if (!snapshot.hasData || !snapshot.data!.exists) {
+                            _isLoading = false;
+                            return Center(
+                              child: Text("Sem mensagens enviadas"),
+                            );
+                          }
 
-                      var document = snapshot.data!;
-                      var messages = document['messages'] ?? [];
-                      var respostas = document['respostas'] ?? [];
+                          var document = snapshot.data!;
+                          var documentData =
+                              (document.data() as Map<String, dynamic>?) ?? {};
+                          var messages = documentData['messages'] ?? [];
+                          var respostas =
+                              (documentData['respostas'] as List<dynamic>?) ??
+                                  [];
 
-                      if (_isLoading) {
-                        _isLoading = false;
-                        // Adicionando um delay para permitir a renderização inicial antes de rolar para baixo
-                        Future.delayed(Duration(milliseconds: 1), () {
-                          _scrollController.jumpTo(
-                              _scrollController.position.maxScrollExtent);
-                        });
-                      }
+                          if (_isLoading) {
+                            _isLoading = false;
+                            // Adicionando um delay para permitir a renderização inicial antes de rolar para baixo
+                            Future.delayed(Duration(milliseconds: 1), () {
+                              _scrollController.jumpTo(
+                                  _scrollController.position.maxScrollExtent);
+                            });
+                          }
 
-                      if (messages.isEmpty && respostas.isEmpty) {
-                        return Center(
-                          child: Text("Sem mensagens enviadas"),
-                        );
-                      }
+                          if (messages.isEmpty && respostas.isEmpty) {
+                            return Center(
+                              child: Text("Sem mensagens enviadas"),
+                            );
+                          }
 
-                      List<Map<String, dynamic>> combinedList = [];
+                          List<Map<String, dynamic>> combinedList = [];
 
-                      for (var message in messages) {
-                        var imageUrl = message[
-                            'image']; // Obtenha a URL da imagem, se existir
+                          for (var message in messages) {
+                            var imageUrl = message[
+                                'image']; // Obtenha a URL da imagem, se existir
 
-                        var messageData = {
-                          'sender': message['sender'],
-                          'text': message['text'],
-                          'isAlunoMessage': true,
-                          'timestamp': message['timestamp'],
-                          'imageUrl':
-                              imageUrl, // Adicione a URL da imagem à lista, mesmo que seja nula ou vazia
-                        };
+                            var messageData = {
+                              'sender': message['sender'],
+                              'text': message['text'],
+                              'isAlunoMessage': true,
+                              'timestamp': message['timestamp'],
+                              'imageUrl':
+                                  imageUrl, // Adicione a URL da imagem à lista, mesmo que seja nula ou vazia
+                            };
 
-                        combinedList.add(messageData);
-                      }
+                            combinedList.add(messageData);
+                          }
 
-                      for (var resposta in respostas) {
-                        var imageUrl = resposta[
-                            'image']; // Obtenha a URL da imagem, se existir
+                          for (var resposta in respostas) {
+                            var imageUrl = resposta[
+                                'image']; // Obtenha a URL da imagem, se existir
 
-                        combinedList.add({
-                          'sender': resposta['sender'],
-                          'text': resposta['text'],
-                          'isAlunoMessage': false,
-                          'timestamp': resposta['timestamp'],
-                          'imageUrl':
-                              imageUrl, // Adicione a URL da imagem à lista, mesmo que seja nula ou vazia
-                        });
-                      }
+                            combinedList.add({
+                              'sender': resposta['sender'],
+                              'text': resposta['text'],
+                              'isAlunoMessage': false,
+                              'timestamp': resposta['timestamp'],
+                              'imageUrl':
+                                  imageUrl, // Adicione a URL da imagem à lista, mesmo que seja nula ou vazia
+                            });
+                          }
 
-                      combinedList.sort(
-                          (a, b) => a['timestamp'].compareTo(b['timestamp']));
+                          combinedList.sort((a, b) =>
+                              a['timestamp'].compareTo(b['timestamp']));
 
-                      return ListView.builder(
-                        controller: _scrollController,
-                        itemCount: combinedList.length,
-                        itemBuilder: (context, index) {
-                          var message = combinedList[index];
-                          return _buildMessageTile(
-                            message['sender'],
-                            message['text'],
-                            message['isAlunoMessage'],
-                            message['timestamp'],
-                            imageUrl: message['imageUrl'],
+                          return ListView.builder(
+                            controller: _scrollController,
+                            itemCount: combinedList.length,
+                            itemBuilder: (context, index) {
+                              var message = combinedList[index];
+                              return _buildMessageTile(
+                                message['sender'],
+                                message['text'],
+                                message['isAlunoMessage'],
+                                message['timestamp'],
+                                imageUrl: message['imageUrl'],
+                              );
+                            },
                           );
-                        },
-                      );
-                    },
-                  ),
-                ),
+                        })),
                 Divider(height: 1.0),
                 _buildTextComposer(),
               ],
