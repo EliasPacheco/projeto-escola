@@ -4,14 +4,18 @@ import 'package:google_fonts/google_fonts.dart';
 class MyCard extends StatelessWidget {
   final String title;
   final IconData icon;
+  final ImageProvider image;
   final Color borderColor;
   final Function()? onTap;
+  final double widthW;
+  final double heightH;
 
   MyCard({
     required this.title,
     required this.icon,
     required this.borderColor,
     required this.onTap,
+    required this.image, required this.widthW, required this.heightH,
   });
 
   @override
@@ -43,10 +47,11 @@ class MyCard extends StatelessWidget {
                   const SizedBox(
                     height: 20,
                   ),
-                  Icon(
-                    icon,
-                    size: 50.0,
-                    color: borderColor,
+                  Container(
+                    width: widthW,
+                    height: heightH,
+                    decoration:
+                        BoxDecoration(image: DecorationImage(image: image)),
                   ),
                   const SizedBox(
                     height: 20,
