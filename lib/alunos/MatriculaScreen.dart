@@ -38,6 +38,8 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
   TextEditingController cpfResponsavel2Controller = TextEditingController();
   TextEditingController telefoneResponsavel2Controller =
       TextEditingController();
+  TextEditingController senhaController =
+      TextEditingController(); // Novo controlador
 
   List<String> anexos = [];
 
@@ -123,6 +125,11 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
                 'Telefone 2',
                 keyboardType: TextInputType.phone,
                 maskFormatter: telefoneFormatter,
+              ),
+              _buildTextField(
+                senhaController,
+                'Senha',
+                keyboardType: TextInputType.text,
               ),
               SizedBox(height: 10),
               if (isDocumentoAnexado)
@@ -322,35 +329,6 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
 
   String alunoUid = "";
 
-  Future<bool> _verificarExistenciaCPF(String cpf) async {
-    // Consulta ao Firestore para verificar se o CPF já existe em qualquer turma
-    for (String serie in [
-      'Maternal',
-      'Infantil I',
-      'Infantil II',
-      '1º Ano',
-      '2º Ano',
-      '3º Ano',
-      '4º Ano',
-      '5º Ano',
-      '6º Ano',
-    ]) {
-      QuerySnapshot query = await alunosCollection
-          .doc(serie)
-          .collection('alunos')
-          .where('cpfResponsavel1', isEqualTo: cpf)
-          .get();
-
-      // Retorna verdadeiro se o CPF já existe em alguma turma
-      if (query.docs.isNotEmpty) {
-        return true;
-      }
-    }
-
-    // Retorna falso se o CPF não existe em nenhuma turma
-    return false;
-  }
-
   void _realizarMatricula() async {
     if (!_camposObrigatoriosPreenchidos()) {
       // Mostrar mensagem de erro
@@ -364,31 +342,6 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
       return;
     }
 
-    bool cpfExistente =
-        await _verificarExistenciaCPF(cpfResponsavel1Controller.text);
-
-    if (cpfExistente) {
-      // CPF já existe, não realizar a matrícula
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text('CPF já cadastrado'),
-            content: Text(
-                'O CPF do responsável 1 já está cadastrado. Não é possível realizar a matrícula.'),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: Text('OK'),
-              ),
-            ],
-          );
-        },
-      );
-      return;
-    }
     Map<String, dynamic> alunoData = {
       'nome': nomeController.text,
       'nomePai': nomePaiController.text,
@@ -404,6 +357,7 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
       'enderecoResponsavel2': enderecoResponsavel2Controller.text,
       'cpfResponsavel2': cpfResponsavel2Controller.text,
       'telefoneResponsavel2': telefoneResponsavel2Controller.text,
+      'senha': senhaController.text, // Inclua a senha no mapa de dados
       'documentosAnexados': documentosAnexados,
     };
 
@@ -437,7 +391,8 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
         serieSelecionada != null &&
         dataNascimentoController.text.isNotEmpty &&
         dataMatriculaController.text.isNotEmpty &&
-        matriculaController.text.isNotEmpty;
+        matriculaController.text.isNotEmpty &&
+        senhaController.text.isNotEmpty;
   }
 
   void _limparCampos() {
@@ -458,6 +413,7 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
     serieSelecionada = null;
     isDocumentoAnexado = false;
     documentosAnexados.clear();
+    senhaController.clear();
     botoesDesativados = [false, false, false, false];
   }
 }

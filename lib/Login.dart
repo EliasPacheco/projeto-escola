@@ -82,8 +82,8 @@ class _LoginPageState extends State<LoginPage> {
       // Execute as consultas em paralelo
       Query<Map<String, dynamic>> queryAlunos = FirebaseFirestore.instance
           .collectionGroup('alunos')
-          .where('cpfResponsavel1', isEqualTo: matriculaCpf)
-          .where('matricula', isEqualTo: senha);
+          .where('senha', isEqualTo: senha)
+          .where('cpfResponsavel1', isEqualTo: matriculaCpf);
 
       queries.add(queryAlunos);
 
@@ -156,7 +156,7 @@ class _LoginPageState extends State<LoginPage> {
             FirebaseFirestore.instance.collection('alunos/$turma/alunos');
 
         QuerySnapshot<Map<String, dynamic>> alunoInfoQuery =
-            await turmaCollection.where('matricula', isEqualTo: senha).get();
+            await turmaCollection.where('senha', isEqualTo: senha).get();
 
         if (alunoInfoQuery.docs.isNotEmpty) {
           Map<String, dynamic> alunoData = alunoInfoQuery.docs.first.data();
