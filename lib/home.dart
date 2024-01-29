@@ -59,6 +59,14 @@ class _MySchoolAppState extends State<MySchoolApp> {
               userType: widget.userType,
               professorData: widget.professorData,
             ),
+        'financeiro/FinanceiroScreen': (context) => FinanceiroScreen(
+              userType: widget.userType,
+              aluno: AlunoHomePackage.Aluno(
+                nome: widget.alunoData?['nome'],
+                serie: widget.alunoData?['serie'],
+                documentId: widget.alunoData?['uid'],
+              ),
+            ),
         'alunos/AvisosScreen': (context) => AvisosHome(
               matriculaCpf: widget.matriculaCpf,
               alunoData: widget.alunoData,
@@ -117,7 +125,7 @@ class _MySchoolAppState extends State<MySchoolApp> {
   }
 }
 
-class MyHomePage extends StatelessWidget {
+class MyHomePage extends StatefulWidget {
   final String matriculaCpf;
   final Map<String, dynamic>? alunoData;
   final String userType;
@@ -131,9 +139,17 @@ class MyHomePage extends StatelessWidget {
     this.professorData,
   }) : super(key: key);
 
-  bool get isAluno => alunoData != null;
-  bool get isProfessor => alunoData == null && !isAluno;
-  bool get isCoordenacao => alunoData == null && !isAluno && !isProfessor;
+  @override
+  State<MyHomePage> createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  bool get isAluno => widget.alunoData != null;
+
+  bool get isProfessor => widget.alunoData == null && !isAluno;
+
+  bool get isCoordenacao =>
+      widget.alunoData == null && !isAluno && !isProfessor;
 
   void _signOut(BuildContext context) async {
     try {
@@ -142,7 +158,7 @@ class MyHomePage extends StatelessWidget {
         context,
         'Login',
         arguments: {
-          'professorData': professorData,
+          'professorData': widget.professorData,
         },
       );
     } catch (e) {
@@ -151,18 +167,19 @@ class MyHomePage extends StatelessWidget {
     }
   }
 
+  int _selectedIndex = 0;
+
   @override
   Widget build(BuildContext context) {
-    print('Tipo de usuário: $userType');
+    print('Tipo de usuário: ${widget.userType}');
 
-    bool isAluno = userType == 'Aluno';
-    bool isProfessor = userType == 'Professor';
-    bool isCoordenacao = userType == 'Coordenacao';
+    bool isAluno = widget.userType == 'Aluno';
+    bool isProfessor = widget.userType == 'Professor';
+    bool isCoordenacao = widget.userType == 'Coordenacao';
     Image noti = Image.asset('assets/noti.png');
     Image livros = Image.asset('assets/livros.png');
     Image suporte = Image.asset('assets/suporte.png');
     Image relogio = Image.asset('assets/relogio.png');
-    Image pix = Image.asset('assets/pix.jpeg');
     Image chat = Image.asset('assets/chat.png');
     Image aviso = Image.asset('assets/aviso.png');
 
@@ -182,48 +199,47 @@ class MyHomePage extends StatelessWidget {
           ),
         ]),
         child: BottomNavigationBar(
-          currentIndex: 0,
-          selectedLabelStyle: GoogleFonts.nunito(
-            textStyle:
-                const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          unselectedLabelStyle: GoogleFonts.nunito(
-            textStyle:
-                const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          fixedColor: Colors.black,
-          unselectedItemColor: Colors.black,
-          showUnselectedLabels: true,
-          type: BottomNavigationBarType.fixed,
-          onTap: (index) {},
-          items: const [
-            BottomNavigationBarItem(
-              icon: FaIcon(
-                FontAwesomeIcons.house,
-                color: Colors.black,
-              ),
-              label: 'Inicio',
+            selectedLabelStyle: GoogleFonts.nunito(
+              textStyle:
+                  const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
-            BottomNavigationBarItem(
-                icon: Icon(
-                  Icons.calendar_today,
-                  color: Colors.black,
-                ),
-                label: 'Agenda'),
-            BottomNavigationBarItem(
-                icon: Icon(
-                  Icons.monetization_on,
-                  color: Colors.black,
-                ),
-                label: 'Financeiro'),
-            BottomNavigationBarItem(
-                icon: FaIcon(
-                  FontAwesomeIcons.userGraduate,
-                  color: Colors.black,
-                ),
-                label: 'Alunos'),
-          ],
-        ),
+            unselectedLabelStyle: GoogleFonts.nunito(
+              textStyle:
+                  const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            fixedColor: Colors.black,
+            unselectedItemColor: Colors.black,
+            showUnselectedLabels: true,
+            type: BottomNavigationBarType.fixed,
+            onTap: (index) {
+              setState(() {
+                _selectedIndex = index; // Atualize o índice selecionado
+              });
+              if (_selectedIndex == 0) {
+                Navigator.pushNamed(context, 'alunos/MySchoolApp');
+              }
+              if (_selectedIndex == 1) {
+                Navigator.pushNamed(context, 'alunos/AgendaScreen');
+              }
+              if (_selectedIndex == 2) {
+                if (widget.userType == 'Aluno') {
+                  Navigator.pushNamed(context, 'financeiro/FinanceiroScreen');
+                } else if (widget.userType == 'Coordenacao') {
+                  Navigator.pushNamed(context, 'financeiro/FinanceiroHome');
+                } else if (widget.userType == 'Professor') {
+                  Navigator.pushNamed(context, 'alunos/AlunoHome');
+                }
+              }
+              if (_selectedIndex == 3) {
+                if (widget.userType == 'Aluno') {
+                  Navigator.pushNamed(context, 'alunos/StudentScreen');
+                } else if (widget.userType == 'Coordenacao' ||
+                    widget.userType == 'Professor') {
+                  Navigator.pushNamed(context, 'alunos/AlunoHome');
+                }
+              }
+            },
+            items: _buildBottomNavigationBarItems()),
       ),
       appBar: AppBar(
         title: Container(
@@ -239,24 +255,32 @@ class MyHomePage extends StatelessWidget {
                   Text(
                     'Olá,',
                     style: GoogleFonts.nunito(
-                        textStyle: const TextStyle(
-                            fontSize: 20, fontWeight: FontWeight.bold)),
+                      textStyle: const TextStyle(
+                          fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
                   ),
                   Text(
-                    'username', // Utilize o dado da pessoa que faz login e coloque seu nome para ser exibido aqui
+                    // Utilize o dado da pessoa que faz login e coloque seu nome para ser exibido aqui
+                    widget.userType == 'Aluno'
+                        ? '${widget.alunoData?['nome'].toString().split(' ')[0]}'
+                        : widget.userType == 'Professor'
+                            ? 'Professor'
+                            : 'Coordenação',
                     style: GoogleFonts.nunito(
-                        textStyle: const TextStyle(
-                            fontSize: 26, fontWeight: FontWeight.bold)),
+                      textStyle: const TextStyle(
+                          fontSize: 26, fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ],
               ),
-              Container(
-                child: Icon(
-                  Icons.exit_to_app,
-                  color: Colors.red,
-                  size: 30,
-                ),
-              )
+              IconButton(
+                icon: Icon(Icons.exit_to_app),
+                color: Colors.red,
+                iconSize: 30,
+                onPressed: () {
+                  _signOut(context);
+                },
+              ),
             ],
           ),
         ),
@@ -279,7 +303,7 @@ class MyHomePage extends StatelessWidget {
                   Navigator.pushNamed(context, 'alunos/AvisosScreen');
                 },
               ),
-              if (userType != 'Professor')
+              if (widget.userType != 'Professor')
                 MyCard(
                   title: 'Ocorrências',
                   icon: FontAwesomeIcons.circleExclamation,
@@ -288,15 +312,15 @@ class MyHomePage extends StatelessWidget {
                   widthW: 50,
                   heightH: 50,
                   onTap: () {
-                    print('Detalhes do alunoData enviado: $alunoData');
+                    print('Detalhes do alunoData enviado: ${widget.alunoData}');
                     Navigator.pushNamed(
                       context,
                       'alunos/OcorrenciasScreen',
                       arguments: {
-                        'matriculaCpf': matriculaCpf,
-                        'alunoData': alunoData,
-                        'userType': userType,
-                        'professorData': professorData,
+                        'matriculaCpf': widget.matriculaCpf,
+                        'alunoData': widget.alunoData,
+                        'userType': widget.userType,
+                        'professorData': widget.professorData,
                       },
                     );
                   },
@@ -312,7 +336,7 @@ class MyHomePage extends StatelessWidget {
                   Navigator.pushNamed(context, 'alunos/ConteudosScreen');
                 },
               ),
-              if (userType != 'Professor')
+              if (widget.userType != 'Professor')
                 MyCard(
                   title: 'Chat',
                   icon: FontAwesomeIcons.solidCommentDots,
@@ -321,7 +345,7 @@ class MyHomePage extends StatelessWidget {
                   widthW: 50,
                   heightH: 50,
                   onTap: () {
-                    if (userType == 'Aluno') {
+                    if (widget.userType == 'Aluno') {
                       Navigator.pushNamed(context, 'alunos/ChatScreen');
                     } else {
                       Navigator.pushNamed(context, 'alunos/ChatHome');
@@ -379,7 +403,7 @@ class MyHomePage extends StatelessWidget {
                   }
                 },
               ),
-              if (userType != 'Professor')
+              if (widget.userType != 'Professor')
                 MyCard(
                   title: 'Suporte',
                   icon: FontAwesomeIcons.solidCircleUser,
@@ -395,7 +419,7 @@ class MyHomePage extends StatelessWidget {
           ),
         ),
       ),
-      floatingActionButton: userType == 'Coordenacao'
+      floatingActionButton: widget.userType == 'Coordenacao'
           ? FloatingActionButton(
               backgroundColor: Color(0xff2E71E8),
               foregroundColor: Colors.white,
@@ -412,5 +436,42 @@ class MyHomePage extends StatelessWidget {
             )
           : null,
     );
+  }
+
+  List<BottomNavigationBarItem> _buildBottomNavigationBarItems() {
+    // Define BottomNavigationBarItems excluindo "Financeiro" para Professor
+    List<BottomNavigationBarItem> items = [
+      BottomNavigationBarItem(
+        icon: FaIcon(
+          FontAwesomeIcons.house,
+          color: Colors.black,
+        ),
+        label: 'Inicio',
+      ),
+      BottomNavigationBarItem(
+        icon: Icon(
+          Icons.calendar_today,
+          color: Colors.black,
+        ),
+        label: 'Agenda',
+      ),
+      if (widget.userType != 'Professor')
+        BottomNavigationBarItem(
+          icon: Icon(
+            Icons.monetization_on,
+            color: Colors.black,
+          ),
+          label: 'Financeiro',
+        ),
+      BottomNavigationBarItem(
+        icon: FaIcon(
+          FontAwesomeIcons.userGraduate,
+          color: Colors.black,
+        ),
+        label: 'Alunos',
+      ),
+    ];
+
+    return items;
   }
 }
