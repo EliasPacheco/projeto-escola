@@ -1,4 +1,5 @@
 import 'package:escola/alunos/AlunoHome.dart';
+import 'package:escola/alunos/BoletimScreen.dart';
 import 'package:escola/financeiro/FinanceiroScreen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -326,7 +327,25 @@ class _StudentScreenState extends State<StudentScreen> {
                     );
                   },
                   child: Text('Ir para Financeiro'),
-                )
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => BoletimScreen(
+                          /*userType: widget.userType,
+                          aluno: Aluno(
+                            nome: widget.alunoData?['nome'],
+                            serie: widget.alunoData?['serie'],
+                            documentId: widget.alunoData?['uid'],
+                          ),*/
+                        ),
+                      ),
+                    );
+                  },
+                  child: Text('Ir para Boletim'),
+                ),
               ],
             ),
           );
