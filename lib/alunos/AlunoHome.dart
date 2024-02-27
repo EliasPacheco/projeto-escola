@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:escola/alunos/BoletimScreen.dart';
 import 'package:escola/alunos/MatriculaScreen.dart';
-import 'package:escola/financeiro/FinanceiroScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
@@ -147,34 +147,6 @@ class _AlunoHomeState extends State<AlunoHome> {
     });
   }
 
-  void exibirModalPresencaFalta(String aluno) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        String dataAtual = _getDataAtual();
-        return AlertDialog(
-          title: Text('Presença/Falta $dataAtual'),
-          content: Text('$aluno está presente na aula?'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text('Falta'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                // Adicione lógica para tratar a presença do aluno aqui
-              },
-              child: Text('Presente'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   void exibirModalExcluirAluno(String alunoId) {
     showDialog(
       context: context,
@@ -219,13 +191,6 @@ class _AlunoHomeState extends State<AlunoHome> {
     } catch (error) {
       print('Erro ao excluir aluno: $error');
     }
-  }
-
-  String _getDataAtual() {
-    DateTime dataAtual = DateTime.now();
-    String formattedDate =
-        "${dataAtual.day.toString().padLeft(2, '0')}/${dataAtual.month.toString().padLeft(2, '0')}";
-    return formattedDate;
   }
 
   @override
@@ -367,45 +332,27 @@ class _AlunoHomeState extends State<AlunoHome> {
                         trailing: PopupMenuButton<String>(
                           itemBuilder: (context) {
                             return [
-                              PopupMenuItem<String>(
-                                value: 'opcao1',
-                                child: Text('Presença/Falta'),
-                              ),
                               if (widget.userType == 'Coordenacao')
                                 PopupMenuItem<String>(
-                                  value: 'opcao2',
+                                  value: 'opcao',
                                   child: Text('Boletim'),
                                 ),
                               if (widget.userType == 'Coordenacao')
                                 PopupMenuItem<String>(
-                                  value: 'opcao3',
-                                  child: Text('Financeiro'),
-                                ),
-                              if (widget.userType == 'Coordenacao')
-                                PopupMenuItem<String>(
-                                  value: 'opcao4',
+                                  value: 'opcao2',
                                   child: Text('Excluir aluno'),
                                 ),
                             ];
                           },
                           onSelected: (String value) {
-                            if (value == 'opcao1') {
-                              exibirModalPresencaFalta(
-                                alunosFiltrados[index].nome,
-                              );
-                            } else if (value == 'opcao2') {
-                              // Adicione lógica para a opção Boletim
-                            } else if (value == 'opcao3') {
+                            if (value == 'opcao') {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => FinanceiroScreen(
-                                    userType: widget.userType,
-                                    aluno: alunosFiltrados[index],
-                                  ),
+                                  builder: (context) => BoletimScreen(),
                                 ),
                               );
-                            } else if (value == 'opcao4') {
+                            } else if (value == 'opcao2') {
                               exibirModalExcluirAluno(
                                 alunosFiltrados[index].documentId,
                               );

@@ -187,6 +187,21 @@ class _MyHomePageState extends State<MyHomePage> {
     print('isProfessor: $isProfessor');
     print('isCoordenacao: $isCoordenacao');
 
+    int _notificationCount = 3;
+
+    void _showNotificationsDialog() {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return NotificationDialog(
+            // Passe as informações necessárias para o diálogo de notificações
+            notificationCount: _notificationCount,
+            // ... (adicionar outros dados conforme necessário)
+          );
+        },
+      );
+    }
+
     return Scaffold(
       bottomNavigationBar: Container(
         height: 70,
@@ -243,7 +258,10 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       appBar: AppBar(
         title: Container(
-          padding: EdgeInsets.only(left: 20, right: 20),
+          padding: EdgeInsets.only(
+            left: 20,
+            top: 15,
+          ),
           child: Row(
             mainAxisSize: MainAxisSize.max,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -273,14 +291,51 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                 ],
               ),
-              IconButton(
-                icon: Icon(Icons.exit_to_app),
-                color: Colors.red,
-                iconSize: 30,
-                onPressed: () {
-                  _signOut(context);
-                },
-              ),
+              widget.userType == 'Coordenacao' || widget.userType == 'Professor'
+                  ? IconButton(
+                      icon: Icon(Icons.exit_to_app),
+                      color: Colors.red,
+                      iconSize: 30,
+                      onPressed: () {
+                        _signOut(context);
+                      },
+                    )
+                  : Stack(
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.notifications),
+                          color: Colors.yellow,
+                          iconSize: 45,
+                          onPressed:
+                              _showNotificationsDialog, // Alterado para chamar a função _showNotificationsDialog
+                        ),
+                        if (_notificationCount > 0)
+                          Positioned(
+                            right: 12,
+                            top: 8,
+                            child: Container(
+                              padding: EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: Colors.red,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              constraints: BoxConstraints(
+                                minWidth: 16,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  _notificationCount.toString(),
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
             ],
           ),
         ),
@@ -473,5 +528,37 @@ class _MyHomePageState extends State<MyHomePage> {
     ];
 
     return items;
+  }
+}
+
+class NotificationDialog extends StatelessWidget {
+  final int notificationCount; // Adicione outros dados conforme necessário
+
+  const NotificationDialog({
+    Key? key,
+    required this.notificationCount,
+    // ... (adicionar outros parâmetros conforme necessário)
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('Notificações'),
+      content: Column(
+        children: [
+          // Adicione widgets para exibir informações sobre as notificações
+          Text('Você tem $notificationCount notificações.'),
+          // ... (adicionar outros widgets conforme necessário)
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context); // Feche o diálogo
+          },
+          child: Text('Fechar'),
+        ),
+      ],
+    );
   }
 }

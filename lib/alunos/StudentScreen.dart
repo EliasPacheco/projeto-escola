@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class StudentScreen extends StatefulWidget {
   final String matriculaCpf;
@@ -41,6 +42,22 @@ class _StudentScreenState extends State<StudentScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   late Stream<DocumentSnapshot> _studentStream;
+
+  void _signOut(BuildContext context) async {
+    try {
+      await FirebaseAuth.instance.signOut();
+      Navigator.pushReplacementNamed(
+        context,
+        'Login',
+        arguments: {
+          'alunoData': widget.alunoData,
+        },
+      );
+    } catch (e) {
+      print('Erro ao fazer logout: $e');
+      // Trate o erro, mostre uma mensagem, etc.
+    }
+  }
 
   @override
   void initState() {
@@ -185,7 +202,29 @@ class _StudentScreenState extends State<StudentScreen> {
     String primeiroNome = nome.split(' ')[0];
     return Scaffold(
       appBar: AppBar(
-        title: Text('Perfil do $primeiroNome'),
+        title: Container(
+          child: Row(
+            mainAxisSize: MainAxisSize.max,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                children: [
+                  Text(
+                    'Perfil do $primeiroNome',
+                  ),
+                ],
+              ),
+              IconButton(
+                icon: Icon(Icons.exit_to_app),
+                color: Colors.red,
+                iconSize: 30,
+                onPressed: () {
+                  _signOut(context);
+                },
+              ),
+            ],
+          ),
+        ),
       ),
       body: StreamBuilder<DocumentSnapshot>(
         stream: _studentStream,
@@ -334,13 +373,13 @@ class _StudentScreenState extends State<StudentScreen> {
                       context,
                       MaterialPageRoute(
                         builder: (context) => BoletimScreen(
-                          /*userType: widget.userType,
+                            /*userType: widget.userType,
                           aluno: Aluno(
                             nome: widget.alunoData?['nome'],
                             serie: widget.alunoData?['serie'],
                             documentId: widget.alunoData?['uid'],
                           ),*/
-                        ),
+                            ),
                       ),
                     );
                   },
