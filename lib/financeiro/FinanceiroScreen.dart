@@ -368,7 +368,7 @@ class _FinanceiroScreenState extends State<FinanceiroScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => FinanceiroCard(),
+                    builder: (context) => FinanceiroCard(aluno: widget.aluno),
                   ),
                 );
               },
@@ -398,7 +398,7 @@ class _FinanceiroScreenState extends State<FinanceiroScreen> {
                             );
                           },
                           child: Text(
-                            'institutoroma2023@outlook.com',
+                            'eliaspacheco989@outlook.com',
                             style: TextStyle(
                               color: Colors.blue,
                               decoration: TextDecoration.underline,
