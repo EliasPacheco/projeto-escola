@@ -1,3 +1,4 @@
+import 'package:escola/Login.dart';
 import 'package:escola/alunos/AlunoHome.dart';
 import 'package:escola/alunos/BoletimScreen.dart';
 import 'package:escola/financeiro/FinanceiroScreen.dart';
@@ -45,16 +46,16 @@ class _StudentScreenState extends State<StudentScreen> {
 
   void _signOut(BuildContext context) async {
     try {
-      await FirebaseAuth.instance.signOut();
-      Navigator.pushReplacementNamed(
+      // Navegue de volta à tela de login removendo todas as rotas empilhadas
+      Navigator.pushAndRemoveUntil(
         context,
-        'Login',
-        arguments: {
-          'alunoData': widget.alunoData,
-        },
+        MaterialPageRoute(
+          builder: (context) => LoginPage(),
+        ),
+        (route) => false,
       );
     } catch (e) {
-      print('Erro ao fazer logout: $e');
+      print('Erro ao sair da conta: $e');
       // Trate o erro, mostre uma mensagem, etc.
     }
   }
@@ -373,13 +374,13 @@ class _StudentScreenState extends State<StudentScreen> {
                       context,
                       MaterialPageRoute(
                         builder: (context) => BoletimScreen(
-                            /*userType: widget.userType,
+                          userType: widget.userType,
                           aluno: Aluno(
                             nome: widget.alunoData?['nome'],
                             serie: widget.alunoData?['serie'],
                             documentId: widget.alunoData?['uid'],
-                          ),*/
-                            ),
+                          ),
+                        ),
                       ),
                     );
                   },

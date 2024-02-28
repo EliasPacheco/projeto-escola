@@ -63,6 +63,107 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
   final CollectionReference alunosCollection =
       FirebaseFirestore.instance.collection('alunos');
 
+  Map<String, dynamic> materiasPorSerie = {
+    'Maternal': {
+      'Portugues': {},
+      'Matematica': {},
+      'Natureza e Sociedade': {},
+      'Ingles': {},
+    },
+    'Infantil I': {
+      'Portugues': {},
+      'Matematica': {},
+      'Natureza e Sociedade': {},
+      'Ingles': {},
+    },
+    'Infantil II': {
+      'Portugues': {},
+      'Matematica': {},
+      'Natureza e Sociedade': {},
+      'Ingles': {},
+    },
+    '1º Ano': {
+      'Portugues': {},
+      'Gramatica': {},
+      'Producao Textual': {},
+      'Matematica': {},
+      'Historia': {},
+      'Geografia': {},
+      'Ciencias': {},
+      'Religiao': {},
+      'Artes': {},
+      'Ingles': {},
+    },
+    '2º Ano': {
+      'Portugues': {},
+      'Gramatica': {},
+      'Producao Textual': {},
+      'Matematica': {},
+      'Historia': {},
+      'Geografia': {},
+      'Ciencias': {},
+      'Religiao': {},
+      'Artes': {},
+      'Ingles': {},
+    },
+    '3º Ano': {
+      'Portugues': {},
+      'Gramatica': {},
+      'Producao Textual': {},
+      'Matematica': {},
+      'Educacao Financeira': {},
+      'Historia': {},
+      'Geografia': {},
+      'Ciencias': {},
+      'Religiao': {},
+      'Empreendedorismo': {},
+      'Artes': {},
+      'Ingles': {},
+    },
+    '4º Ano': {
+      'Portugues': {},
+      'Gramatica': {},
+      'Producao Textual': {},
+      'Matematica': {},
+      'Educacao Financeira': {},
+      'Historia': {},
+      'Geografia': {},
+      'Ciencias': {},
+      'Religiao': {},
+      'Empreendedorismo': {},
+      'Artes': {},
+      'Ingles': {},
+    },
+    '5º Ano': {
+      'Portugues': {},
+      'Gramatica': {},
+      'Producao Textual': {},
+      'Matematica': {},
+      'Educacao Financeira': {},
+      'Historia': {},
+      'Geografia': {},
+      'Ciencias': {},
+      'Religiao': {},
+      'Empreendedorismo': {},
+      'Artes': {},
+      'Ingles': {},
+    },
+    '6º Ano': {
+      'Portugues': {},
+      'Gramatica': {},
+      'Producao Textual': {},
+      'Matematica': {},
+      'Educacao Financeira': {},
+      'Historia': {},
+      'Geografia': {},
+      'Ciencias': {},
+      'Religiao': {},
+      'Empreendedorismo': {},
+      'Artes': {},
+      'Ingles': {},
+    },
+  };
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -335,7 +436,7 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Preencha todos os campos obrigatórios!'),
-          duration: Duration(seconds: 3),
+          duration: Duration(seconds: 2),
           backgroundColor: Colors.red,
         ),
       );
@@ -359,6 +460,7 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
       'telefoneResponsavel2': telefoneResponsavel2Controller.text,
       'senha': senhaController.text, // Inclua a senha no mapa de dados
       'documentosAnexados': documentosAnexados,
+      'materias': materiasPorSerie[serieSelecionada],
     };
 
     // Gere um UID único para o aluno

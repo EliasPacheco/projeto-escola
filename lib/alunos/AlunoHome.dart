@@ -349,7 +349,14 @@ class _AlunoHomeState extends State<AlunoHome> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => BoletimScreen(),
+                                  builder: (context) => BoletimScreen(
+                                    userType: widget.userType,
+                                    aluno: Aluno(
+                                      nome: widget.alunoData?['nome'],
+                                      serie: widget.alunoData?['serie'],
+                                      documentId: widget.alunoData?['uid'],
+                                    ),
+                                  ),
                                 ),
                               );
                             } else if (value == 'opcao2') {

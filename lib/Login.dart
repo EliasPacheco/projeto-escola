@@ -83,7 +83,7 @@ class _LoginPageState extends State<LoginPage> {
       Query<Map<String, dynamic>> queryAlunos = FirebaseFirestore.instance
           .collectionGroup('alunos')
           .where('senha', isEqualTo: senha)
-          .where('cpfResponsavel1', isEqualTo: matriculaCpf);
+          .where('matricula', isEqualTo: matriculaCpf);
 
       queries.add(queryAlunos);
 
@@ -147,7 +147,7 @@ class _LoginPageState extends State<LoginPage> {
       QuerySnapshot<Map<String, dynamic>> alunosQuery = await FirebaseFirestore
           .instance
           .collection('alunos/$turma/alunos')
-          .where('cpfResponsavel1', isEqualTo: matriculaCpf)
+          .where('matricula', isEqualTo: matriculaCpf)
           .get();
 
       for (QueryDocumentSnapshot<Map<String, dynamic>> alunoSnapshot
@@ -370,7 +370,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         fillColor: const Color(0xffF7F8F9),
                         filled: true,
-                        labelText: 'CPF',
+                        labelText: 'Matrícula',
                         labelStyle: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Colors.grey.shade500,
@@ -397,7 +397,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         fillColor: const Color(0xffF7F8F9),
                         filled: true,
-                        labelText: 'Matrícula',
+                        labelText: 'Senha',
                         labelStyle: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Colors.grey.shade500,

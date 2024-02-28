@@ -1,7 +1,22 @@
+import 'package:escola/alunos/AlunoHome.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-class BoletimScreen extends StatelessWidget {
+class BoletimScreen extends StatefulWidget {
+
+  final String userType;
+  final Aluno aluno;
+
+  BoletimScreen({
+    Key? key,
+    required this.userType,
+    required this.aluno,
+  }) : super(key: key);
+  @override
+  State<BoletimScreen> createState() => _BoletimScreenState();
+}
+
+class _BoletimScreenState extends State<BoletimScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
