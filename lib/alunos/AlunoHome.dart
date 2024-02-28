@@ -3,6 +3,7 @@ import 'package:escola/alunos/BoletimScreen.dart';
 import 'package:escola/alunos/MatriculaScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:escola/alunos/AlunoHome.dart' as AlunoHomePackage;
 
 class Aluno {
   final String documentId;
@@ -14,6 +15,14 @@ class Aluno {
     required this.nome,
     required this.serie,
   });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'documentId': documentId,
+      'nome': nome,
+      'serie': serie,
+    };
+  }
 }
 
 class AlunoHome extends StatefulWidget {
@@ -346,19 +355,21 @@ class _AlunoHomeState extends State<AlunoHome> {
                           },
                           onSelected: (String value) {
                             if (value == 'opcao') {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => BoletimScreen(
-                                    userType: widget.userType,
-                                    aluno: Aluno(
-                                      nome: widget.alunoData?['nome'],
-                                      serie: widget.alunoData?['serie'],
-                                      documentId: widget.alunoData?['uid'],
+                              // Check the user type before navigating
+                              if (widget.userType == 'Coordenacao') {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => BoletimScreen(
+                                      userType: widget.userType,
+                                      aluno: alunosFiltrados[
+                                          index], // Passe o objeto Aluno completo
+                                      alunoData: alunosFiltrados[index]
+                                          .toMap(), // Passe os dados completos se necessário
                                     ),
                                   ),
-                                ),
-                              );
+                                );
+                              }
                             } else if (value == 'opcao2') {
                               exibirModalExcluirAluno(
                                 alunosFiltrados[index].documentId,

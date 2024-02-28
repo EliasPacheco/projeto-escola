@@ -380,7 +380,7 @@ class _LoginPageState extends State<LoginPage> {
                       keyboardType: TextInputType.number,
                       inputFormatters: [
                         FilteringTextInputFormatter.digitsOnly,
-                        CpfInputFormatter(),
+                        //CpfInputFormatter(),
                       ],
                     ),
                     const SizedBox(height: 16.0),

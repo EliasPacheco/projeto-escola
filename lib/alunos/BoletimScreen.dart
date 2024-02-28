@@ -3,156 +3,122 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class BoletimScreen extends StatefulWidget {
-
   final String userType;
   final Aluno aluno;
+  final Map<String, dynamic>? alunoData;
 
   BoletimScreen({
     Key? key,
     required this.userType,
     required this.aluno,
+    this.alunoData,
   }) : super(key: key);
+
   @override
   State<BoletimScreen> createState() => _BoletimScreenState();
 }
 
 class _BoletimScreenState extends State<BoletimScreen> {
+  late Aluno _aluno; // Adicione essa linha para armazenar o objeto Aluno
+  List<Widget> subjectCards = []; // Adicione esta linha
+
+  @override
+  void initState() {
+    super.initState();
+    _aluno = widget.aluno; // Atribua o valor ao objeto _aluno
+  }
+
   @override
   Widget build(BuildContext context) {
+    print('Aluno Data: ${widget.alunoData ?? "Nenhum dado de aluno"}');
+    print('Subject Cards: $subjectCards'); // Agora você pode acessar a variável
+
     return Scaffold(
       appBar: AppBar(
-        title: Text("Boletim"),
+        title: Text('Boletim - ${_aluno.nome}'),
       ),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildExpandableCard('Matemática', FontAwesomeIcons.calculator, [
-                _buildSubjectRow('Janeiro', '9.5', Colors.blue),
-                _buildSubjectRow('Fevereiro', '8.0', Colors.green),
-                _buildSubjectRow('Março', '', Colors.orange),
-                _buildSubjectRow('Abril', '', Colors.orange),
-                _buildSubjectRow('Maio', '', Colors.orange),
-                _buildSubjectRow('Junho', '', Colors.orange),
-                _buildSubjectRow('Julho', '', Colors.orange),
-                _buildSubjectRow('Agosto', '', Colors.orange),
-                _buildSubjectRow('Setembro', '', Colors.orange),
-                _buildSubjectRow('Outubro', '', Colors.orange),
-                _buildSubjectRow('Novembro', '', Colors.orange),
-                _buildSubjectRow('Dezembro', '', Colors.orange),
-              ]),
-              _buildExpandableCard('Português', FontAwesomeIcons.book, [
-                _buildSubjectRow('Janeiro', '9.5', Colors.blue),
-                _buildSubjectRow('Fevereiro', '8.0', Colors.green),
-                _buildSubjectRow('Março', '', Colors.orange),
-                _buildSubjectRow('Abril', '', Colors.orange),
-                _buildSubjectRow('Maio', '', Colors.orange),
-                _buildSubjectRow('Junho', '', Colors.orange),
-                _buildSubjectRow('Julho', '', Colors.orange),
-                _buildSubjectRow('Agosto', '', Colors.orange),
-                _buildSubjectRow('Setembro', '', Colors.orange),
-                _buildSubjectRow('Outubro', '', Colors.orange),
-                _buildSubjectRow('Novembro', '', Colors.orange),
-                _buildSubjectRow('Dezembro', '', Colors.orange),
-              ]),
-              _buildExpandableCard('Ciências', FontAwesomeIcons.microscope, [
-                _buildSubjectRow('Janeiro', '9.5', Colors.blue),
-                _buildSubjectRow('Fevereiro', '8.0', Colors.green),
-                _buildSubjectRow('Março', '', Colors.orange),
-                _buildSubjectRow('Abril', '', Colors.orange),
-                _buildSubjectRow('Maio', '', Colors.orange),
-                _buildSubjectRow('Junho', '', Colors.orange),
-                _buildSubjectRow('Julho', '', Colors.orange),
-                _buildSubjectRow('Agosto', '', Colors.orange),
-                _buildSubjectRow('Setembro', '', Colors.orange),
-                _buildSubjectRow('Outubro', '', Colors.orange),
-                _buildSubjectRow('Novembro', '', Colors.orange),
-                _buildSubjectRow('Dezembro', '', Colors.orange),
-              ]),
-              _buildExpandableCard('Fisica', FontAwesomeIcons.lightbulb, [
-                _buildSubjectRow('Janeiro', '9.5', Colors.blue),
-                _buildSubjectRow('Fevereiro', '8.0', Colors.green),
-                _buildSubjectRow('Março', '', Colors.orange),
-                _buildSubjectRow('Abril', '', Colors.orange),
-                _buildSubjectRow('Maio', '', Colors.orange),
-                _buildSubjectRow('Junho', '', Colors.orange),
-                _buildSubjectRow('Julho', '', Colors.orange),
-                _buildSubjectRow('Agosto', '', Colors.orange),
-                _buildSubjectRow('Setembro', '', Colors.orange),
-                _buildSubjectRow('Outubro', '', Colors.orange),
-                _buildSubjectRow('Novembro', '', Colors.orange),
-                _buildSubjectRow('Dezembro', '', Colors.orange),
-              ]),
-              _buildExpandableCard('Quimica', FontAwesomeIcons.flask, [
-                _buildSubjectRow('Janeiro', '9.5', Colors.blue),
-                _buildSubjectRow('Fevereiro', '8.0', Colors.green),
-                _buildSubjectRow('Março', '', Colors.orange),
-                _buildSubjectRow('Abril', '', Colors.orange),
-                _buildSubjectRow('Maio', '', Colors.orange),
-                _buildSubjectRow('Junho', '', Colors.orange),
-                _buildSubjectRow('Julho', '', Colors.orange),
-                _buildSubjectRow('Agosto', '', Colors.orange),
-                _buildSubjectRow('Setembro', '', Colors.orange),
-                _buildSubjectRow('Outubro', '', Colors.orange),
-                _buildSubjectRow('Novembro', '', Colors.orange),
-                _buildSubjectRow('Dezembro', '', Colors.orange),
-              ]),
-              _buildExpandableCard('Artes', FontAwesomeIcons.palette, [
-                _buildSubjectRow('Janeiro', '9.5', Colors.blue),
-                _buildSubjectRow('Fevereiro', '8.0', Colors.green),
-                _buildSubjectRow('Março', '', Colors.orange),
-                _buildSubjectRow('Abril', '', Colors.orange),
-                _buildSubjectRow('Maio', '', Colors.orange),
-                _buildSubjectRow('Junho', '', Colors.orange),
-                _buildSubjectRow('Julho', '', Colors.orange),
-                _buildSubjectRow('Agosto', '', Colors.orange),
-                _buildSubjectRow('Setembro', '', Colors.orange),
-                _buildSubjectRow('Outubro', '', Colors.orange),
-                _buildSubjectRow('Novembro', '', Colors.orange),
-                _buildSubjectRow('Dezembro', '', Colors.orange),
-              ]),
-              _buildExpandableCard('Inglês', FontAwesomeIcons.language, [
-                _buildSubjectRow('Janeiro', '9.5', Colors.blue),
-                _buildSubjectRow('Fevereiro', '8.0', Colors.green),
-                _buildSubjectRow('Março', '', Colors.orange),
-                _buildSubjectRow('Abril', '', Colors.orange),
-                _buildSubjectRow('Maio', '', Colors.orange),
-                _buildSubjectRow('Junho', '', Colors.orange),
-                _buildSubjectRow('Julho', '', Colors.orange),
-                _buildSubjectRow('Agosto', '', Colors.orange),
-                _buildSubjectRow('Setembro', '', Colors.orange),
-                _buildSubjectRow('Outubro', '', Colors.orange),
-                _buildSubjectRow('Novembro', '', Colors.orange),
-                _buildSubjectRow('Dezembro', '', Colors.orange),
-              ]),
-              _buildExpandableCard('Espanhol', FontAwesomeIcons.language, [
-                _buildSubjectRow('Janeiro', '9.5', Colors.blue),
-                _buildSubjectRow('Fevereiro', '8.0', Colors.green),
-                _buildSubjectRow('Março', '', Colors.orange),
-                _buildSubjectRow('Abril', '', Colors.orange),
-                _buildSubjectRow('Maio', '', Colors.orange),
-                _buildSubjectRow('Junho', '', Colors.orange),
-                _buildSubjectRow('Julho', '', Colors.orange),
-                _buildSubjectRow('Agosto', '', Colors.orange),
-                _buildSubjectRow('Setembro', '', Colors.orange),
-                _buildSubjectRow('Outubro', '', Colors.orange),
-                _buildSubjectRow('Novembro', '', Colors.orange),
-                _buildSubjectRow('Dezembro', '', Colors.orange),
-              ]),
-              // Add more cards for other subjects or months as needed
-              SizedBox(height: 20),
-              Text(
-                'Média Geral: 8.3',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-            ],
+            children: _buildSubjectCards(),
           ),
         ),
       ),
     );
   }
+
+  List<Widget> _buildSubjectCards() {
+  List<Widget> subjectCards = [];
+
+  print('Aluno Data (BoletimScreen): ${widget.alunoData}');
+
+  if (widget.alunoData != null &&
+      widget.alunoData!['materias'] is Map) {
+    Map<String, dynamic> materias = widget.alunoData!['materias'];
+
+    print('Materias (BoletimScreen): $materias');
+
+    if (materias.isNotEmpty) {
+      materias.forEach((subject, grades) {
+        List<Widget> subjectRows = [];
+
+        List<String> months = [
+          'Janeiro',
+          'Fevereiro',
+          'Março',
+          'Abril',
+          'Maio',
+          'Junho',
+          'Julho',
+          'Agosto',
+          'Setembro',
+          'Outubro',
+          'Novembro',
+          'Dezembro'
+        ];
+
+        for (String month in months) {
+          String grade = grades[month] != null ? grades[month].toString() : '';
+          Color color = grade.isNotEmpty ? Colors.blue : Colors.orange;
+
+          print('Subject: $subject, Month: $month, Grade: $grade');
+          subjectRows.add(_buildSubjectRow(month, grade, color));
+        }
+
+        Widget subjectCard =
+            _buildExpandableCard(subject, Icons.subject, subjectRows);
+        subjectCards.add(subjectCard);
+      });
+    } else {
+      print('Materias (BoletimScreen): Mapa de matérias vazio.');
+      // Adicione uma mensagem indicando que o boletim não está disponível.
+      subjectCards.add(
+        Card(
+          child: ListTile(
+            title: Text('Boletim não disponível.'),
+          ),
+        ),
+      );
+    }
+  } else {
+    print('Materias (BoletimScreen): Dados inválidos ou ausentes.');
+    // Adicione uma mensagem indicando que os dados do boletim não estão disponíveis.
+    subjectCards.add(
+      Card(
+        child: ListTile(
+          title: Text('Boletim não disponível.'),
+        ),
+      ),
+    );
+  }
+
+  print('Subject Cards (BoletimScreen): $subjectCards');
+
+  return subjectCards;
+}
+
 
   Widget _buildExpandableCard(
       String subject, IconData iconData, List<Widget> subjectRows) {
