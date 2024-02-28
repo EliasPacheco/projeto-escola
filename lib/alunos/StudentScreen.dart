@@ -375,7 +375,6 @@ class _StudentScreenState extends State<StudentScreen> {
                       MaterialPageRoute(
                         builder: (context) => BoletimScreen(
                           userType: widget.userType,
-                          alunoData: widget.alunoData,
                           aluno: Aluno(
                             nome: widget.alunoData?['nome'],
                             serie: widget.alunoData?['serie'],

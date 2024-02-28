@@ -1,17 +1,15 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:escola/alunos/AlunoHome.dart';
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class BoletimScreen extends StatefulWidget {
   final String userType;
   final Aluno aluno;
-  final Map<String, dynamic>? alunoData;
 
   BoletimScreen({
     Key? key,
     required this.userType,
     required this.aluno,
-    this.alunoData,
   }) : super(key: key);
 
   @override
@@ -19,20 +17,37 @@ class BoletimScreen extends StatefulWidget {
 }
 
 class _BoletimScreenState extends State<BoletimScreen> {
-  late Aluno _aluno; // Adicione essa linha para armazenar o objeto Aluno
-  List<Widget> subjectCards = []; // Adicione esta linha
+  late Aluno _aluno;
+  Map<String, dynamic> _materias = {};
 
   @override
   void initState() {
     super.initState();
-    _aluno = widget.aluno; // Atribua o valor ao objeto _aluno
+    _aluno = widget.aluno;
+
+    // Modifique o código para buscar os dados corretamente no Firestore
+    FirebaseFirestore.instance
+        .collection('alunos')
+        .doc(_aluno.serie)
+        .collection('alunos')
+        .doc(_aluno.documentId)
+        .get()
+        .then((DocumentSnapshot documentSnapshot) {
+      if (documentSnapshot.exists) {
+        setState(() {
+          _materias = documentSnapshot['materias'] ??
+              {}; // Usando ?? para tratar caso 'materias' seja nulo
+        });
+      } else {
+        print('Documento do aluno não encontrado no Firestore.');
+      }
+    }).catchError((error) {
+      print('Erro ao buscar dados do Firestore: $error');
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    print('Aluno Data: ${widget.alunoData ?? "Nenhum dado de aluno"}');
-    print('Subject Cards: $subjectCards'); // Agora você pode acessar a variável
-
     return Scaffold(
       appBar: AppBar(
         title: Text('Boletim - ${_aluno.nome}'),
@@ -50,18 +65,10 @@ class _BoletimScreenState extends State<BoletimScreen> {
   }
 
   List<Widget> _buildSubjectCards() {
-  List<Widget> subjectCards = [];
+    List<Widget> subjectCards = [];
 
-  print('Aluno Data (BoletimScreen): ${widget.alunoData}');
-
-  if (widget.alunoData != null &&
-      widget.alunoData!['materias'] is Map) {
-    Map<String, dynamic> materias = widget.alunoData!['materias'];
-
-    print('Materias (BoletimScreen): $materias');
-
-    if (materias.isNotEmpty) {
-      materias.forEach((subject, grades) {
+    if (_materias != null && _materias!.isNotEmpty) {
+      _materias!.forEach((subject, grades) {
         List<Widget> subjectRows = [];
 
         List<String> months = [
@@ -83,7 +90,6 @@ class _BoletimScreenState extends State<BoletimScreen> {
           String grade = grades[month] != null ? grades[month].toString() : '';
           Color color = grade.isNotEmpty ? Colors.blue : Colors.orange;
 
-          print('Subject: $subject, Month: $month, Grade: $grade');
           subjectRows.add(_buildSubjectRow(month, grade, color));
         }
 
@@ -92,33 +98,18 @@ class _BoletimScreenState extends State<BoletimScreen> {
         subjectCards.add(subjectCard);
       });
     } else {
-      print('Materias (BoletimScreen): Mapa de matérias vazio.');
-      // Adicione uma mensagem indicando que o boletim não está disponível.
+      // Adicione uma mensagem indicando que os dados estão sendo carregados
       subjectCards.add(
         Card(
           child: ListTile(
-            title: Text('Boletim não disponível.'),
+            title: Text('Carregando boletim...'),
           ),
         ),
       );
     }
-  } else {
-    print('Materias (BoletimScreen): Dados inválidos ou ausentes.');
-    // Adicione uma mensagem indicando que os dados do boletim não estão disponíveis.
-    subjectCards.add(
-      Card(
-        child: ListTile(
-          title: Text('Boletim não disponível.'),
-        ),
-      ),
-    );
+
+    return subjectCards;
   }
-
-  print('Subject Cards (BoletimScreen): $subjectCards');
-
-  return subjectCards;
-}
-
 
   Widget _buildExpandableCard(
       String subject, IconData iconData, List<Widget> subjectRows) {

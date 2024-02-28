@@ -362,10 +362,7 @@ class _AlunoHomeState extends State<AlunoHome> {
                                   MaterialPageRoute(
                                     builder: (context) => BoletimScreen(
                                       userType: widget.userType,
-                                      aluno: alunosFiltrados[
-                                          index], // Passe o objeto Aluno completo
-                                      alunoData: alunosFiltrados[index]
-                                          .toMap(), // Passe os dados completos se necessário
+                                      aluno: alunosFiltrados[index],
                                     ),
                                   ),
                                 );
