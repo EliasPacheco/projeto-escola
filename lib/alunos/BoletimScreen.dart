@@ -86,13 +86,14 @@ class _BoletimScreenState extends State<BoletimScreen> {
 
         for (String month in months) {
           String grade = grades[month] != null ? grades[month].toString() : '';
-          Color color = grade.isNotEmpty ? Colors.blue : Colors.orange;
+          Color color = grade.isNotEmpty
+              ? (double.parse(grade) >= 7 ? Colors.blue : Colors.red)
+              : Colors.orange;
 
           // Adiciona o ícone de lápis como ícone de edição
           IconData editIcon = Icons.edit;
 
-          subjectRows
-              .add(_buildSubjectRow(subject, month, grade, color, editIcon));
+          subjectRows.add(_buildSubjectRow(subject, month, grade, editIcon));
         }
 
         Widget subjectCard =
@@ -158,8 +159,12 @@ class _BoletimScreenState extends State<BoletimScreen> {
     );
   }
 
-  Widget _buildSubjectRow(String subject, String month, String grade,
-      Color color, IconData editIcon) {
+  Widget _buildSubjectRow(
+      String subject, String month, String grade, IconData editIcon) {
+    Color textColor = grade.isNotEmpty
+        ? (double.parse(grade) >= 7 ? Colors.blue : Colors.red)
+        : Colors.orange;
+
     return Container(
       margin: EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -172,9 +177,10 @@ class _BoletimScreenState extends State<BoletimScreen> {
               Text(
                 month,
                 style: TextStyle(
-                    fontFamily: 'RobotoMono',
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16),
+                  fontFamily: 'RobotoMono',
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
               ),
             ],
           ),
@@ -183,7 +189,10 @@ class _BoletimScreenState extends State<BoletimScreen> {
               Text(
                 grade,
                 style: TextStyle(
-                    fontWeight: FontWeight.bold, color: color, fontSize: 20),
+                  fontWeight: FontWeight.bold,
+                  color: textColor, // Altera a cor do texto aqui
+                  fontSize: 20,
+                ),
               ),
               if (widget.userType == 'Coordenacao')
                 IconButton(
