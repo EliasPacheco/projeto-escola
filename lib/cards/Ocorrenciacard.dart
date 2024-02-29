@@ -1,23 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
-void main() {
-  runApp(MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Adicionar Ocorrências',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-      ),
-      home: OcorrenciaCard(),
-    );
-  }
-}
+import 'package:intl/intl.dart';
 
 class OcorrenciaCard extends StatefulWidget {
   @override
@@ -44,7 +27,8 @@ class _OcorrenciaCardState extends State<OcorrenciaCard> {
     if (picked != null && picked != _selectedDate) {
       setState(() {
         _selectedDate = picked;
-        _dataController.text = "${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}";
+        _dataController.text =
+            "${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}";
       });
     }
   }
@@ -84,6 +68,7 @@ class _OcorrenciaCardState extends State<OcorrenciaCard> {
 
   Future<void> _enviarParaFirestore() async {
     try {
+      String dataAtual = DateFormat('dd/MM/yyyy').format(DateTime.now());
       if (_selectedOption != null) {
         String alunoUid = _alunosDaSerieWithUid.firstWhere(
             (aluno) => aluno['nome'] == _alunoController.text)['uid'];
@@ -104,11 +89,17 @@ class _OcorrenciaCardState extends State<OcorrenciaCard> {
           'ocorrencias': FieldValue.arrayUnion([ocorrencia]),
         });
 
+        await alunoRef.update({
+          'notificacoes': FieldValue.arrayUnion([
+            {'mensagem': 'Você recebeu uma ocorrência', 'data': dataAtual}
+          ]),
+        });
+
         _tituloController.clear();
         _descricaoController.clear();
         _dataController.clear();
         _alunoController.clear();
-        _selectedOption = null;
+        _selectedOption = 'Selecione a opção';
       } else {
         print('Nenhuma opção selecionada.');
       }
