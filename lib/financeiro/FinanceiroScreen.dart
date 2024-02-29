@@ -44,44 +44,6 @@ class _FinanceiroScreenState extends State<FinanceiroScreen> {
         StreamController<List<Map<String, dynamic>>>.broadcast();
     _verificarConexaoInternet();
     _monitorarConexao();
-
-    // Inicia a verificação periódica a cada 10 segundos
-    Timer.periodic(Duration(seconds: 10), (Timer timer) {
-      if (_temConexaoInternet) {
-        // Realiza a busca e envia as informações para o Firestore
-        _realizarBuscaEEnviarParaFirestore();
-      }
-    });
-  }
-
-  // Função para realizar a busca e enviar para o Firestore
-  void _realizarBuscaEEnviarParaFirestore() {
-    buscarInformacoesFinanceirasAluno().listen((alunos) {
-      _alunosStreamController.add(alunos);
-
-      // Envie as informações para o Firestore aqui
-      _enviarParaFirestore(alunos);
-    });
-  }
-
-  // Função para enviar informações para o Firestore
-  void _enviarParaFirestore(List<Map<String, dynamic>> alunos) {
-    // Exemplo hipotético:
-    FirebaseFirestore.instance
-        .collection('alunos')
-        .doc(widget.aluno.serie)
-        .collection('alunos')
-        .doc(widget.aluno.documentId)
-        .update({
-      'financeiro': alunos,
-      'notificacoes': FieldValue.arrayUnion([
-        {
-          'mensagem':
-              'Sua mensalidade com vencimento em ${alunos[0]['vencimento']} está atrasada',
-          'data': obterDataAtualFormatada(),
-        }
-      ]),
-    });
   }
 
   void _monitorarConexao() {
@@ -402,6 +364,7 @@ class _FinanceiroScreenState extends State<FinanceiroScreen> {
         children: [
           if (widget.userType == 'Coordenacao')
             FloatingActionButton(
+              heroTag: 'addButton',
               onPressed: () {
                 Navigator.push(
                   context,
@@ -414,6 +377,7 @@ class _FinanceiroScreenState extends State<FinanceiroScreen> {
             ),
           SizedBox(height: 16.0),
           FloatingActionButton(
+            heroTag: 'pixButton',
             onPressed: () {
               // Abre a imagem dos ativos quando este botão é pressionado
               showDialog(

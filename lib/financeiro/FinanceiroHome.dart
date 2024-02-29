@@ -1,22 +1,43 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:escola/alunos/AlunoHome.dart' as AlunoHomePackage;
 import 'package:escola/financeiro/FinanceiroScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:intl/intl.dart';
 
 class Aluno {
   final String documentId;
   final String nome;
   final String serie;
   final bool pagou;
+  List<Notificacao>? notificacoes;
 
   Aluno({
     required this.documentId,
     required this.nome,
     required this.serie,
     required this.pagou,
+    this.notificacoes,
   });
+}
+
+class Notificacao {
+  final String mensagem;
+  final String data;
+
+  Notificacao({
+    required this.mensagem,
+    required this.data,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'mensagem': mensagem,
+      'data': data,
+    };
+  }
 }
 
 class FinanceiroHome extends StatefulWidget {
@@ -75,6 +96,71 @@ class _FinanceiroHomeState extends State<FinanceiroHome> {
     });
   }
 
+  void _adicionarNotificacao(String alunoNome, String mensagem) {
+    String dataAtual = DateFormat('dd/MM/yyyy').format(DateTime.now());
+
+    // Encontrar o aluno na lista filtrada
+    var aluno = alunosFiltrados.firstWhere((aluno) => aluno.nome == alunoNome);
+
+    // Inicializar a lista de notificações se for nula
+    aluno.notificacoes ??= [];
+
+    // Criar uma nova instância de Notificacao com ID único
+    Notificacao notificacao = Notificacao(
+      mensagem: mensagem,
+      data: dataAtual,
+    );
+
+    // Adicionar a notificação à lista de notificações
+    aluno.notificacoes!.add(notificacao);
+
+    // Atualizar a lista de alunosFiltrados com o aluno modificado
+    alunosFiltrados = List.from(alunos);
+  }
+
+  void _enviarMensagem(String alunoNome) async {
+    // Verificar se o aluno tem mensalidade em atraso no mês atual
+    bool mensalidadeEmAtraso = alunosFiltrados
+            .firstWhere((aluno) => aluno.nome == alunoNome)
+            .notificacoes
+            ?.any((notificacao) =>
+                notificacao.data == mesAno &&
+                notificacao.mensagem == "Sua mensalidade está atrasada.") ??
+        false;
+
+    if (mensalidadeEmAtraso) {
+      // Aluno já recebeu mensagem para o mês atual
+      print('Mensagem já enviada para este mês.');
+      // Adicionar lógica para mostrar mensagem, se necessário
+    } else {
+      String mensagem = "Sua mensalidade está atrasada.";
+
+      // Adicionar notificação ao aluno
+      _adicionarNotificacao(alunoNome, mensagem);
+
+      // Atualizar o documento no Firestore
+      try {
+        var aluno =
+            alunosFiltrados.firstWhere((aluno) => aluno.nome == alunoNome);
+
+        await FirebaseFirestore.instance
+            .collection('alunos')
+            .doc(selectedAno)
+            .collection('alunos')
+            .doc(aluno.documentId)
+            .update({
+          'notificacoes':
+              FieldValue.arrayUnion([aluno.notificacoes!.last.toMap()]),
+        });
+
+        // Adicionar lógica para mostrar mensagem de sucesso, se necessário
+      } catch (e) {
+        print('Erro ao enviar mensagem: $e');
+        // Adicionar lógica para mostrar mensagem de erro, se necessário
+      }
+    }
+  }
+
   @override
   void dispose() {
     _connectivitySubscription.cancel(); // Cancel the subscription
@@ -108,6 +194,7 @@ class _FinanceiroHomeState extends State<FinanceiroHome> {
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
+                _enviarMensagem(aluno);
                 // Add logic for sending the message
               },
               child: Text('Enviar'),
