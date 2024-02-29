@@ -172,6 +172,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     print('Tipo de usuário: ${widget.userType}');
+    print('alunoData: ${widget.alunoData!["notificacoes"]}');
 
     bool isAluno = widget.userType == 'Aluno';
     bool isProfessor = widget.userType == 'Professor';
@@ -187,20 +188,24 @@ class _MyHomePageState extends State<MyHomePage> {
     print('isProfessor: $isProfessor');
     print('isCoordenacao: $isCoordenacao');
 
-    int _notificationCount = 3;
+    int _notificationCount = 0;
+
+    List<Map<String, dynamic>> notificacoes = []; // Adicione essa linha
 
     void _showNotificationsDialog() {
       showDialog(
         context: context,
         builder: (BuildContext context) {
           return NotificationDialog(
-            // Passe as informações necessárias para o diálogo de notificações
-            notificationCount: _notificationCount,
-            // ... (adicionar outros dados conforme necessário)
+            notificacoes: (widget.alunoData?['notificacoes'] as List<dynamic>)
+                .cast<Map<String, dynamic>>(),
           );
         },
       );
     }
+
+    _notificationCount =
+        (widget.alunoData?['notificacoes'] as List<dynamic>?)?.length ?? 0;
 
     return Scaffold(
       bottomNavigationBar: Container(
@@ -532,29 +537,47 @@ class _MyHomePageState extends State<MyHomePage> {
 }
 
 class NotificationDialog extends StatelessWidget {
-  final int notificationCount; // Adicione outros dados conforme necessário
+  final List<Map<String, dynamic>> notificacoes;
 
   const NotificationDialog({
     Key? key,
-    required this.notificationCount,
-    // ... (adicionar outros parâmetros conforme necessário)
+    required this.notificacoes,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text('Notificações'),
-      content: Column(
-        children: [
-          // Adicione widgets para exibir informações sobre as notificações
-          Text('Você tem $notificationCount notificações.'),
-          // ... (adicionar outros widgets conforme necessário)
-        ],
+      content: SingleChildScrollView(
+        child: Column(
+          children: [
+            for (var notificacao in notificacoes)
+              Card(
+                elevation:
+                    2, // Adicione elevação para dar uma aparência mais 3D
+                margin: EdgeInsets.symmetric(vertical: 8),
+                child: ListTile(
+                  title: Text(
+                    notificacao['mensagem'],
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  subtitle: Text(
+                    notificacao['data'],
+                    style: TextStyle(
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
       actions: [
         TextButton(
           onPressed: () {
-            Navigator.pop(context); // Feche o diálogo
+            Navigator.pop(context);
           },
           child: Text('Fechar'),
         ),
