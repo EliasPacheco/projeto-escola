@@ -172,7 +172,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     print('Tipo de usuário: ${widget.userType}');
-    print('alunoData: ${widget.alunoData!["notificacoes"]}');
+    print('alunoData: ${widget.alunoData?["notificacoes"]}');
 
     bool isAluno = widget.userType == 'Aluno';
     bool isProfessor = widget.userType == 'Professor';
@@ -310,7 +310,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         IconButton(
                           icon: Icon(Icons.notifications),
                           color: Colors.yellow,
-                          iconSize: 45,
+                          iconSize: 48,
                           onPressed:
                               _showNotificationsDialog, // Alterado para chamar a função _showNotificationsDialog
                         ),
