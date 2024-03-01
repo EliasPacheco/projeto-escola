@@ -25,13 +25,57 @@ class _ChatHomeState extends State<ChatHome> {
     return horaFormatada;
   }
 
+  void _showDeleteConfirmationDialog(String nomeAluno) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Excluir Conversa"),
+          content: Text(
+              "Tem certeza de que deseja excluir a conversa com $nomeAluno?"),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text("Cancelar"),
+            ),
+            TextButton(
+              onPressed: () {
+                _deleteConversation(nomeAluno);
+                Navigator.of(context).pop();
+              },
+              child: Text("Excluir"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _deleteConversation(String nomeAluno) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection(
+              'messages') // Substitua 'suaColecao' pelo nome da sua coleção
+          .doc(nomeAluno)
+          .delete();
+
+      // Atualize o estado ou faça qualquer outra coisa após a exclusão bem-sucedida
+      print('Conversa com $nomeAluno excluída com sucesso.');
+    } catch (e) {
+      print("Erro ao excluir a conversa: $e");
+      // Trate o erro conforme necessário
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(
           'Chat Coordenação',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         centerTitle: true,
         flexibleSpace: Container(
@@ -163,9 +207,14 @@ class _ChatHomeState extends State<ChatHome> {
                         ),
                       ],
                     ),
-                    trailing: Icon(
-                      Icons.chat,
-                      color: Colors.black,
+                    trailing: GestureDetector(
+                      onTap: () {
+                        _showDeleteConfirmationDialog(nomeAluno);
+                      },
+                      child: Icon(
+                        Icons.delete,
+                        color: Colors.red,
+                      ),
                     ),
                     onTap: () {
                       Navigator.push(

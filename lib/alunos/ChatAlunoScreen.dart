@@ -6,6 +6,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:photo_view/photo_view.dart';
+import 'package:photo_view/photo_view_gallery.dart';
 
 class ChatAlunoScreen extends StatefulWidget {
   final String matriculaCpf;
@@ -314,20 +316,50 @@ class _ChatAlunoScreenState extends State<ChatAlunoScreen> {
   }
 
   Widget _buildImageWidget(String imageUrl) {
-    return FutureBuilder(
-      future: precacheImage(NetworkImage(imageUrl), context),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.done) {
-          return Image.network(
-            imageUrl,
-            width: 150, // adjust as needed
-            height: 150, // adjust as needed
-          );
-        } else {
-          return CircularProgressIndicator();
-        }
+    return GestureDetector(
+      onTap: () {
+        _showFullScreenImage(imageUrl);
       },
+      child: FutureBuilder(
+        future: precacheImage(NetworkImage(imageUrl), context),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.done) {
+            return Image.network(
+              imageUrl,
+              width: 150, // ajuste conforme necessário
+              height: 150, // ajuste conforme necessário
+            );
+          } else {
+            return CircularProgressIndicator();
+          }
+        },
+      ),
     );
+  }
+
+  void _showFullScreenImage(String imageUrl) {
+    Navigator.push(context, MaterialPageRoute(builder: (context) {
+      return Scaffold(
+        body: PhotoViewGallery.builder(
+          itemCount: 1,
+          builder: (context, index) {
+            return PhotoViewGalleryPageOptions(
+              imageProvider: NetworkImage(imageUrl),
+              minScale: PhotoViewComputedScale.contained,
+              maxScale: PhotoViewComputedScale.covered * 2,
+            );
+          },
+          scrollPhysics: BouncingScrollPhysics(),
+          backgroundDecoration: BoxDecoration(
+            color: Colors.black,
+          ),
+          pageController: PageController(),
+          onPageChanged: (index) {
+            // do something on page change
+          },
+        ),
+      );
+    }));
   }
 
   _showImagePreviewDialog() async {
