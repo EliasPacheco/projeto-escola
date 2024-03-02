@@ -153,12 +153,29 @@ class _FinanceiroHomeState extends State<FinanceiroHome> {
               FieldValue.arrayUnion([aluno.notificacoes!.last.toMap()]),
         });
 
-        // Adicionar lógica para mostrar mensagem de sucesso, se necessário
+        _agendarExclusaoMensagem(aluno.documentId, aluno.notificacoes!.last);
       } catch (e) {
         print('Erro ao enviar mensagem: $e');
         // Adicionar lógica para mostrar mensagem de erro, se necessário
       }
     }
+  }
+
+  void _agendarExclusaoMensagem(String alunoId, Notificacao notificacao) {
+    Future.delayed(Duration(days: 15), () async {
+      try {
+        await FirebaseFirestore.instance
+            .collection('alunos')
+            .doc(selectedAno)
+            .collection('alunos')
+            .doc(alunoId)
+            .update({
+          'notificacoes': FieldValue.arrayRemove([notificacao.toMap()]),
+        });
+      } catch (e) {
+        print('Erro ao excluir mensagem: $e');
+      }
+    });
   }
 
   @override

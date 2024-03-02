@@ -100,6 +100,14 @@ class _OcorrenciaCardState extends State<OcorrenciaCard> {
         _dataController.clear();
         _alunoController.clear();
         _selectedOption = 'Selecione a opção';
+
+        await Future.delayed(Duration(days: 15), () async {
+          await alunoRef.update({
+            'notificacoes': FieldValue.arrayRemove([
+              {'mensagem': 'Você recebeu uma ocorrência', 'data': dataAtual}
+            ]),
+          });
+        });
       } else {
         print('Nenhuma opção selecionada.');
       }
