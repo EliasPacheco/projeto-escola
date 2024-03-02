@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:escola/Login.dart';
 import 'package:escola/alunos/AgendaScreen.dart';
 import 'package:escola/alunos/AlunoHome.dart';
@@ -188,24 +189,137 @@ class _MyHomePageState extends State<MyHomePage> {
     print('isProfessor: $isProfessor');
     print('isCoordenacao: $isCoordenacao');
 
-    int _notificationCount = 0;
-
-    List<Map<String, dynamic>> notificacoes = []; // Adicione essa linha
+    Stream<DocumentSnapshot<Map<String, dynamic>>> _notificationStream =
+        FirebaseFirestore.instance
+            .collection('alunos')
+            .doc(widget.alunoData?['serie'])
+            .collection('alunos')
+            .doc(widget.alunoData?['uid'])
+            .snapshots();
 
     void _showNotificationsDialog() {
       showDialog(
         context: context,
         builder: (BuildContext context) {
-          return NotificationDialog(
-            notificacoes: (widget.alunoData?['notificacoes'] as List<dynamic>)
-                .cast<Map<String, dynamic>>(),
+          return AlertDialog(
+            title: Text('Notificações'),
+            content: StreamBuilder(
+              stream: FirebaseFirestore.instance
+                  .collection('alunos')
+                  .doc(widget.alunoData?['serie'])
+                  .collection('alunos')
+                  .doc(widget.alunoData?['uid'])
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  // Wrap CircularProgressIndicator in Container or Center
+                  return Container(
+                    height: 50,
+                    width: 50,
+                    child: Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  );
+                }
+
+                if (snapshot.hasError) {
+                  print("Error: ${snapshot.error}");
+                  return Text("Error loading data");
+                }
+
+                var data = snapshot.data?.data() ?? {};
+                var notificacoes = (data['notificacoes'] as List<dynamic>?)
+                        ?.cast<Map<String, dynamic>>() ??
+                    [];
+
+                notificacoes.sort((a, b) => b['data'].compareTo(a['data']));
+
+                return SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      for (var notificacao in notificacoes)
+                        Card(
+                          elevation: 2,
+                          margin: EdgeInsets.symmetric(vertical: 8),
+                          child: ListTile(
+                            title: Text(
+                              notificacao['mensagem'],
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            subtitle: Text(
+                              notificacao['data'],
+                              style: TextStyle(
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                            trailing: IconButton(
+                              icon: Icon(Icons.delete),
+                              color: Colors.red,
+                              onPressed: () {
+                                // Show confirmation dialog before deleting
+                                showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return AlertDialog(
+                                      title: Text('Excluir Notificação'),
+                                      content: Text(
+                                        'Tem certeza que deseja excluir esta notificação?',
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.pop(context);
+                                          },
+                                          child: Text('Cancelar'),
+                                        ),
+                                        TextButton(
+                                          onPressed: () async {
+                                            var notificationReference =
+                                                FirebaseFirestore.instance
+                                                    .collection('alunos')
+                                                    .doc(widget
+                                                        .alunoData?['serie'])
+                                                    .collection('alunos')
+                                                    .doc(widget
+                                                        .alunoData?['uid']);
+
+                                            // Delete the notification from the array
+                                            await notificationReference.update({
+                                              'notificacoes':
+                                                  FieldValue.arrayRemove(
+                                                      [notificacao]),
+                                            });
+                                            Navigator.pop(context);
+                                          },
+                                          child: Text('Excluir'),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                );
+              },
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: Text('Fechar'),
+              ),
+            ],
           );
         },
       );
     }
-
-    _notificationCount =
-        (widget.alunoData?['notificacoes'] as List<dynamic>?)?.length ?? 0;
 
     return Scaffold(
       bottomNavigationBar: Container(
@@ -311,34 +425,56 @@ class _MyHomePageState extends State<MyHomePage> {
                           icon: Icon(Icons.notifications),
                           color: Colors.yellow,
                           iconSize: 48,
-                          onPressed:
-                              _showNotificationsDialog, // Alterado para chamar a função _showNotificationsDialog
+                          onPressed: _showNotificationsDialog,
                         ),
-                        if (_notificationCount > 0)
-                          Positioned(
-                            right: 12,
-                            top: 8,
-                            child: Container(
-                              padding: EdgeInsets.all(4),
-                              decoration: BoxDecoration(
-                                color: Colors.red,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              constraints: BoxConstraints(
-                                minWidth: 16,
-                              ),
-                              child: Center(
-                                child: Text(
-                                  _notificationCount.toString(),
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
+                        StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                          stream: _notificationStream,
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return Container(); // Placeholder widget while waiting
+                            }
+
+                            if (snapshot.hasError) {
+                              return Text("Error loading data");
+                            }
+
+                            var data = snapshot.data?.data() ?? {};
+                            var notificacoes =
+                                (data['notificacoes'] as List<dynamic>?)
+                                        ?.cast<Map<String, dynamic>>() ??
+                                    [];
+
+                            int _notificationCount = notificacoes.length;
+
+                            return _notificationCount > 0
+                                ? Positioned(
+                                    right: 12,
+                                    top: 8,
+                                    child: Container(
+                                      padding: EdgeInsets.all(4),
+                                      decoration: BoxDecoration(
+                                        color: Colors.red,
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      constraints: BoxConstraints(
+                                        minWidth: 16,
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          _notificationCount.toString(),
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                : Container(); // If no notifications, show an empty container
+                          },
+                        ),
                       ],
                     ),
             ],
@@ -533,55 +669,5 @@ class _MyHomePageState extends State<MyHomePage> {
     ];
 
     return items;
-  }
-}
-
-class NotificationDialog extends StatelessWidget {
-  final List<Map<String, dynamic>> notificacoes;
-
-  const NotificationDialog({
-    Key? key,
-    required this.notificacoes,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text('Notificações'),
-      content: SingleChildScrollView(
-        child: Column(
-          children: [
-            for (var notificacao in notificacoes)
-              Card(
-                elevation:
-                    2, // Adicione elevação para dar uma aparência mais 3D
-                margin: EdgeInsets.symmetric(vertical: 8),
-                child: ListTile(
-                  title: Text(
-                    notificacao['mensagem'],
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  subtitle: Text(
-                    notificacao['data'],
-                    style: TextStyle(
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          child: Text('Fechar'),
-        ),
-      ],
-    );
   }
 }
