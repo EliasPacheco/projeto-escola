@@ -659,13 +659,21 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
           label: 'Financeiro',
         ),
-      BottomNavigationBarItem(
-        icon: FaIcon(
-          FontAwesomeIcons.userGraduate,
-          color: Colors.black,
-        ),
-        label: 'Alunos',
-      ),
+      widget.userType == 'Coordenacao'
+          ? BottomNavigationBarItem(
+              icon: FaIcon(
+                FontAwesomeIcons.userGraduate,
+                color: Colors.black,
+              ),
+              label: 'Alunos',
+            )
+          : BottomNavigationBarItem(
+              icon: FaIcon(
+                FontAwesomeIcons.userGraduate,
+                color: Colors.black,
+              ),
+              label: 'Perfil',
+            )
     ];
 
     return items;

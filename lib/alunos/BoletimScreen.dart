@@ -70,7 +70,6 @@ class _BoletimScreenState extends State<BoletimScreen> {
         List<Widget> subjectRows = [];
 
         List<String> months = [
-          'Janeiro',
           'Fevereiro',
           'Março',
           'Abril',
@@ -81,7 +80,6 @@ class _BoletimScreenState extends State<BoletimScreen> {
           'Setembro',
           'Outubro',
           'Novembro',
-          'Dezembro'
         ];
 
         for (String month in months) {

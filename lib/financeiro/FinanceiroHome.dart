@@ -1,11 +1,10 @@
 import 'dart:async';
-import 'dart:convert';
-import 'package:escola/alunos/AlunoHome.dart' as AlunoHomePackage;
-import 'package:escola/financeiro/FinanceiroScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:intl/intl.dart';
+import 'package:escola/alunos/AlunoHome.dart' as AlunoHomePackage;
+import 'package:escola/financeiro/FinanceiroScreen.dart';
 
 class Aluno {
   final String documentId;
@@ -317,7 +316,7 @@ class _FinanceiroHomeState extends State<FinanceiroHome> {
     alunosFiltrados.sort((a, b) => a.nome.compareTo(b.nome));
     return Scaffold(
       appBar: AppBar(
-        title: Text('Financeiro'),
+        title: Text('Lista Financeiro'),
         actions: [
           if (widget.userType == 'Coordenacao' ||
               widget.userType == 'Professor')
@@ -398,68 +397,84 @@ class _FinanceiroHomeState extends State<FinanceiroHome> {
                       : ListView.builder(
                           itemCount: alunosFiltrados.length,
                           itemBuilder: (context, index) {
-                            return ListTile(
-                              title: Row(
-                                children: [
-                                  CircleAvatar(
-                                    backgroundColor:
+                            return Card(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(15.0),
+                              ),
+                              elevation: 4.0,
+                              margin: EdgeInsets.all(8.0),
+                              child: ListTile(
+                                title: Row(
+                                  children: [
+                                    CircleAvatar(
+                                      backgroundColor:
+                                          (alunosFiltrados[index].pagou)
+                                              ? Colors.green
+                                              : Colors.red,
+                                      child: Icon(
                                         (alunosFiltrados[index].pagou)
+                                            ? Icons.check_circle
+                                            : Icons.error,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: 10.0,
+                                    ),
+                                    Text(
+                                      '${alunosFiltrados[index].nome}',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: (alunosFiltrados[index].pagou)
                                             ? Colors.green
                                             : Colors.red,
-                                    child: Icon(
-                                      (alunosFiltrados[index].pagou)
-                                          ? Icons.check_circle
-                                          : Icons.error,
-                                      color: Colors.white,
+                                      ),
                                     ),
-                                  ),
-                                  SizedBox(
-                                    width: 10.0,
-                                  ),
-                                  Text('${alunosFiltrados[index].nome}'),
-                                ],
-                              ),
-                              trailing: widget.userType == 'Coordenacao'
-                                  ? PopupMenuButton<String>(
-                                      itemBuilder: (context) {
-                                        return [
-                                          PopupMenuItem<String>(
-                                            value: 'opcao1',
-                                            child: Text('Enviar mensagem'),
-                                          ),
-                                          PopupMenuItem<String>(
-                                            value: 'opcao2',
-                                            child: Text('Financeiro'),
-                                          ),
-                                        ];
-                                      },
-                                      onSelected: (String value) {
-                                        if (value == 'opcao1') {
-                                          exibirModalPresencaFalta(
-                                              alunosFiltrados[index].nome);
-                                        } else if (value == 'opcao2') {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  FinanceiroScreen(
-                                                userType: widget.userType,
-                                                aluno: AlunoHomePackage.Aluno(
-                                                  nome: alunosFiltrados[index]
-                                                      .nome,
-                                                  serie: alunosFiltrados[index]
-                                                      .serie,
-                                                  documentId:
-                                                      alunosFiltrados[index]
-                                                          .documentId,
+                                  ],
+                                ),
+                                trailing: widget.userType == 'Coordenacao'
+                                    ? PopupMenuButton<String>(
+                                        itemBuilder: (context) {
+                                          return [
+                                            PopupMenuItem<String>(
+                                              value: 'opcao1',
+                                              child: Text('Enviar mensagem'),
+                                            ),
+                                            PopupMenuItem<String>(
+                                              value: 'opcao2',
+                                              child: Text('Financeiro'),
+                                            ),
+                                          ];
+                                        },
+                                        onSelected: (String value) {
+                                          if (value == 'opcao1') {
+                                            exibirModalPresencaFalta(
+                                                alunosFiltrados[index].nome);
+                                          } else if (value == 'opcao2') {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) =>
+                                                    FinanceiroScreen(
+                                                  userType: widget.userType,
+                                                  aluno: AlunoHomePackage.Aluno(
+                                                    nome: alunosFiltrados[index]
+                                                        .nome,
+                                                    serie:
+                                                        alunosFiltrados[index]
+                                                            .serie,
+                                                    documentId:
+                                                        alunosFiltrados[index]
+                                                            .documentId,
+                                                  ),
                                                 ),
                                               ),
-                                            ),
-                                          );
-                                        }
-                                      },
-                                    )
-                                  : null,
+                                            );
+                                          }
+                                        },
+                                      )
+                                    : null,
+                              ),
                             );
                           },
                         )

@@ -1,9 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/material.dart';
 import 'package:escola/alunos/BoletimScreen.dart';
 import 'package:escola/alunos/MatriculaScreen.dart';
-import 'package:flutter/material.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:escola/alunos/AlunoHome.dart' as AlunoHomePackage;
 
 class Aluno {
   final String documentId;
@@ -60,7 +59,6 @@ class _AlunoHomeState extends State<AlunoHome> {
 
   bool _temConexaoInternet = true;
   Connectivity _connectivity = Connectivity();
-
   late String selectedAno;
 
   @override
@@ -68,22 +66,18 @@ class _AlunoHomeState extends State<AlunoHome> {
     super.initState();
     _verificarConexaoInternet();
     _monitorarConexao();
+    _inicializarAnoSelecionado();
+    alunosStream = buscarAlunosStream(selectedAno);
+  }
 
+  void _inicializarAnoSelecionado() {
     if (widget.userType == 'Professor' && widget.professorData != null) {
-      // Verifica se 'series' não é nulo e não está vazio
-      if (widget.professorData!['series'] != null &&
-          (widget.professorData!['series'] as List).isNotEmpty) {
-        selectedAno = widget.professorData!['series'][0];
-      } else {
-        // Defina um valor padrão caso não haja turmas disponíveis
-        selectedAno = anos[0];
-      }
+      selectedAno = widget.professorData!['series']?.isNotEmpty ?? false
+          ? widget.professorData!['series'][0]
+          : anos[0];
     } else if (widget.userType == 'Coordenacao') {
-      // Se for um usuário de Coordenação, inicialize selectedAno com o primeiro ano
       selectedAno = anos[0];
     }
-
-    alunosStream = buscarAlunosStream(selectedAno);
   }
 
   void _monitorarConexao() {
@@ -108,7 +102,6 @@ class _AlunoHomeState extends State<AlunoHome> {
     listaAlunos.sort((a, b) => a.nome.compareTo(b.nome));
   }
 
-  // Função para buscar os dados da coleção "alunos" no Firestore em forma de Stream
   Stream<List<Aluno>> buscarAlunosStream(String selectedAno) {
     return FirebaseFirestore.instance
         .collection('alunos')
@@ -124,7 +117,6 @@ class _AlunoHomeState extends State<AlunoHome> {
         );
       }).toList();
 
-      // Ordenar a lista de alunos por nome
       ordenarAlunosPorNome(alunos);
 
       return alunos;
@@ -151,7 +143,6 @@ class _AlunoHomeState extends State<AlunoHome> {
   void filtrarPorAno(String selectedAno) {
     setState(() {
       this.selectedAno = selectedAno;
-      // Atualiza o stream com o novo ano selecionado
       alunosStream = buscarAlunosStream(selectedAno);
     });
   }
@@ -195,7 +186,6 @@ class _AlunoHomeState extends State<AlunoHome> {
 
       print('Aluno excluído com sucesso');
 
-      // Atualiza a lista de alunos após a exclusão
       alunosStream = buscarAlunosStream(selectedAno);
     } catch (error) {
       print('Erro ao excluir aluno: $error');
@@ -204,199 +194,226 @@ class _AlunoHomeState extends State<AlunoHome> {
 
   @override
   Widget build(BuildContext context) {
-    print(
-        'Professor Data: ${widget.professorData ?? "Nenhum dado de professor"}');
-    print('Tipo de usuário: ${widget.userType ?? "Nenhum tipo de usuário"}');
-
-    print('Anos: $anos');
-
     return Scaffold(
       appBar: AppBar(
         title: Text('Lista de Alunos'),
         actions: [
           if (widget.userType == 'Coordenacao' ||
               widget.userType == 'Professor')
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: DropdownButton<String>(
-                value: selectedAno,
-                onChanged: (String? newValue) {
-                  if (newValue != null) {
-                    setState(() {
-                      selectedAno = newValue;
-                    });
-
-                    // Chama a função para filtrar os alunos com base no novo ano selecionado
-                    filtrarPorAno(selectedAno);
-                  }
-                },
-                items: (widget.userType == 'Professor')
-                    ? [
-                        ...widget.professorData!['series']
-                            .map<DropdownMenuItem<String>>((serie) {
-                          return DropdownMenuItem<String>(
-                            value: serie as String,
-                            child: Text(serie),
-                          );
-                        }),
-                      ]
-                    : (widget.userType == 'Coordenacao')
-                        ? anos.map<DropdownMenuItem<String>>((String value) {
-                            return DropdownMenuItem<String>(
-                              value: value,
-                              child: Text(value),
-                            );
-                          }).toList()
-                        : [],
-              ),
-            ),
+            _buildAnoDropdown(),
         ],
       ),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15.0),
-              ),
-              elevation: 4.0,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: TextField(
-                  onChanged: (query) {
-                    if (query.isEmpty) {
-                      resetFiltro();
-                    } else {
-                      filtrarAlunos(query);
-                    }
-                  },
-                  decoration: InputDecoration(
-                    hintText: 'Pesquisar Alunos',
-                    prefixIcon: Icon(Icons.search),
-                    border: InputBorder.none,
-                  ),
-                ),
-              ),
-            ),
-          ),
+          _buildSearchTextField(),
           Expanded(
-            child: Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(20.0),
-                  topRight: Radius.circular(20.0),
-                ),
-              ),
-              elevation: 4.0,
-              margin: EdgeInsets.zero,
-              child: StreamBuilder<List<Aluno>>(
-                stream: alunosStream,
-                builder: (context, snapshot) {
-                  if (!_temConexaoInternet) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.signal_wifi_off,
-                            size: 50,
-                            color: Colors.red,
-                          ),
-                          SizedBox(height: 10),
-                          Text(
-                            'Sem conexão com a Internet',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.red,
-                            ),
-                          ),
-                          SizedBox(height: 10),
-                        ],
-                      ),
-                    );
-                  }
-
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Center(child: CircularProgressIndicator());
-                  }
-
-                  alunos = snapshot.data ?? [];
-                  ordenarAlunosPorNome(alunos);
-                  alunosFiltrados = alunos
-                      .where((aluno) => aluno.serie == selectedAno)
-                      .toList();
-
-                  if (alunosFiltrados.isEmpty) {
-                    return Center(
-                      child: Text('Sem alunos nessa turma'),
-                    );
-                  }
-
-                  return ListView.builder(
-                    itemCount: alunosFiltrados.length,
-                    itemBuilder: (context, index) {
-                      return ListTile(
-                        title: Text('${alunosFiltrados[index].nome}'),
-                        trailing: PopupMenuButton<String>(
-                          itemBuilder: (context) {
-                            return [
-                              if (widget.userType == 'Coordenacao')
-                                PopupMenuItem<String>(
-                                  value: 'opcao',
-                                  child: Text('Boletim'),
-                                ),
-                              if (widget.userType == 'Coordenacao')
-                                PopupMenuItem<String>(
-                                  value: 'opcao2',
-                                  child: Text('Excluir aluno'),
-                                ),
-                            ];
-                          },
-                          onSelected: (String value) {
-                            if (value == 'opcao') {
-                              // Check the user type before navigating
-                              if (widget.userType == 'Coordenacao') {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => BoletimScreen(
-                                      userType: widget.userType,
-                                      aluno: alunosFiltrados[index],
-                                    ),
-                                  ),
-                                );
-                              }
-                            } else if (value == 'opcao2') {
-                              exibirModalExcluirAluno(
-                                alunosFiltrados[index].documentId,
-                              );
-                            }
-                          },
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
-            ),
+            child: _buildAlunosList(),
           ),
         ],
       ),
       floatingActionButton: widget.userType == 'Coordenacao'
-          ? FloatingActionButton(
-              onPressed: () {
-                // Adicione a lógica para adicionar novos avisos aqui
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => MatriculaScreen(),
-                  ),
-                );
-              },
-              child: Icon(Icons.add),
-            )
+          ? _buildFloatingActionButton()
           : null,
     );
   }
+
+  Widget _buildAnoDropdown() {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: DropdownButton<String>(
+        value: selectedAno,
+        onChanged: (String? newValue) {
+          if (newValue != null) {
+            setState(() {
+              selectedAno = newValue;
+            });
+
+            filtrarPorAno(selectedAno);
+          }
+        },
+        items: (widget.userType == 'Professor')
+            ? widget.professorData!['series']
+                .map<DropdownMenuItem<String>>(
+                  (serie) => DropdownMenuItem<String>(
+                    value: serie as String,
+                    child: Text(serie),
+                  ),
+                )
+                .toList()
+            : (widget.userType == 'Coordenacao')
+                ? anos
+                    .map<DropdownMenuItem<String>>(
+                      (String value) => DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      ),
+                    )
+                    .toList()
+                : [],
+      ),
+    );
+  }
+
+  Widget _buildSearchTextField() {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Card(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15.0),
+        ),
+        elevation: 4.0,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: TextField(
+            onChanged: (query) {
+              if (query.isEmpty) {
+                resetFiltro();
+              } else {
+                filtrarAlunos(query);
+              }
+            },
+            decoration: InputDecoration(
+              hintText: 'Pesquisar Alunos',
+              prefixIcon: Icon(Icons.search),
+              border: InputBorder.none,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAlunosList() {
+    return Card(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20.0),
+          topRight: Radius.circular(20.0),
+        ),
+      ),
+      elevation: 4.0,
+      margin: EdgeInsets.zero,
+      child: StreamBuilder<List<Aluno>>(
+        stream: alunosStream,
+        builder: (context, snapshot) {
+          if (!_temConexaoInternet) {
+            return _buildNoInternetWidget();
+          }
+
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          }
+
+          alunos = snapshot.data ?? [];
+          ordenarAlunosPorNome(alunos);
+          alunosFiltrados =
+              alunos.where((aluno) => aluno.serie == selectedAno).toList();
+
+          if (alunosFiltrados.isEmpty) {
+            return Center(
+              child: Text('Sem alunos nessa turma'),
+            );
+          }
+
+          return _buildAlunosListView();
+        },
+      ),
+    );
+  }
+
+  Widget _buildFloatingActionButton() {
+    return FloatingActionButton(
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => MatriculaScreen(),
+          ),
+        );
+      },
+      child: Icon(Icons.add),
+    );
+  }
+
+  Widget _buildNoInternetWidget() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.signal_wifi_off,
+            size: 50,
+            color: Colors.red,
+          ),
+          SizedBox(height: 10),
+          Text(
+            'Sem conexão com a Internet',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.red,
+            ),
+          ),
+          SizedBox(height: 10),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAlunosListView() {
+    return ListView.builder(
+      itemCount: alunosFiltrados.length,
+      itemBuilder: (context, index) {
+        return Card(
+          elevation: 2.0,
+          margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+          child: ListTile(
+            title: Text(
+              '${alunosFiltrados[index].nome}',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            subtitle: Text('Série: ${alunosFiltrados[index].serie}'),
+            trailing: PopupMenuButton<String>(
+              itemBuilder: (context) {
+                return [
+                  if (widget.userType == 'Coordenacao')
+                    PopupMenuItem<String>(
+                      value: 'opcao',
+                      child: Text('Boletim'),
+                    ),
+                  if (widget.userType == 'Coordenacao')
+                    PopupMenuItem<String>(
+                      value: 'opcao2',
+                      child: Text('Excluir aluno'),
+                    ),
+                ];
+              },
+              onSelected: (String value) {
+                if (value == 'opcao') {
+                  if (widget.userType == 'Coordenacao') {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => BoletimScreen(
+                          userType: widget.userType,
+                          aluno: alunosFiltrados[index],
+                        ),
+                      ),
+                    );
+                  }
+                } else if (value == 'opcao2') {
+                  exibirModalExcluirAluno(alunosFiltrados[index].documentId);
+                }
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+void main() {
+  runApp(MaterialApp(
+    home: AlunoHome(userType: 'Coordenacao'),
+  ));
 }
