@@ -97,6 +97,16 @@ class _ChatAlunoScreenState extends State<ChatAlunoScreen> {
     );
   }
 
+  bool _isDifferentDate(Timestamp currentTimestamp, Timestamp previousTimestamp) {
+    DateTime currentDate = currentTimestamp.toDate();
+    DateTime previousDate = previousTimestamp.toDate();
+    return !isSameDay(currentDate, previousDate);
+  }
+
+  bool isSameDay(DateTime date1, DateTime date2) {
+    return date1.year == date2.year && date1.month == date2.month && date1.day == date2.day;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -108,11 +118,11 @@ class _ChatAlunoScreenState extends State<ChatAlunoScreen> {
               .snapshots(),
           builder: (context, AsyncSnapshot<DocumentSnapshot> snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return Text('Carregando...'); // ou algum valor padrão
+              return Text('Carregando...');
             }
 
             if (!snapshot.hasData || !snapshot.data!.exists) {
-              return Text('Chat com Aluno'); // ou algum valor padrão
+              return Text('Chat com Aluno');
             }
 
             var messages = snapshot.data!['messages'] ?? [];
@@ -177,16 +187,13 @@ class _ChatAlunoScreenState extends State<ChatAlunoScreen> {
                 }
 
                 for (var resposta in respostas) {
-                  var imageUrl =
-                      resposta['image']; // Obtenha a URL da imagem, se existir
-
+                  var imageUrl = resposta['image'];
                   combinedList.add({
                     'sender': resposta['sender'],
                     'text': resposta['text'],
                     'isAlunoMessage': false,
                     'timestamp': resposta['timestamp'],
-                    'imageUrl':
-                        imageUrl, // Adicione a URL da imagem à lista, mesmo que seja nula ou vazia
+                    'imageUrl': imageUrl,
                   });
                 }
 
@@ -200,20 +207,98 @@ class _ChatAlunoScreenState extends State<ChatAlunoScreen> {
 
                 return Column(
                   children: [
+                    Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                      ),
+                      child: StreamBuilder(
+                        stream: FirebaseFirestore.instance
+                            .collection('messages')
+                            .doc(widget.matriculaCpf)
+                            .snapshots(),
+                        builder: (context,
+                            AsyncSnapshot<DocumentSnapshot> snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return CircularProgressIndicator();
+                          }
+
+                          if (!snapshot.hasData || !snapshot.data!.exists) {
+                            return Text('Sem mensagens');
+                          }
+
+                          var messages = snapshot.data!['messages'] ?? [];
+                          var firstMessageTimestamp = messages.isNotEmpty
+                              ? messages.first['timestamp']
+                              : null;
+
+                          if (firstMessageTimestamp != null) {
+                            DateTime firstMessageDate =
+                                firstMessageTimestamp.toDate();
+                            String formattedDate = DateFormat('dd/MM/yyyy')
+                                .format(firstMessageDate);
+
+                            return Text(
+                              formattedDate,
+                              style: TextStyle(
+                                
+                                fontSize: 14,
+                              ),
+                            );
+                          } else {
+                            return Container();
+                          }
+                        },
+                      ),
+                    ),
                     Expanded(
                       child: ListView.builder(
                         controller: _scrollController,
                         itemCount: combinedList.length,
                         itemBuilder: (context, index) {
                           var message = combinedList[index];
-                          return _buildMessageTile(
-                            message['sender'],
-                            message['text'],
-                            message['isAlunoMessage'],
-                            message['timestamp'],
-                            imageUrl: message[
-                                'imageUrl'], // Pass the imageUrl to _buildMessageTile
-                          );
+
+                          if (index > 0 &&
+                              _isDifferentDate(message['timestamp'],
+                                  combinedList[index - 1]['timestamp'])) {
+                            DateTime messageDate =
+                                message['timestamp'].toDate();
+                            String formattedDate =
+                                DateFormat('dd/MM/yyyy').format(messageDate);
+
+                            return Column(
+                              children: [
+                                SizedBox(height: 8),
+                                Container(
+                                  padding: EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[200],
+                                  ),
+                                  child: Text(
+                                    formattedDate,
+                                    style: TextStyle(
+                                      
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                                _buildMessageTile(
+                                    message['sender'],
+                                    message['text'],
+                                    message['isAlunoMessage'],
+                                    message['timestamp'],
+                                    imageUrl: message['imageUrl']),
+                              ],
+                            );
+                          } else {
+                            return _buildMessageTile(
+                                message['sender'],
+                                message['text'],
+                                message['isAlunoMessage'],
+                                message['timestamp'],
+                                imageUrl: message['imageUrl']);
+                          }
                         },
                       ),
                     ),

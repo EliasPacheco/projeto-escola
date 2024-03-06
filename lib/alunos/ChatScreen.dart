@@ -177,6 +177,16 @@ class ChatScreenState extends State<ChatScreen> {
     );
   }
 
+  bool _isDifferentDate(DateTime date1, DateTime date2) {
+    return !isSameDay(date1, date2);
+  }
+
+  bool isSameDay(DateTime date1, DateTime date2) {
+    return date1.year == date2.year &&
+        date1.month == date2.month &&
+        date1.day == date2.day;
+  }
+
   Widget _buildMessageTile(
       String sender, String text, bool isAlunoMessage, Timestamp timestamp,
       {String? imageUrl}) {
@@ -518,13 +528,45 @@ class ChatScreenState extends State<ChatScreen> {
                             itemCount: combinedList.length,
                             itemBuilder: (context, index) {
                               var message = combinedList[index];
-                              return _buildMessageTile(
-                                message['sender'],
-                                message['text'],
-                                message['isAlunoMessage'],
-                                message['timestamp'],
-                                imageUrl: message['imageUrl'],
-                              );
+                              var timestamp = message['timestamp'] as Timestamp;
+
+                              if (index == 0 ||
+                                  _isDifferentDate(
+                                      timestamp.toDate(),
+                                      combinedList[index - 1]['timestamp']
+                                          .toDate())) {
+                                return Column(
+                                  children: [
+                                    Container(
+                                      padding: EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[200],
+                                      ),
+                                      child: Text(
+                                        _formatDate(timestamp.toDate()),
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ),
+                                    _buildMessageTile(
+                                      message['sender'],
+                                      message['text'],
+                                      message['isAlunoMessage'],
+                                      timestamp,
+                                      imageUrl: message['imageUrl'],
+                                    ),
+                                  ],
+                                );
+                              } else {
+                                return _buildMessageTile(
+                                  message['sender'],
+                                  message['text'],
+                                  message['isAlunoMessage'],
+                                  timestamp,
+                                  imageUrl: message['imageUrl'],
+                                );
+                              }
                             },
                           );
                         })),
@@ -554,6 +596,12 @@ class ChatScreenState extends State<ChatScreen> {
               ),
             ),
     );
+  }
+
+  // Rest of the code remains the same
+
+  String _formatDate(DateTime date) {
+    return DateFormat('dd/MM/yyyy').format(date);
   }
 }
 
