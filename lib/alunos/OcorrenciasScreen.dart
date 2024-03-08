@@ -169,20 +169,6 @@ class _OcorrenciasScreenState extends State<OcorrenciasScreen> {
                 ],
               ),
             ),
-      floatingActionButton: widget.userType == 'Coordenacao'
-          ? FloatingActionButton(
-              onPressed: () {
-                // Adicione a lógica para adicionar novos avisos aqui
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => OcorrenciaCard(),
-                  ),
-                );
-              },
-              child: Icon(Icons.add),
-            )
-          : null,
     );
   }
 }

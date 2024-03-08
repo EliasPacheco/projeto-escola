@@ -404,8 +404,6 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         prefixIcon: const Icon(Icons.lock),
                       ),
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       obscureText: true,
                     ),
                     const SizedBox(height: 32.0),

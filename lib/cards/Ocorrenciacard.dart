@@ -38,6 +38,11 @@ class _OcorrenciaCardState extends State<OcorrenciaCard> {
   Future<void> _carregarAlunosDaSerie() async {
     try {
       if (_selectedOption != null && _selectedOption != 'Aluno') {
+        // Limpar a lista antes de carregar os novos alunos
+        setState(() {
+          _alunosDaSerieWithUid = [];
+        });
+
         final QuerySnapshot<Map<String, dynamic>> querySnapshot =
             await FirebaseFirestore.instance
                 .collection('alunos')
@@ -239,6 +244,7 @@ class _OcorrenciaCardState extends State<OcorrenciaCard> {
                 ),
                 SizedBox(height: 16.0),
                 TextFormField(
+                  readOnly: true,
                   controller: _alunoController,
                   decoration: InputDecoration(
                     labelText: 'Aluno',
@@ -302,19 +308,9 @@ class _OcorrenciaCardState extends State<OcorrenciaCard> {
                                 Text('Título: ${_tituloController.text}'),
                                 Text('Descrição: ${_descricaoController.text}'),
                                 Text('Data: ${_dataController.text}'),
-                                Text('Aluno: ${_alunoController.text}'),
                                 Text(
-                                    'Opção: ${_selectedOption ?? "Nenhuma opção selecionada"}'),
-                                if (_selectedOption != null)
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text('Alunos da opção:'),
-                                      for (String aluno in _alunosDaOpcao)
-                                        Text('- $aluno'),
-                                    ],
-                                  ),
+                                    'Turma: ${_selectedOption ?? "Nenhuma opção selecionada"}'),
+                                Text('Aluno: ${_alunoController.text}'),
                               ],
                             ),
                             actions: [

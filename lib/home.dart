@@ -11,6 +11,7 @@ import 'package:escola/alunos/MatriculaScreen.dart';
 import 'package:escola/alunos/AvisosScreen.dart';
 import 'package:escola/alunos/OcorrenciasScreen.dart';
 import 'package:escola/alunos/StudentScreen.dart';
+import 'package:escola/cards/Ocorrenciacard.dart';
 import 'package:escola/financeiro/FinanceiroHome.dart';
 import 'package:escola/financeiro/FinanceiroScreen.dart';
 import 'package:escola/funcionarios/Cadastrarfuncionario.dart';
@@ -509,16 +510,23 @@ class _MyHomePageState extends State<MyHomePage> {
                   heightH: 50,
                   onTap: () {
                     print('Detalhes do alunoData enviado: ${widget.alunoData}');
-                    Navigator.pushNamed(
-                      context,
-                      'alunos/OcorrenciasScreen',
-                      arguments: {
-                        'matriculaCpf': widget.matriculaCpf,
-                        'alunoData': widget.alunoData,
-                        'userType': widget.userType,
-                        'professorData': widget.professorData,
-                      },
-                    );
+                    if (widget.userType == 'Aluno') {
+                      Navigator.pushNamed(
+                        context,
+                        'alunos/OcorrenciasScreen',
+                        arguments: {
+                          'matriculaCpf': widget.matriculaCpf,
+                          'alunoData': widget.alunoData,
+                          'userType': widget.userType,
+                          'professorData': widget.professorData,
+                        },
+                      );
+                    } else {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => OcorrenciaCard()));
+                    }
                   },
                 ),
               MyCard(

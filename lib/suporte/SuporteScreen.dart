@@ -48,7 +48,7 @@ class SuporteScreen extends StatelessWidget {
                             Icon(Icons.phone, color: Colors.green),
                             SizedBox(width: 8),
                             Text(
-                              '(86) 98856-2815',
+                              '(86) 98866-7348',
                               style: TextStyle(
                                 fontSize: 18,
                                 color: Colors.blue,
@@ -60,7 +60,7 @@ class SuporteScreen extends StatelessWidget {
                       ),
                       SizedBox(height: 8),
                       Text(
-                        'Instituto Roma',
+                        'Elias Pacheco',
                         style: TextStyle(
                             fontSize: 18, fontWeight: FontWeight.bold),
                       ),
@@ -81,7 +81,7 @@ class SuporteScreen extends StatelessWidget {
   }
 
   void _launchWhatsApp() async {
-    final whatsappUrl = "https://wa.me/558698856-2815";
+    final whatsappUrl = "https://wa.me/558698866-7348";
     if (await canLaunch(whatsappUrl)) {
       await launch(whatsappUrl);
     } else {

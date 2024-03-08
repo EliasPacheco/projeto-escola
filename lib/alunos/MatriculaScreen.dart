@@ -30,14 +30,6 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
   TextEditingController serieController = TextEditingController();
   TextEditingController dataMatriculaController = TextEditingController();
   TextEditingController matriculaController = TextEditingController();
-  TextEditingController naturalidadeController = TextEditingController();
-  TextEditingController enderecoResponsavel1Controller =
-      TextEditingController();
-  TextEditingController enderecoResponsavel2Controller =
-      TextEditingController();
-  TextEditingController cpfResponsavel2Controller = TextEditingController();
-  TextEditingController telefoneResponsavel2Controller =
-      TextEditingController();
   TextEditingController senhaController =
       TextEditingController(); // Novo controlador
 
@@ -177,8 +169,6 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _buildTextField(nomeController, 'Nome do Aluno'),
-              _buildTextField(nomePaiController, 'Nome do Pai'),
-              _buildTextField(nomeMaeController, 'Nome da Mãe'),
               _buildDropdownButton(),
               _buildTextField(
                 dataNascimentoController,
@@ -186,7 +176,6 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
                 maskFormatter: dataNascimentoFormatter,
                 keyboardType: TextInputType.number,
               ),
-              _buildTextField(naturalidadeController, 'Naturalidade'),
               _buildTextField(
                 dataMatriculaController,
                 'Data da Matrícula',
@@ -198,97 +187,10 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
                 'Matrícula',
                 keyboardType: TextInputType.number,
               ),
-              SizedBox(height: 20),
-              _buildTextField(
-                  enderecoResponsavel1Controller, 'Endereço do Responsável 1'),
-              _buildTextField(
-                cpfResponsavel1Controller,
-                'Cpf do responsável 1',
-                keyboardType: TextInputType.number,
-                maskFormatter: cpfFormatter,
-              ),
-              _buildTextField(
-                telefoneResponsavel1Controller,
-                'Telefone 1',
-                keyboardType: TextInputType.phone,
-                maskFormatter: telefoneFormatter,
-              ),
-              _buildTextField(
-                  enderecoResponsavel2Controller, 'Endereço do Responsável 2'),
-              _buildTextField(
-                cpfResponsavel2Controller,
-                'Cpf do responsável 2',
-                keyboardType: TextInputType.number,
-                maskFormatter: cpfFormatter,
-              ),
-              _buildTextField(
-                telefoneResponsavel2Controller,
-                'Telefone 2',
-                keyboardType: TextInputType.phone,
-                maskFormatter: telefoneFormatter,
-              ),
               _buildTextField(
                 senhaController,
                 'Senha',
                 keyboardType: TextInputType.text,
-              ),
-              SizedBox(height: 10),
-              if (isDocumentoAnexado)
-                Column(
-                  children: documentosAnexados
-                      .asMap()
-                      .entries
-                      .map(
-                        (entry) => Row(
-                          children: [
-                            Text(
-                              'Documento Anexado: ${entry.value}',
-                              style:
-                                  TextStyle(color: Colors.green, fontSize: 14),
-                            ),
-                            SizedBox(width: 8),
-                            GestureDetector(
-                              onTap: () {
-                                _removerDocumento(entry.key);
-                              },
-                              child: Icon(
-                                Icons.close,
-                                color: Colors.red,
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                      .toList(),
-                ),
-              SizedBox(height: 8),
-              ElevatedButton(
-                onPressed: () {
-                  _anexarDocumento(context, 'RG do Aluno', 0);
-                },
-                child: Text('Anexar RG do Aluno'),
-                style: _getButtonStyle(0),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  _anexarDocumento(context, 'RG do Responsável', 1);
-                },
-                child: Text('Anexar RG do Responsável'),
-                style: _getButtonStyle(1),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  _anexarDocumento(context, 'Comprovante de Residência', 2);
-                },
-                child: Text('Anexar Comprovante de Residência'),
-                style: _getButtonStyle(2),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  _anexarDocumento(context, 'Histórico Escolar', 3);
-                },
-                child: Text('Anexar Histórico Escolar'),
-                style: _getButtonStyle(3),
               ),
               /*ElevatedButton(
                 onPressed: () {
@@ -391,43 +293,6 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
     );
   }
 
-  void _removerDocumento(int index) {
-    setState(() {
-      documentosAnexados.removeAt(index);
-      if (documentosAnexados.isEmpty) {
-        isDocumentoAnexado = false;
-      }
-      for (int i = 0; i < botoesDesativados.length; i++) {
-        if (documentosAnexados.contains('RG do Aluno') && i == 0) {
-          botoesDesativados[i] = true;
-        } else if (documentosAnexados.contains('RG do Responsável') && i == 1) {
-          botoesDesativados[i] = true;
-        } else if (documentosAnexados.contains('Comprovante de Residência') &&
-            i == 2) {
-          botoesDesativados[i] = true;
-        } else if (documentosAnexados.contains('Histórico Escolar') && i == 3) {
-          botoesDesativados[i] = true;
-        } else {
-          botoesDesativados[i] = false;
-        }
-      }
-    });
-  }
-
-  Future<void> _anexarDocumento(
-      BuildContext context, String tipoDocumento, int index) async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-
-    if (pickedFile != null) {
-      setState(() {
-        documentosAnexados.add(tipoDocumento);
-        isDocumentoAnexado = true;
-        botoesDesativados[index] = true;
-      });
-    }
-  }
-
   String alunoUid = "";
 
   void _realizarMatricula() async {
@@ -445,21 +310,11 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
 
     Map<String, dynamic> alunoData = {
       'nome': nomeController.text,
-      'nomePai': nomePaiController.text,
-      'nomeMae': nomeMaeController.text,
       'serie': serieSelecionada,
       'dataNascimento': dataNascimentoController.text,
-      'naturalidade': naturalidadeController.text,
       'dataMatricula': dataMatriculaController.text,
       'matricula': matriculaController.text,
-      'enderecoResponsavel1': enderecoResponsavel1Controller.text,
-      'cpfResponsavel1': cpfResponsavel1Controller.text,
-      'telefoneResponsavel1': telefoneResponsavel1Controller.text,
-      'enderecoResponsavel2': enderecoResponsavel2Controller.text,
-      'cpfResponsavel2': cpfResponsavel2Controller.text,
-      'telefoneResponsavel2': telefoneResponsavel2Controller.text,
       'senha': senhaController.text, // Inclua a senha no mapa de dados
-      'documentosAnexados': documentosAnexados,
       'materias': materiasPorSerie[serieSelecionada],
     };
 
@@ -499,23 +354,10 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
 
   void _limparCampos() {
     nomeController.clear();
-    nomePaiController.clear();
-    nomeMaeController.clear();
-    serieController.clear();
     dataNascimentoController.clear();
-    cpfResponsavel1Controller.clear();
-    telefoneResponsavel1Controller.clear();
-    enderecoResponsavel1Controller.clear();
-    cpfResponsavel2Controller.clear();
-    telefoneResponsavel2Controller.clear();
-    enderecoResponsavel2Controller.clear();
     dataMatriculaController.clear();
     matriculaController.clear();
-    naturalidadeController.clear();
     serieSelecionada = null;
-    isDocumentoAnexado = false;
-    documentosAnexados.clear();
     senhaController.clear();
-    botoesDesativados = [false, false, false, false];
   }
 }
