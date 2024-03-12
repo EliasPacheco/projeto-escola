@@ -211,7 +211,7 @@ class _StudentScreenState extends State<StudentScreen> {
               Column(
                 children: [
                   Text(
-                    'Perfil do $primeiroNome',
+                    'Meu perfil',
                   ),
                 ],
               ),
@@ -350,7 +350,11 @@ class _StudentScreenState extends State<StudentScreen> {
                     Icons.calendar_today),
                 buildStudentInfo(
                     'Matrícula:', matricula, Icons.confirmation_number),
-                ElevatedButton(
+                SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton.icon(
                   onPressed: () {
                     Navigator.push(
                       context,
@@ -366,9 +370,19 @@ class _StudentScreenState extends State<StudentScreen> {
                       ),
                     );
                   },
-                  child: Text('Ir para Financeiro'),
+                  icon: Icon(Icons.attach_money),
+                  label: Text('Financeiro'),
+                  style: ElevatedButton.styleFrom(
+                    elevation: 5,
+                    primary: Colors.blue,
+                    onPrimary: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
                 ),
-                ElevatedButton(
+                SizedBox(width: 10),
+                ElevatedButton.icon(
                   onPressed: () {
                     Navigator.push(
                       context,
@@ -384,8 +398,19 @@ class _StudentScreenState extends State<StudentScreen> {
                       ),
                     );
                   },
-                  child: Text('Ir para Boletim'),
+                  icon: Icon(Icons.assignment),
+                  label: Text('Boletim'),
+                  style: ElevatedButton.styleFrom(
+                    elevation: 5,
+                    primary: Colors.green,
+                    onPrimary: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
                 ),
+                  ],
+                )
               ],
             ),
           );

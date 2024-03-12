@@ -75,7 +75,6 @@ class _BoletimScreenState extends State<BoletimScreen> {
           'Abril',
           'Maio',
           'Junho',
-          'Julho',
           'Agosto',
           'Setembro',
           'Outubro',
