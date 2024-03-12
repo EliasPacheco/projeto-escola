@@ -116,9 +116,9 @@ class CadastroFuncionarioScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Cadastro de Funcionário',
-            style: TextStyle(color: Colors.white)),
-        backgroundColor: Theme.of(context).primaryColor,
+        title: Text(
+          'Cadastro de Funcionário',
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
