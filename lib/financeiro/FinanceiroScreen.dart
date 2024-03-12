@@ -410,6 +410,7 @@ class _FinanceiroScreenState extends State<FinanceiroScreen> {
                         SizedBox(height: 8.0),
                         ElevatedButton(
                           onPressed: () {
+                            Navigator.pop(context);
                             _copiarChavePix();
                           },
                           child: Text('Copiar chave Pix'),

@@ -277,7 +277,8 @@ class _AgendaScreenState extends State<AgendaScreen> {
                             ),
                           ],
                         ),
-                        trailing: widget.userType == 'Coordenacao' || widget.userType == 'Professor'
+                        trailing: widget.userType == 'Coordenacao' ||
+                                widget.userType == 'Professor'
                             ? IconButton(
                                 icon: Icon(Icons.delete),
                                 color: Colors.red,
@@ -316,6 +317,8 @@ class _AgendaScreenState extends State<AgendaScreen> {
       floatingActionButton:
           widget.userType == 'Coordenacao' || widget.userType == 'Professor'
               ? FloatingActionButton(
+                  backgroundColor: Color(0xff2E71E8),
+                  foregroundColor: Colors.white,
                   onPressed: () {
                     Navigator.push(
                       context,

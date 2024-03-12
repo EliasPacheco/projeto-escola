@@ -125,11 +125,17 @@ class _AlunoHomeState extends State<AlunoHome> {
 
   void filtrarAlunos(String query) {
     setState(() {
-      alunosFiltrados = alunos
-          .where((aluno) =>
-              aluno.nome.toLowerCase().contains(query.toLowerCase()) &&
-              aluno.serie == selectedAno)
-          .toList();
+      if (query.isEmpty) {
+        alunosStream = buscarAlunosStream(selectedAno);
+      } else {
+        alunosStream = buscarAlunosStream(selectedAno).map((alunos) {
+          return alunos
+              .where((aluno) =>
+                  aluno.nome.toLowerCase().contains(query.toLowerCase()) &&
+                  aluno.serie == selectedAno)
+              .toList();
+        });
+      }
     });
   }
 
@@ -137,6 +143,7 @@ class _AlunoHomeState extends State<AlunoHome> {
     setState(() {
       alunosFiltrados =
           alunos.where((aluno) => aluno.serie == selectedAno).toList();
+      alunosStream = buscarAlunosStream(selectedAno);
     });
   }
 
@@ -323,6 +330,8 @@ class _AlunoHomeState extends State<AlunoHome> {
 
   Widget _buildFloatingActionButton() {
     return FloatingActionButton(
+      backgroundColor: Color(0xff2E71E8),
+      foregroundColor: Colors.white,
       onPressed: () {
         Navigator.push(
           context,

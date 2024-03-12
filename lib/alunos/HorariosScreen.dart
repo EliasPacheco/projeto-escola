@@ -454,6 +454,8 @@ class _HorariosScreenState extends State<HorariosScreen> {
       )),
       floatingActionButton: widget.userType == 'Coordenacao'
           ? FloatingActionButton(
+            backgroundColor: Color(0xff2E71E8),
+              foregroundColor: Colors.white,
               onPressed: () async {
                 await _pickImage();
               },

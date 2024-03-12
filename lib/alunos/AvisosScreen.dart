@@ -314,6 +314,8 @@ class _AvisosHomeState extends State<AvisosHome> {
             ),
       floatingActionButton: widget.userType == 'Coordenacao'
           ? FloatingActionButton(
+              backgroundColor: Color(0xff2E71E8),
+              foregroundColor: Colors.white,
               onPressed: () {
                 Navigator.push(
                   context,

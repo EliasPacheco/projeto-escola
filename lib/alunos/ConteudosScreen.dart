@@ -468,6 +468,8 @@ class _ConteudosScreenState extends State<ConteudosScreen> {
       floatingActionButton:
           widget.userType == 'Coordenacao' || widget.userType == 'Professor'
               ? FloatingActionButton(
+                  backgroundColor: Color(0xff2E71E8),
+                  foregroundColor: Colors.white,
                   onPressed: () {
                     // Adicione a lógica para adicionar novos conteúdos aqui
                     Navigator.push(
