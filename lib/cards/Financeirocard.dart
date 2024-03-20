@@ -75,6 +75,15 @@ class _FinanceiroCardState extends State<FinanceiroCard> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Adicionar Finanças'),
+        flexibleSpace: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.blueAccent, Colors.lightBlue],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+          ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

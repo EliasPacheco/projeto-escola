@@ -226,6 +226,15 @@ class _StudentScreenState extends State<StudentScreen> {
             ],
           ),
         ),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.blueAccent, Colors.lightBlue],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+        ),
       ),
       body: StreamBuilder<DocumentSnapshot>(
         stream: _studentStream,
@@ -355,60 +364,60 @@ class _StudentScreenState extends State<StudentScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => FinanceiroScreen(
-                          userType: widget.userType,
-                          aluno: Aluno(
-                            nome: widget.alunoData?['nome'],
-                            serie: widget.alunoData?['serie'],
-                            documentId: widget.alunoData?['uid'],
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => FinanceiroScreen(
+                              userType: widget.userType,
+                              aluno: Aluno(
+                                nome: widget.alunoData?['nome'],
+                                serie: widget.alunoData?['serie'],
+                                documentId: widget.alunoData?['uid'],
+                              ),
+                            ),
                           ),
+                        );
+                      },
+                      icon: Icon(Icons.attach_money),
+                      label: Text('Financeiro'),
+                      style: ElevatedButton.styleFrom(
+                        elevation: 5,
+                        primary: Colors.blue,
+                        onPrimary: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
                         ),
                       ),
-                    );
-                  },
-                  icon: Icon(Icons.attach_money),
-                  label: Text('Financeiro'),
-                  style: ElevatedButton.styleFrom(
-                    elevation: 5,
-                    primary: Colors.blue,
-                    onPrimary: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
                     ),
-                  ),
-                ),
-                SizedBox(width: 10),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => BoletimScreen(
-                          userType: widget.userType,
-                          aluno: Aluno(
-                            nome: widget.alunoData?['nome'],
-                            serie: widget.alunoData?['serie'],
-                            documentId: widget.alunoData?['uid'],
+                    SizedBox(width: 10),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => BoletimScreen(
+                              userType: widget.userType,
+                              aluno: Aluno(
+                                nome: widget.alunoData?['nome'],
+                                serie: widget.alunoData?['serie'],
+                                documentId: widget.alunoData?['uid'],
+                              ),
+                            ),
                           ),
+                        );
+                      },
+                      icon: Icon(Icons.assignment),
+                      label: Text('Boletim'),
+                      style: ElevatedButton.styleFrom(
+                        elevation: 5,
+                        primary: Colors.green,
+                        onPrimary: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
                         ),
                       ),
-                    );
-                  },
-                  icon: Icon(Icons.assignment),
-                  label: Text('Boletim'),
-                  style: ElevatedButton.styleFrom(
-                    elevation: 5,
-                    primary: Colors.green,
-                    onPrimary: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
                     ),
-                  ),
-                ),
                   ],
                 )
               ],

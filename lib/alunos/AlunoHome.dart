@@ -204,6 +204,15 @@ class _AlunoHomeState extends State<AlunoHome> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Lista de Alunos'),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.blueAccent, Colors.lightBlue],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+        ),
         actions: [
           if (widget.userType == 'Coordenacao' ||
               widget.userType == 'Professor')

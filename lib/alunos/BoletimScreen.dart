@@ -49,6 +49,15 @@ class _BoletimScreenState extends State<BoletimScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Boletim - ' + _aluno.nome.toString().split(' ')[0]),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.blueAccent, Colors.lightBlue],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+        ),
       ),
       body: SingleChildScrollView(
         child: Padding(

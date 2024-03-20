@@ -287,6 +287,15 @@ class _ConteudosScreenState extends State<ConteudosScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Conteudos'),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.blueAccent, Colors.lightBlue],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+        ),
         actions: [
           if (widget.userType == 'Coordenacao' ||
               widget.userType == 'Professor')

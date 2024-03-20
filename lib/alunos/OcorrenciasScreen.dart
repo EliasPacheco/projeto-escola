@@ -98,9 +98,16 @@ class _OcorrenciasScreenState extends State<OcorrenciasScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(nomeAluno.isNotEmpty
-            ? 'Ocorrências de $primeiroNome'
-            : 'Ocorrências Escolares'),
+        title: Text('Minhas Ocorrências'),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.blueAccent, Colors.lightBlue],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+        ),
       ),
       body: _temConexaoInternet
           ? (widget.alunoData == null

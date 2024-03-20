@@ -284,6 +284,15 @@ class _HorariosScreenState extends State<HorariosScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Horários'),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.blueAccent, Colors.lightBlue],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+        ),
         actions: [
           if (widget.userType == 'Coordenacao')
             Padding(
@@ -454,7 +463,7 @@ class _HorariosScreenState extends State<HorariosScreen> {
       )),
       floatingActionButton: widget.userType == 'Coordenacao'
           ? FloatingActionButton(
-            backgroundColor: Color(0xff2E71E8),
+              backgroundColor: Color(0xff2E71E8),
               foregroundColor: Colors.white,
               onPressed: () async {
                 await _pickImage();

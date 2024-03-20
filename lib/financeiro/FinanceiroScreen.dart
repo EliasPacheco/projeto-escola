@@ -183,6 +183,15 @@ class _FinanceiroScreenState extends State<FinanceiroScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Financeiro'),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.blueAccent, Colors.lightBlue],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+        ),
         actions: [
           StreamBuilder<List<String>>(
             stream: yearsStream,

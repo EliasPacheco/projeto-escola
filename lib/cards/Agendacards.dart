@@ -85,6 +85,15 @@ class _AgendaCardsState extends State<AgendaCards> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Adicionar agendas'),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.blueAccent, Colors.lightBlue],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

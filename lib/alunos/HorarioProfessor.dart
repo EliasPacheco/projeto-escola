@@ -399,6 +399,15 @@ class _HorarioProfessorState extends State<HorarioProfessor> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Horários Professor'),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.blueAccent, Colors.lightBlue],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+        ),
       ),
       body: Center(
           child: StreamBuilder<List<Map<String, dynamic>>>(
@@ -542,7 +551,7 @@ class _HorarioProfessorState extends State<HorarioProfessor> {
       )),
       floatingActionButton: widget.userType == 'Coordenacao'
           ? FloatingActionButton(
-            backgroundColor: Color(0xff2E71E8),
+              backgroundColor: Color(0xff2E71E8),
               foregroundColor: Colors.white,
               onPressed: () async {
                 await _showTurmaDialog();
