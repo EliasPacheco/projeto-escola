@@ -270,6 +270,18 @@ class ChatScreenState extends State<ChatScreen> {
   void _showFullScreenImage(String imageUrl) {
     Navigator.push(context, MaterialPageRoute(builder: (context) {
       return Scaffold(
+        appBar: AppBar(
+          title: Text("Foto"),
+          flexibleSpace: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.blueAccent, Colors.lightBlue],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+          ),
+        ),
         body: PhotoViewGallery.builder(
           itemCount: 1,
           builder: (context, index) {
