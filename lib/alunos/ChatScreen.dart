@@ -353,11 +353,14 @@ class ChatScreenState extends State<ChatScreen> {
     return IconTheme(
       data: IconThemeData(color: Colors.blue),
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 8.0),
+        decoration: BoxDecoration(
+          color: Colors.lightBlueAccent, // Cor de destaque na barra de entrada
+          borderRadius: BorderRadius.circular(10), // Borda arredondada
+        ),
         child: Row(
           children: <Widget>[
             IconButton(
-              icon: Icon(Icons.add),
+              icon: Icon(Icons.add, color: Colors.white),
               onPressed: () async {
                 _getImage();
                 if (_image != null) {
@@ -365,19 +368,33 @@ class ChatScreenState extends State<ChatScreen> {
                 }
               },
             ),
-            Flexible(
-              child: TextField(
-                controller: _textController,
-                onSubmitted: _handleSubmitted,
-                decoration: InputDecoration.collapsed(
-                  hintText: "Digite uma mensagem",
+            Expanded(
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white, // Cor de fundo do campo de entrada
+                  borderRadius: BorderRadius.circular(20), // Borda arredondada
+                ),
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                      vertical: 5), // Ajuste o padding vertical aqui
+                  child: TextField(
+                    controller: _textController,
+                    onSubmitted: _handleSubmitted,
+                    decoration: InputDecoration.collapsed(
+                      hintText: "Digite uma mensagem",
+                    ),
+                  ),
                 ),
               ),
             ),
             Container(
               margin: EdgeInsets.symmetric(horizontal: 4.0),
               child: IconButton(
-                icon: Icon(Icons.send),
+                icon: Icon(
+                  Icons.send,
+                  color: Colors.white,
+                ),
                 onPressed: () => _handleSubmitted(_textController.text),
               ),
             ),
