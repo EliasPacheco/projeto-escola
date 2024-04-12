@@ -25,6 +25,7 @@ class _LoginPageState extends State<LoginPage> {
   bool _isCoordenacao = false;
   bool _isLoading = false;
   Completer<void>? _loadingCompleter;
+  bool _isObscure = true;
 
   Connectivity _connectivity = Connectivity();
   bool _temConexaoInternet = true;
@@ -398,13 +399,23 @@ class _LoginPageState extends State<LoginPage> {
                         fillColor: const Color(0xffF7F8F9),
                         filled: true,
                         labelText: 'Senha',
+                        suffixIcon: IconButton(
+                          icon: Icon(_isObscure
+                              ? Icons.visibility_off
+                              : Icons.visibility),
+                          onPressed: () {
+                            setState(() {
+                              _isObscure = !_isObscure;
+                            });
+                          },
+                        ),
                         labelStyle: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Colors.grey.shade500,
                         ),
                         prefixIcon: const Icon(Icons.lock),
                       ),
-                      obscureText: true,
+                      obscureText: _isObscure,
                     ),
                     const SizedBox(height: 32.0),
                     InkWell(

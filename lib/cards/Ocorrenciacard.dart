@@ -60,10 +60,24 @@ class _OcorrenciaCardState extends State<OcorrenciaCard> {
                 .toList();
             print('Alunos da série ($_selectedOption): $_alunosDaSerieWithUid');
           });
-
-          if (_alunosDaSerieWithUid.isEmpty) {
-            print('Não há alunos na série: $_selectedOption');
-          }
+        } else {
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: Text('Sem alunos nessa turma'),
+                content: Text('Não há alunos cadastrados nesta turma.'),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: Text('OK'),
+                  ),
+                ],
+              );
+            },
+          );
         }
       }
     } catch (e) {
@@ -270,31 +284,74 @@ class _OcorrenciaCardState extends State<OcorrenciaCard> {
                     showDialog(
                       context: context,
                       builder: (BuildContext context) {
-                        return AlertDialog(
-                          title: Text('Alunos do $_selectedOption'),
-                          content: SingleChildScrollView(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: _alunosDaSerieWithUid
-                                  .map((aluno) => ListTile(
-                                        title: Text(aluno['nome']),
-                                        onTap: () {
-                                          _alunoController.text = aluno[
-                                              'nome']; // Exibe o nome no TextFormField
-                                          Navigator.of(context).pop();
-                                        },
-                                      ))
-                                  .toList(),
-                            ),
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                              },
-                              child: Text('Fechar'),
-                            ),
-                          ],
+                        List<Map<String, dynamic>> alunosFiltrados =
+                            _alunosDaSerieWithUid;
+
+                        return StatefulBuilder(
+                          builder:
+                              (BuildContext context, StateSetter setState) {
+                            return AlertDialog(
+                              title: Text('Alunos do $_selectedOption'),
+                              content: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(8.0),
+                                      border: Border.all(color: Colors.grey),
+                                    ),
+                                    padding:
+                                        EdgeInsets.symmetric(horizontal: 8.0),
+                                    child: TextField(
+                                      decoration: InputDecoration(
+                                        prefixIcon: Icon(Icons.search),
+                                        hintText: 'Buscar aluno',
+                                        border: InputBorder.none,
+                                      ),
+                                      onChanged: (value) {
+                                        setState(() {
+                                          alunosFiltrados =
+                                              _alunosDaSerieWithUid
+                                                  .where((aluno) =>
+                                                      aluno['nome']
+                                                          .toLowerCase()
+                                                          .contains(value
+                                                              .toLowerCase()))
+                                                  .toList();
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                  SizedBox(height: 16.0),
+                                  SingleChildScrollView(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: alunosFiltrados
+                                          .map((aluno) => ListTile(
+                                                title: Text(aluno['nome']),
+                                                onTap: () {
+                                                  _alunoController.text = aluno[
+                                                      'nome']; // Exibe o nome no TextFormField
+                                                  Navigator.of(context).pop();
+                                                },
+                                              ))
+                                          .toList(),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                  },
+                                  child: Text('Fechar'),
+                                ),
+                              ],
+                            );
+                          },
                         );
                       },
                     );
