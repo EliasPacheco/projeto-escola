@@ -138,6 +138,22 @@ class _ChatHomeState extends State<ChatHome> {
                   ultimaMensagem = allMessages.first['text'] ?? '';
                 }
 
+                String primeiroNome = nomeAluno.split(' ')[0];
+                String terceiroNome = nomeAluno.split(' ').length >= 3
+                    ? nomeAluno.split(' ')[2]
+                    : '';
+                String nomeExibido = terceiroNome.isNotEmpty
+                    ? '$primeiroNome $terceiroNome'
+                    : primeiroNome;
+
+                Map<String, dynamic> documentData = snapshot.data!.docs[index]
+                    .data()['messages'][0] as Map<String, dynamic>;
+
+                String turmaAluno = 'Turma não especificada';
+                if (documentData.containsKey('turma')) {
+                  turmaAluno = documentData['turma'] as String;
+                }
+
                 bool ultimaMensagemDaResposta =
                     respostas.contains(allMessages.first);
 
@@ -154,11 +170,26 @@ class _ChatHomeState extends State<ChatHome> {
                       backgroundColor: Colors.blue,
                       child: Text(nomeAluno.isNotEmpty ? nomeAluno[0] : ''),
                     ),
-                    title: Text(
-                      nomeAluno,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 17,
+                    title: RichText(
+                      text: TextSpan(
+                        children: [
+                          TextSpan(
+                            text: nomeExibido,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 17,
+                              color: Colors.black, // Cor do nome do aluno
+                            ),
+                          ),
+                          TextSpan(
+                            text: " ($turmaAluno)",
+                            style: TextStyle(
+                              fontSize: 17,
+                              color: Colors
+                                  .grey, // Cor para "Turma não especificada"
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     subtitle: Column(

@@ -113,6 +113,7 @@ class ChatScreenState extends State<ChatScreen> {
       'messages': FieldValue.arrayUnion([
         {
           'sender': widget.alunoData?['nome'],
+          'turma': widget.alunoData?['serie'],
           'text': text,
           'image': imageUrl, // Salva a URL da imagem
           'timestamp': Timestamp.fromDate(now),
