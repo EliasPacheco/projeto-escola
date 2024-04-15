@@ -611,6 +611,7 @@ class _ChatAlunoScreenState extends State<ChatAlunoScreen> {
     if (messageText.isNotEmpty || _image != null) {
       final matriculaCpf = widget.matriculaCpf;
 
+      // Verifica se há uma imagem pendente
       if (_image != null) {
         setState(() {
           _isImageUploading = true;
@@ -638,11 +639,17 @@ class _ChatAlunoScreenState extends State<ChatAlunoScreen> {
           'respostas': FieldValue.arrayUnion([
             {
               'sender': 'Coordenação',
-              'text': messageText,
+              'text':
+                  messageText, // Aqui, você pode optar por não incluir o texto se quiser enviar apenas a imagem
               'timestamp': DateTime.now(),
               'image': imageUrl,
             }
           ]),
+        });
+
+        // Limpa a imagem após o envio bem-sucedido
+        setState(() {
+          _image = null;
         });
       } else {
         // Se não houver imagem, envie apenas a mensagem de texto
