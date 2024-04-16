@@ -67,7 +67,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '57604481514',
     projectId: 'projeto-escola-22b2f',
     storageBucket: 'projeto-escola-22b2f.appspot.com',
-    iosBundleId: 'com.example.escola',
+    iosBundleId: 'com.escola',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
@@ -76,6 +76,6 @@ class DefaultFirebaseOptions {
     messagingSenderId: '57604481514',
     projectId: 'projeto-escola-22b2f',
     storageBucket: 'projeto-escola-22b2f.appspot.com',
-    iosBundleId: 'com.example.escola.RunnerTests',
+    iosBundleId: 'com.escola.RunnerTests',
   );
 }
