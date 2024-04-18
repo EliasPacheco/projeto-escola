@@ -8,6 +8,7 @@ import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
+import 'dart:async';
 
 class ChatAlunoScreen extends StatefulWidget {
   final String matriculaCpf;
@@ -225,8 +226,13 @@ class _ChatAlunoScreenState extends State<ChatAlunoScreen> {
                     .sort((a, b) => a['timestamp'].compareTo(b['timestamp']));
 
                 WidgetsBinding.instance!.addPostFrameCallback((_) {
-                  _scrollController
-                      .jumpTo(_scrollController.position.maxScrollExtent);
+                  Timer(Duration(milliseconds: 100), () {
+                    _scrollController.animateTo(
+                      _scrollController.position.maxScrollExtent,
+                      duration: Duration(milliseconds: 300),
+                      curve: Curves.ease,
+                    );
+                  });
                 });
 
                 return Column(

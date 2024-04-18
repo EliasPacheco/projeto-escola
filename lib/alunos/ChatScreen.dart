@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -83,47 +84,72 @@ class ChatScreenState extends State<ChatScreen> {
   }
 
   void _handleSubmitted(String text) async {
-    _textController.clear();
-    DateTime now = DateTime.now();
+    // Remove os espaços em branco do início e do final do texto
+    text = text.trim();
 
-    String imageUrl = "";
+    // Verifica se o texto não está vazio
+    if (text.isNotEmpty || _image != null) {
+      _textController.clear();
+      DateTime now = DateTime.now();
 
-    if (_image != null) {
+      String imageUrl = "";
+
+      if (_image != null) {
+        setState(() {
+          _isImageUploading = true;
+        });
+
+        // Upload da imagem para o Firestore Storage
+        final firebase_storage.Reference storageRef = firebase_storage
+            .FirebaseStorage.instance
+            .ref()
+            .child('images/${DateTime.now().millisecondsSinceEpoch}.jpg');
+
+        await storageRef.putFile(_image!);
+
+        // Obtém a URL da imagem no Firestore Storage
+        imageUrl = await storageRef.getDownloadURL();
+
+        setState(() {
+          _isImageUploading = false;
+        });
+      }
+
+      await _messagesCollection.doc(widget.alunoData?['nome']).set({
+        'messages': FieldValue.arrayUnion([
+          {
+            'sender': widget.alunoData?['nome'],
+            'turma': widget.alunoData?['serie'],
+            'text': text,
+            'image': imageUrl, // Salva a URL da imagem
+            'timestamp': Timestamp.fromDate(now),
+          },
+        ]),
+      }, SetOptions(merge: true));
+
       setState(() {
-        _isImageUploading = true;
+        _image = null;
       });
-
-      // Upload da imagem para o Firestore Storage
-      final firebase_storage.Reference storageRef = firebase_storage
-          .FirebaseStorage.instance
-          .ref()
-          .child('images/${DateTime.now().millisecondsSinceEpoch}.jpg');
-
-      await storageRef.putFile(_image!);
-
-      // Obtém a URL da imagem no Firestore Storage
-      imageUrl = await storageRef.getDownloadURL();
-
-      setState(() {
-        _isImageUploading = false;
-      });
-    }
-
-    await _messagesCollection.doc(widget.alunoData?['nome']).set({
-      'messages': FieldValue.arrayUnion([
-        {
-          'sender': widget.alunoData?['nome'],
-          'turma': widget.alunoData?['serie'],
-          'text': text,
-          'image': imageUrl, // Salva a URL da imagem
-          'timestamp': Timestamp.fromDate(now),
+    } else {
+      // Exibe um aviso ao usuário se o campo de texto estiver vazio
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text("Aviso"),
+            content: Text("Não é possível enviar uma mensagem vazia."),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text("OK"),
+              ),
+            ],
+          );
         },
-      ]),
-    }, SetOptions(merge: true));
-
-    setState(() {
-      _image = null;
-    });
+      );
+    }
   }
 
   void _getImage() async {
@@ -503,13 +529,21 @@ class ChatScreenState extends State<ChatScreen> {
                               (documentData['respostas'] as List<dynamic>?) ??
                                   [];
 
-                          if (_isLoading) {
-                            _isLoading = false;
-                            // Adicionando um delay para permitir a renderização inicial antes de rolar para baixo
-                            Future.delayed(Duration(milliseconds: 1), () {
-                              _scrollController.jumpTo(
-                                  _scrollController.position.maxScrollExtent);
+                          // Adicionando um atraso para permitir a renderização inicial antes de rolar para baixo
+
+                          try {
+                            WidgetsBinding.instance!.addPostFrameCallback((_) {
+                              Timer(Duration(milliseconds: 100), () {
+                                _scrollController.animateTo(
+                                  _scrollController.position.maxScrollExtent,
+                                  duration: Duration(milliseconds: 300),
+                                  curve: Curves.easeOut,
+                                );
+                              });
                             });
+                          } catch (e) {
+                            // Trate quaisquer erros de animação de rolagem aqui
+                            print("Erro ao rolar para baixo: $e");
                           }
 
                           if (messages.isEmpty && respostas.isEmpty) {
