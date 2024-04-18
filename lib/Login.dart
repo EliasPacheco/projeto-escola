@@ -292,7 +292,7 @@ class _LoginPageState extends State<LoginPage> {
       // Snackbar para CPF ou Matrícula inválidos quando há conexão com a internet
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('CPF ou Matrícula inválidos. Usuário não encontrado.'),
+          content: Text('Matrícula ou Senha inválidos. Usuário não encontrado.'),
           duration: Duration(seconds: 2),
           backgroundColor: Colors.red,
         ),
