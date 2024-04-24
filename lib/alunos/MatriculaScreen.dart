@@ -3,20 +3,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-void main() => runApp(MyApp());
-
-class MyApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Matrícula',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: MatriculaScreen(),
-    );
-  }
-}
 
 class MatriculaScreen extends StatefulWidget {
   @override
