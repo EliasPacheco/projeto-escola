@@ -408,6 +408,27 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
       return;
     }
 
+    try {
+      if (nomeArquivo == null) {
+        // Se nenhum arquivo foi selecionado, apenas realizamos a matrícula com os dados do formulário
+        _realizarMatriculaFormulario();
+      } else {
+        // Se um arquivo foi selecionado, processamos o arquivo XLSX
+        await _processarArquivoXLSX();
+      }
+    } catch (e) {
+      print('Erro ao realizar a matrícula: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao realizar a matrícula.'),
+          duration: Duration(seconds: 2),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _realizarMatriculaFormulario() {
     Map<String, dynamic> alunoData = {
       'nome': nomeController.text,
       'serie': serieSelecionada,
@@ -438,79 +459,78 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
       );
       print('Matrícula realizada com sucesso! Document ID: $alunoUid');
       _limparCampos();
+      setState(() {
+        nomeArquivo = null;
+        arquivoSelecionado = null;
+        serieSelecionada = null;
+      });
     }).catchError((error) {
       print('Erro ao realizar a matrícula: $error');
     });
+  }
 
-    try {
-      if (arquivoSelecionado != null) {
-        if (!arquivoSelecionado!.existsSync()) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('O arquivo não existe mais no dispositivo.'),
-              duration: Duration(seconds: 2),
-              backgroundColor: Colors.red,
-            ),
-          );
-          return;
-        }
-
-        var bytes = await arquivoSelecionado!.readAsBytes();
-        var excel = Excel.decodeBytes(bytes);
-        var sheet = excel.tables.keys.first;
-
-        var rows = excel.tables[sheet]!.rows;
-        for (var row in rows) {
-          var nome = row[0]?.value.toString();
-          var serie = row[1]?.value.toString();
-          var dataNascimento = formatDate(_parseCellValue(row[2]?.value));
-          var dataMatricula = formatDate(_parseCellValue(row[3]?.value));
-          var matricula = row[4]?.value.toString();
-          var senha = row[5]?.value.toString();
-
-          String alunoUid = alunosCollection.doc().id;
-
-          Map<String, dynamic> alunoData = {
-            'nome': nome,
-            'serie': serie,
-            'dataNascimento': dataNascimento,
-            'dataMatricula': dataMatricula,
-            'matricula': matricula,
-            'senha': senha,
-            'uid': alunoUid,
-            'materias': materiasPorSerie[serie],
-          };
-
-          await alunosCollection
-              .doc(serie)
-              .collection('alunos')
-              .doc(alunoUid)
-              .set(alunoData);
-
-          print('Aluno adicionado com sucesso: $alunoUid');
-        }
-
-        print('Arquivo carregado com sucesso.');
+  Future<void> _processarArquivoXLSX() async {
+    if (arquivoSelecionado != null) {
+      if (!arquivoSelecionado!.existsSync()) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('O arquivo não existe mais no dispositivo.'),
+            duration: Duration(seconds: 2),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
       }
-    } catch (e) {
-      print('Erro ao carregar o arquivo: $e');
+
+      var bytes = await arquivoSelecionado!.readAsBytes();
+      var excel = Excel.decodeBytes(bytes);
+      var sheet = excel.tables.keys.first;
+
+      var rows = excel.tables[sheet]!.rows;
+      for (var row in rows) {
+        var nome = row[0]?.value.toString();
+        var serie = row[1]?.value.toString();
+        var dataNascimento = formatDate(_parseCellValue(row[2]?.value));
+        var dataMatricula = formatDate(_parseCellValue(row[3]?.value));
+        var matricula = row[4]?.value.toString();
+        var senha = row[5]?.value.toString();
+
+        String alunoUid = alunosCollection.doc().id;
+
+        Map<String, dynamic> alunoData = {
+          'nome': nome,
+          'serie': serie,
+          'dataNascimento': dataNascimento,
+          'dataMatricula': dataMatricula,
+          'matricula': matricula,
+          'senha': senha,
+          'uid': alunoUid,
+          'materias': materiasPorSerie[serie],
+        };
+
+        await alunosCollection
+            .doc(serie)
+            .collection('alunos')
+            .doc(alunoUid)
+            .set(alunoData);
+
+        print('Aluno adicionado com sucesso: $alunoUid');
+      }
+
+      print('Arquivo carregado com sucesso.');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Matrícula realizada com sucesso!'),
+          duration: Duration(seconds: 2),
+          backgroundColor: Colors.green,
+        ),
+      );
+      setState(() {
+        nomeArquivo = null;
+        arquivoSelecionado = null;
+        serieSelecionada = null;
+      });
     }
-
-    // Limpe os campos após a matrícula ser realizada
-    _limparCampos();
-    setState(() {
-      nomeArquivo = null;
-      arquivoSelecionado = null;
-      serieSelecionada = null;
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Matrícula realizada com sucesso!'),
-        duration: Duration(seconds: 2),
-        backgroundColor: Colors.green,
-      ),
-    );
   }
 
   bool _camposObrigatoriosPreenchidos() {

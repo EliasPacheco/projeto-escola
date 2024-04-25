@@ -401,7 +401,7 @@ class _FinanceiroHomeState extends State<FinanceiroHome> {
               child: _temConexaoInternet
                   ? alunosFiltrados.isEmpty
                       ? Center(
-                          child: Text('Sem financeiro para esses alunos'),
+                          child: Text('Sem financeiro para essa turma'),
                         )
                       : ListView.builder(
                           itemCount: alunosFiltrados.length,
