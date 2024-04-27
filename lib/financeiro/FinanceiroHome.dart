@@ -245,7 +245,8 @@ class _FinanceiroHomeState extends State<FinanceiroHome> {
                     List<Map<String, dynamic>>.from(data['financeiro']);
 
                 bool pagouAluno = financeiroData.any((element) {
-                  String mesAnoAluno = element['mesAno'] ?? '';
+                  String mesAnoAluno = element['vencimento'] ?? '';
+                  print("O vencimento é " +mesAnoAluno);
                   return mesAnoAluno == mesAno && (element['pagou'] ?? false);
                 });
 
@@ -276,9 +277,10 @@ class _FinanceiroHomeState extends State<FinanceiroHome> {
 
   String _getDataAtual() {
     DateTime dataAtual = DateTime.now();
-    String formattedDate =
-        "${dataAtual.month.toString().padLeft(2, '0')}/${dataAtual.year.toString()}";
-    return formattedDate;
+    String formattedDate = DateFormat('dd/MM/yyyy').format(dataAtual);
+print(formattedDate);
+return formattedDate;
+
   }
 
   void filtrarAlunos(String query) {
