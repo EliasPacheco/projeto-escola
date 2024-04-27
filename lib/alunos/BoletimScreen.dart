@@ -91,16 +91,23 @@ class _BoletimScreenState extends State<BoletimScreen> {
         ];
 
         for (String month in months) {
-          String grade = grades[month] != null ? grades[month].toString() : '';
-          Color color = grade.isNotEmpty
-              ? (double.parse(grade) >= 7 ? Colors.blue : Colors.red)
-              : Colors.orange;
+  String grade = grades[month] != null ? grades[month].toString() : '';
+  Color color = grade.isNotEmpty
+      ? (double.parse(grade) >= 7 ? Colors.blue : Colors.red)
+      : Colors.orange;
 
-          // Adiciona o ícone de lápis como ícone de edição
-          IconData editIcon = Icons.edit;
+  // Adiciona o ícone de lápis como ícone de edição
+  IconData editIcon = Icons.edit;
 
-          subjectRows.add(_buildSubjectRow(subject, month, grade, editIcon));
-        }
+  subjectRows.add(_buildSubjectRow(subject, month, grade, editIcon));
+}
+
+// Adicione a lógica para calcular a média abaixo do mês de novembro
+double media = _calculateMedia(grades);
+String mediaString = media.toStringAsFixed(2); // Converta para uma string com duas casas decimais
+
+subjectRows.add(_buildSubjectRow(subject, "Média", mediaString, Icons.calculate));
+
 
         Widget subjectCard =
             _buildExpandableCard(subject, Icons.subject, subjectRows);
@@ -165,57 +172,75 @@ class _BoletimScreenState extends State<BoletimScreen> {
     );
   }
 
-  Widget _buildSubjectRow(
-      String subject, String month, String grade, IconData editIcon) {
-    Color textColor = grade.isNotEmpty
-        ? (double.parse(grade) >= 7 ? Colors.blue : Colors.red)
-        : Colors.orange;
+  Widget _buildSubjectRow(String subject, String month, String grade, IconData editIcon) {
+  // Se o mês for "Média", desabilite o ícone de edição
+  bool isMedia = month == "Média";
 
-    return Container(
-      margin: EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.calendar_month, color: Colors.blue),
-              SizedBox(width: 8),
-              Text(
-                month,
-                style: TextStyle(
-                  fontFamily: 'RobotoMono',
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
+  Color textColor = grade.isNotEmpty
+      ? (double.parse(grade) >= 7 ? Colors.blue : Colors.red)
+      : Colors.orange;
+
+  return Container(
+    margin: EdgeInsets.symmetric(vertical: 8),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(
+          children: [
+            Icon(isMedia ? Icons.calculate : Icons.calendar_month, color: Colors.blue), // Substitua o ícone de calendário pelo ícone da calculadora se for "Média"
+            SizedBox(width: 8),
+            Text(
+              month,
+              style: TextStyle(
+                fontFamily: 'RobotoMono',
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
               ),
-            ],
-          ),
-          Row(
-            children: [
-              Text(
-                grade,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: textColor, // Altera a cor do texto aqui
-                  fontSize: 20,
-                ),
+            ),
+          ],
+        ),
+        Row(
+          children: [
+            Text(
+              grade,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: textColor, // Altera a cor do texto aqui
+                fontSize: 20,
               ),
-              if (widget.userType == 'Coordenacao')
-                IconButton(
-                  icon: Icon(
-                    editIcon,
-                    size: 20,
-                  ),
-                  onPressed: () {
-                    _showEditDialog(subject, month);
-                  },
-                )
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+            ),
+            if (!isMedia && widget.userType == 'Coordenacao') // Adiciona o ícone de edição apenas se não for "Média" e o tipo de usuário for "Coordenacao"
+              IconButton(
+                icon: Icon(
+                  editIcon,
+                  size: 20,
+                ),
+                onPressed: () {
+                  _showEditDialog(subject, month);
+                },
+              )
+          ],
+        ),
+      ],
+    ),
+  );
+}
+
+// Adicione a função para calcular a média
+double _calculateMedia(Map<String, dynamic> grades) {
+  double total = 0;
+  int count = 0;
+
+  grades.forEach((month, grade) {
+    if (grade != null && month != "Novembro") { // Exclua o mês de novembro do cálculo da média
+      total += double.parse(grade.toString());
+      count++;
+    }
+  });
+
+  if (count == 0) return 0; // Evite divisão por zero
+  return total / count;
+}
 
   void _showEditDialog(String subject, String month) {
     TextEditingController _noteController = TextEditingController();

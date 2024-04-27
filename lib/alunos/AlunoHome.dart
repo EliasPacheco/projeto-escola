@@ -401,6 +401,11 @@ class _AlunoHomeState extends State<AlunoHome> {
                   if (widget.userType == 'Coordenacao')
                     PopupMenuItem<String>(
                       value: 'opcao2',
+                      child: Text('Editar'),
+                    ),
+                  if (widget.userType == 'Coordenacao')
+                    PopupMenuItem<String>(
+                      value: 'opcao3',
                       child: Text('Excluir aluno'),
                     ),
                 ];
@@ -418,7 +423,7 @@ class _AlunoHomeState extends State<AlunoHome> {
                       ),
                     );
                   }
-                } else if (value == 'opcao2') {
+                } else if (value == 'opcao3') {
                   exibirModalExcluirAluno(alunosFiltrados[index].documentId);
                 }
               },
