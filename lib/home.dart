@@ -49,6 +49,7 @@ class _MySchoolAppState extends State<MySchoolApp> {
         matriculaCpf: widget.matriculaCpf,
         alunoData: widget.alunoData,
         userType: widget.userType,
+        professorData: widget.professorData,
       ),
       debugShowCheckedModeBanner: false,
       routes: {
@@ -322,6 +323,12 @@ class _MyHomePageState extends State<MyHomePage> {
       );
     }
 
+    String? nomeDoProfessor;
+
+if (widget.professorData != null) {
+  nomeDoProfessor = widget.professorData?['nome'];
+}
+
     return Scaffold(
       bottomNavigationBar: Container(
         height: 70,
@@ -402,8 +409,8 @@ class _MyHomePageState extends State<MyHomePage> {
                     widget.userType == 'Aluno'
                         ? '${widget.alunoData?['nome'].toString().split(' ')[0]}'
                         : widget.userType == 'Professor'
-                            ? 'Professor'
-                            : 'Coordenação',
+                          ? 'Prof. ${nomeDoProfessor.toString().split(' ')[0]}'
+                          : 'Coordenação',
                     style: GoogleFonts.nunito(
                       textStyle: const TextStyle(
                           fontSize: 26, fontWeight: FontWeight.bold),
