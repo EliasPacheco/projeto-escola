@@ -255,7 +255,7 @@ Widget build(BuildContext context) {
   );
 }
 
-void _salvarEdicaoAluno() {
+void _salvarEdicaoAluno() async {
   // Verificar se algum campo obrigatório está vazio
   if (!_camposObrigatoriosPreenchidos()) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -268,19 +268,33 @@ void _salvarEdicaoAluno() {
     return; // Sair da função se algum campo estiver vazio
   }
 
+  // Remover os dados do aluno da série anterior
+  if (widget.aluno.serie != serieSelecionada) {
+    await FirebaseFirestore.instance
+        .collection('alunos')
+        .doc(widget.aluno.serie) // ID da série anterior
+        .collection('alunos')
+        .doc(widget.aluno.documentId)
+        .delete()
+        .catchError((error) {
+      print('Erro ao excluir os dados do aluno da série anterior: $error');
+    });
+  }
+
   // Atualizar os dados do aluno no Firestore
-  FirebaseFirestore.instance
+  await FirebaseFirestore.instance
       .collection('alunos')
-      .doc(widget.aluno.serie) // Supondo que a série seja o ID do documento do aluno
+      .doc(serieSelecionada) // ID da nova série selecionada
       .collection('alunos')
       .doc(widget.aluno.documentId)
-      .update({
+      .set({
         'nome': nomeController.text,
         'serie': serieSelecionada,
         'dataNascimento': dataNascimentoController.text,
         'dataMatricula': dataMatriculaController.text,
         'matricula': matriculaController.text,
         'senha': senhaController.text,
+        'materias': materiasPorSerie[serieSelecionada],
         // Adicione aqui outros campos conforme necessário
       })
       .then((value) {
@@ -305,6 +319,7 @@ void _salvarEdicaoAluno() {
         print('Erro ao salvar as informações do aluno: $error');
       });
 }
+
 
 
 
