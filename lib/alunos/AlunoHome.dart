@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:escola/editar/EditAluno.dart';
 import 'package:flutter/material.dart';
 import 'package:escola/alunos/BoletimScreen.dart';
 import 'package:escola/alunos/MatriculaScreen.dart';
@@ -423,6 +424,16 @@ class _AlunoHomeState extends State<AlunoHome> {
                       ),
                     );
                   }
+                } else if (value == 'opcao2') {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => EditarAlunoScreen(
+                          userType: widget.userType,
+                          aluno: alunosFiltrados[index],
+                        ),
+                      ),
+                    );
                 } else if (value == 'opcao3') {
                   exibirModalExcluirAluno(alunosFiltrados[index].documentId);
                 }
