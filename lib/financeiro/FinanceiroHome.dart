@@ -10,6 +10,7 @@ class Aluno {
   final String documentId;
   final String nome;
   final String serie;
+  final String vencimento;
   final bool pagou;
   List<Notificacao>? notificacoes;
 
@@ -17,6 +18,7 @@ class Aluno {
     required this.documentId,
     required this.nome,
     required this.serie,
+    required this.vencimento,
     required this.pagou,
     this.notificacoes,
   });
@@ -76,6 +78,7 @@ class _FinanceiroHomeState extends State<FinanceiroHome> {
   void initState() {
     super.initState();
     mesAno = _getDataAtual();
+    mesAno = _getDataAtual2();
     buscarAlunos();
     _verificarConexaoInternet();
     _monitorarConexao();
@@ -225,6 +228,7 @@ class _FinanceiroHomeState extends State<FinanceiroHome> {
 
   Future<void> buscarAlunos() async {
     mesAno = _getDataAtual();
+    mesAno = _getDataAtual2();
 
     try {
       final querySnapshot = await FirebaseFirestore.instance
@@ -245,24 +249,30 @@ class _FinanceiroHomeState extends State<FinanceiroHome> {
                     List<Map<String, dynamic>>.from(data['financeiro']);
 
                 bool pagouAluno = financeiroData.any((element) {
-                  String mesAnoAluno = element['vencimento'] ?? '';
-                  print("O vencimento é " +mesAnoAluno);
+                  String mesAnoAluno = element['mesAno'] ?? '';
+                  print("O vencimento é " + mesAnoAluno);
                   return mesAnoAluno == mesAno && (element['pagou'] ?? false);
                 });
 
+                String vencimentoAluno = financeiroData.firstWhere(
+                        (element) => element['mesAno'] == mesAno,
+                        orElse: () => {'vencimento': ''})['vencimento'] ??
+                    '';
+
                 return Aluno(
-                  documentId: document.id,
-                  nome: (data['nome'] ?? '').toString(),
-                  serie: (data['serie'] ?? '').toString(),
-                  pagou: pagouAluno,
-                );
+                    documentId: document.id,
+                    nome: (data['nome'] ?? '').toString(),
+                    serie: (data['serie'] ?? '').toString(),
+                    pagou: pagouAluno,
+                    vencimento:
+                        vencimentoAluno); // Usar a data de vencimento do aluno
               } else {
                 return Aluno(
-                  documentId: document.id,
-                  nome: (data['nome'] ?? '').toString(),
-                  serie: (data['serie'] ?? '').toString(),
-                  pagou: false,
-                );
+                    documentId: document.id,
+                    nome: (data['nome'] ?? '').toString(),
+                    serie: (data['serie'] ?? '').toString(),
+                    pagou: false,
+                    vencimento: mesAno);
               }
             }).toList();
 
@@ -278,9 +288,15 @@ class _FinanceiroHomeState extends State<FinanceiroHome> {
   String _getDataAtual() {
     DateTime dataAtual = DateTime.now();
     String formattedDate = DateFormat('dd/MM/yyyy').format(dataAtual);
-print(formattedDate);
-return formattedDate;
+    print(formattedDate);
+    return formattedDate;
+  }
 
+  String _getDataAtual2() {
+    DateTime dataAtual = DateTime.now();
+    String formattedDate =
+        "${dataAtual.month.toString().padLeft(2, '0')}/${dataAtual.year.toString()}";
+    return formattedDate;
   }
 
   void filtrarAlunos(String query) {
@@ -311,6 +327,83 @@ return formattedDate;
       alunosFiltrados =
           alunos.where((aluno) => aluno.serie == selectedAno).toList();
     });
+  }
+
+  bool _isVencimentoHoje(DateTime dataVencimento) {
+    DateTime hoje = DateTime.now();
+    hoje = DateTime(
+        hoje.year, hoje.month, hoje.day); // Zerando horas, minutos e segundos
+
+    print('Data de Vencimento: $dataVencimento');
+    print('Data de Hoje: $hoje');
+
+    return dataVencimento.year == hoje.year &&
+        dataVencimento.month == hoje.month &&
+        dataVencimento.day == hoje.day;
+  }
+
+  Color _getAvatarColor(Map<String, dynamic> infoFinanceira) {
+    String vencimentoString = infoFinanceira['vencimento'];
+
+    try {
+      DateTime dataVencimento =
+          DateFormat('dd/MM/yyyy').parse(vencimentoString);
+
+      bool pagou = infoFinanceira['pagou'] ?? false;
+
+      // Verifica se o vencimento é hoje
+      bool vencimentoHoje = _isVencimentoHoje(dataVencimento);
+
+      // Verifica se o vencimento está atrasado
+      bool vencimentoAtrasado = dataVencimento.isBefore(DateTime.now());
+
+      // Define a cor com base no estado do pagamento e do vencimento
+      if (pagou) {
+        return Colors.green; // Verde se o pagamento foi feito
+      } else {
+        if (vencimentoHoje) {
+          return Colors
+              .orange; // Laranja se o vencimento é hoje e o pagamento não foi feito
+        } else if (vencimentoAtrasado) {
+          return Colors
+              .red; // Vermelho se o vencimento passou e o pagamento não foi feito
+        } else {
+          return Colors
+              .orange; // Laranja se o vencimento ainda não passou e o pagamento não foi feito
+        }
+      }
+    } catch (e) {
+      // Se ocorrer uma exceção ao tentar analisar a data, imprima o erro e retorne uma cor padrão
+      print('Erro ao analisar a data: $e');
+      return Colors.blue; // Cor padrão para datas inválidas
+    }
+  }
+
+  Widget _buildAvatarContent(Color avatarColor, bool pagou) {
+    if (avatarColor == Colors.blue) {
+      // Se a cor for cinza, exibir "SF"
+      return Text(
+        'SF',
+        style: TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+        ),
+      );
+    } else if (avatarColor == Colors.orange){
+      return Text(
+        'AP',
+        style: TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+        ),
+      );
+    }else {
+      // Caso contrário, exibir o ícone de check se o pagamento foi feito, senão, exibir o ícone de erro
+      return Icon(
+        pagou ? Icons.check_circle : Icons.error,
+        color: Colors.white,
+      );
+    }
   }
 
   @override
@@ -408,6 +501,11 @@ return formattedDate;
                       : ListView.builder(
                           itemCount: alunosFiltrados.length,
                           itemBuilder: (context, index) {
+                            Color avatarColor = _getAvatarColor({
+                              'pagou': alunosFiltrados[index].pagou,
+                              'vencimento': alunosFiltrados[index].vencimento,
+                            });
+
                             return Card(
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(15.0),
@@ -418,16 +516,9 @@ return formattedDate;
                                 title: Row(
                                   children: [
                                     CircleAvatar(
-                                      backgroundColor:
-                                          (alunosFiltrados[index].pagou)
-                                              ? Colors.green
-                                              : Colors.red,
-                                      child: Icon(
-                                        (alunosFiltrados[index].pagou)
-                                            ? Icons.check_circle
-                                            : Icons.error,
-                                        color: Colors.white,
-                                      ),
+                                      backgroundColor: avatarColor,
+                                      child: _buildAvatarContent(avatarColor,
+                                          alunosFiltrados[index].pagou),
                                     ),
                                     SizedBox(
                                       width: 10.0,
@@ -436,9 +527,8 @@ return formattedDate;
                                       '${alunosFiltrados[index].nome}',
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
-                                        color: (alunosFiltrados[index].pagou)
-                                            ? Colors.green
-                                            : Colors.red,
+                                        color:
+                                            avatarColor, // Cor do texto igual à cor do CircleAvatar
                                       ),
                                     ),
                                   ],

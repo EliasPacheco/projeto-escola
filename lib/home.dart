@@ -674,7 +674,7 @@ if (widget.professorData != null) {
           ),
           label: 'Financeiro',
         ),
-      widget.userType == 'Coordenacao'
+      widget.userType == 'Coordenacao' || widget.userType == 'Professor'
           ? BottomNavigationBarItem(
               icon: FaIcon(
                 FontAwesomeIcons.userGraduate,

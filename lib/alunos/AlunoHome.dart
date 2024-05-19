@@ -318,7 +318,7 @@ class _AlunoHomeState extends State<AlunoHome> {
           }
 
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
+            return Center(child: CircularProgressIndicator(color: Colors.blue,));
           }
 
           alunos = snapshot.data ?? [];
@@ -444,10 +444,4 @@ class _AlunoHomeState extends State<AlunoHome> {
       },
     );
   }
-}
-
-void main() {
-  runApp(MaterialApp(
-    home: AlunoHome(userType: 'Coordenacao'),
-  ));
 }
