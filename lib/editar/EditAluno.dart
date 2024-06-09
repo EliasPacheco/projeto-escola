@@ -245,7 +245,7 @@ Widget build(BuildContext context) {
               child: Text('Salvar', style: TextStyle(color: Colors.white),
                 ),
                 style: ElevatedButton.styleFrom(
-                  primary: Colors.blue, // Alteração de cor do botão
+                  backgroundColor: Colors.blue, // Alteração de cor do botão
                 ), 
             ),
           ],

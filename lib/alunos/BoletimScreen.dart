@@ -286,7 +286,7 @@ double _calculateMedia(Map<String, dynamic> grades) {
                 Navigator.pop(context); // Fecha o diálogo
               },
               style: ElevatedButton.styleFrom(
-                primary: Colors.blue,
+                backgroundColor: Colors.blue,
               ),
               child: Text(
                 'Enviar',

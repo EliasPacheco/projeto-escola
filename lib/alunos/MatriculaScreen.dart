@@ -245,7 +245,7 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
                   style: TextStyle(color: Colors.white),
                 ),
                 style: ElevatedButton.styleFrom(
-                  primary: Colors.blue, // Alteração de cor do botão
+                  backgroundColor: Colors.blue, // Alteração de cor do botão
                 ),
               ),
               // Exibição do nome do arquivo abaixo do botão
@@ -275,7 +275,7 @@ class _MatriculaScreenState extends State<MatriculaScreen> {
                   child: Text('Realizar Matrícula',
                       style: TextStyle(color: Colors.white)),
                   style: ElevatedButton.styleFrom(
-                    primary: Colors.blue,
+                    backgroundColor: Colors.blue,
                   )),
             ],
           ),

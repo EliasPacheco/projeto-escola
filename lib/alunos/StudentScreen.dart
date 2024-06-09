@@ -382,9 +382,7 @@ class _StudentScreenState extends State<StudentScreen> {
                       icon: Icon(Icons.attach_money),
                       label: Text('Financeiro'),
                       style: ElevatedButton.styleFrom(
-                        elevation: 5,
-                        primary: Colors.blue,
-                        onPrimary: Colors.white,
+                        foregroundColor: Colors.white, backgroundColor: Colors.blue, elevation: 5,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
@@ -410,9 +408,7 @@ class _StudentScreenState extends State<StudentScreen> {
                       icon: Icon(Icons.assignment),
                       label: Text('Boletim'),
                       style: ElevatedButton.styleFrom(
-                        elevation: 5,
-                        primary: Colors.green,
-                        onPrimary: Colors.white,
+                        foregroundColor: Colors.white, backgroundColor: Colors.green, elevation: 5,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),

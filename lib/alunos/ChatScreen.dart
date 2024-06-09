@@ -166,8 +166,7 @@ class ChatScreenState extends State<ChatScreen> {
                   _getImageFromSource(ImageSource.gallery);
                 },
                 style: ElevatedButton.styleFrom(
-                  primary: Colors.blue,
-                  onPrimary: Colors.white,
+                  foregroundColor: Colors.white, backgroundColor: Colors.blue,
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -185,8 +184,7 @@ class ChatScreenState extends State<ChatScreen> {
                   _getImageFromSource(ImageSource.camera);
                 },
                 style: ElevatedButton.styleFrom(
-                  primary: Colors.green,
-                  onPrimary: Colors.white,
+                  foregroundColor: Colors.white, backgroundColor: Colors.green,
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -455,8 +453,7 @@ class ChatScreenState extends State<ChatScreen> {
                           Navigator.pop(context);
                         },
                         style: ElevatedButton.styleFrom(
-                          primary: Colors.red,
-                          onPrimary: Colors.white,
+                          foregroundColor: Colors.white, backgroundColor: Colors.red,
                         ),
                         child: Text("Cancelar"),
                       ),
@@ -467,8 +464,7 @@ class ChatScreenState extends State<ChatScreen> {
                               ""); // Send the message with the image
                         },
                         style: ElevatedButton.styleFrom(
-                          primary: Colors.green,
-                          onPrimary: Colors.white,
+                          foregroundColor: Colors.white, backgroundColor: Colors.green,
                         ),
                         child: Text("Enviar"),
                       ),
